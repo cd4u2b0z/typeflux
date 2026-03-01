@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>typeflux — flow state typing</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Ambient Background -->
+        <div class="ambient-bg">
+            <div class="gradient-orb orb-1"></div>
+            <div class="gradient-orb orb-2"></div>
+            <div class="gradient-orb orb-3"></div>
+        </div>
+
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">⌨</span>
+                <span class="logo-text">typeflux</span>
+            </div>
+            <nav class="nav">
+                <button class="nav-btn active" data-view="test">test</button>
+                <button class="nav-btn" data-view="stats">stats</button>
+                <button class="nav-btn" data-view="settings">settings</button>
+            </nav>
+            <div class="header-actions">
+                <button class="icon-btn" id="theme-toggle" title="Toggle theme">
+                    <span class="icon">◐</span>
+                </button>
+                <button class="icon-btn" id="sound-toggle" title="Toggle sounds">
+                    <span class="icon">♪</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Test View -->
+            <section class="view view-test active" id="view-test">
+                <!-- Mode Selection -->
+                <div class="mode-bar">
+                    <div class="mode-group">
+                        <span class="mode-label">mode</span>
+                        <button class="mode-btn active" data-mode="words">words</button>
+                        <button class="mode-btn" data-mode="quotes">quotes</button>
+                        <button class="mode-btn" data-mode="code">code</button>
+                        <button class="mode-btn" data-mode="zen">zen</button>
+                    </div>
+                    <div class="mode-group">
+                        <span class="mode-label">time</span>
+                        <button class="time-btn" data-time="15">15</button>
+                        <button class="time-btn active" data-time="30">30</button>
+                        <button class="time-btn" data-time="60">60</button>
+                        <button class="time-btn" data-time="120">120</button>
+                    </div>
+                    <div class="mode-group">
+                        <span class="mode-label">words</span>
+                        <button class="word-btn" data-words="10">10</button>
+                        <button class="word-btn active" data-words="25">25</button>
+                        <button class="word-btn" data-words="50">50</button>
+                        <button class="word-btn" data-words="100">100</button>
+                    </div>
+                </div>
+
+                <!-- Live Stats Bar -->
+                <div class="live-stats">
+                    <div class="stat-item">
+                        <span class="stat-value" id="live-wpm">0</span>
+                        <span class="stat-label">wpm</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="live-accuracy">100</span>
+                        <span class="stat-label">acc%</span>
+                    </div>
+                    <div class="stat-item timer-display">
+                        <span class="stat-value" id="live-timer">30</span>
+                        <span class="stat-label">sec</span>
+                    </div>
+                </div>
+
+                <!-- Typing Area -->
+                <div class="typing-container">
+                    <div class="typing-area" id="typing-area">
+                        <div class="words-display" id="words-display"></div>
+                        <div class="cursor" id="cursor"></div>
+                    </div>
+                    <input type="text" class="hidden-input" id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                </div>
+
+                <!-- Restart Hint -->
+                <div class="hint">
+                    <span class="key">tab</span> + <span class="key">enter</span> to restart
+                    <span class="separator">|</span>
+                    <span class="key">esc</span> to reset
+                </div>
+
+                <!-- Combo & Streak -->
+                <div class="combo-display" id="combo-display">
+                    <span class="combo-count">0</span>
+                    <span class="combo-label">combo</span>
+                </div>
+            </section>
+
+            <!-- Results View -->
+            <section class="view view-results" id="view-results">
+                <div class="results-container">
+                    <div class="results-header">
+                        <h2>test complete</h2>
+                        <div class="results-grade" id="results-grade">S</div>
+                    </div>
+                    
+                    <div class="results-main">
+                        <div class="result-big">
+                            <span class="result-value" id="result-wpm">0</span>
+                            <span class="result-label">wpm</span>
+                        </div>
+                        <div class="result-big">
+                            <span class="result-value" id="result-accuracy">0</span>
+                            <span class="result-label">accuracy</span>
+                        </div>
+                    </div>
+
+                    <div class="results-details">
+                        <div class="detail-item">
+                            <span class="detail-label">raw wpm</span>
+                            <span class="detail-value" id="result-raw">0</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">characters</span>
+                            <span class="detail-value" id="result-chars">0/0/0</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">consistency</span>
+                            <span class="detail-value" id="result-consistency">0%</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">time</span>
+                            <span class="detail-value" id="result-time">0s</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">max combo</span>
+                            <span class="detail-value" id="result-combo">0</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">test type</span>
+                            <span class="detail-value" id="result-type">words 25</span>
+                        </div>
+                    </div>
+
+                    <!-- WPM Chart -->
+                    <div class="chart-container">
+                        <canvas id="wpm-chart"></canvas>
+                    </div>
+
+                    <div class="results-actions">
+                        <button class="btn btn-primary" id="restart-btn">
+                            <span class="icon">↻</span> new test
+                        </button>
+                        <button class="btn btn-secondary" id="share-btn">
+                            <span class="icon">⎘</span> copy result
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Stats View -->
+            <section class="view view-stats" id="view-stats">
+                <div class="stats-container">
+                    <h2>your statistics</h2>
+                    
+                    <div class="stats-overview">
+                        <div class="stat-card">
+                            <span class="stat-card-value" id="stats-tests">0</span>
+                            <span class="stat-card-label">tests completed</span>
+                        </div>
+                        <div class="stat-card highlight">
+                            <span class="stat-card-value" id="stats-best">0</span>
+                            <span class="stat-card-label">best wpm</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-card-value" id="stats-avg">0</span>
+                            <span class="stat-card-label">average wpm</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-card-value" id="stats-time">0m</span>
+                            <span class="stat-card-label">time typing</span>
+                        </div>
+                    </div>
+
+                    <div class="stats-chart-container">
+                        <h3>wpm over time</h3>
+                        <canvas id="history-chart"></canvas>
+                    </div>
+
+                    <div class="recent-tests">
+                        <h3>recent tests</h3>
+                        <div class="tests-list" id="tests-list">
+                            <div class="empty-state">no tests yet — start typing!</div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-danger" id="clear-stats">clear all data</button>
+                </div>
+            </section>
+
+            <!-- Settings View -->
+            <section class="view view-settings" id="view-settings">
+                <div class="settings-container">
+                    <h2>settings</h2>
+                    
+                    <div class="settings-group">
+                        <h3>appearance</h3>
+                        
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <span class="setting-name">theme</span>
+                                <span class="setting-desc">choose your vibe</span>
+                            </div>
+                            <div class="theme-selector" id="theme-selector">
+                                <button class="theme-option active" data-theme="midnight" title="midnight">
+                                    <span class="theme-preview midnight"></span>
+                                </button>
+                                <button class="theme-option" data-theme="aurora" title="aurora">
+                                    <span class="theme-preview aurora"></span>
+                                </button>
+                                <button class="theme-option" data-theme="sunset" title="sunset">
+                                    <span class="theme-preview sunset"></span>
+                                </button>
+                                <button class="theme-option" data-theme="forest" title="forest">
+                                    <span class="theme-preview forest"></span>
+                                </button>
+                                <button class="theme-option" data-theme="ocean" title="ocean">
+                                    <span class="theme-preview ocean"></span>
+                                </button>
+                                <button class="theme-option" data-theme="lavender" title="lavender">
+                                    <span class="theme-preview lavender"></span>
+                                </button>
+                                <button class="theme-option" data-theme="paper" title="paper">
+                                    <span class="theme-preview paper"></span>
+                                </button>
+                                <button class="theme-option" data-theme="matrix" title="matrix">
+                                    <span class="theme-preview matrix"></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <span class="setting-name">font size</span>
+                                <span class="setting-desc">adjust text size</span>
+                            </div>
+                            <div class="setting-control">
+                                <input type="range" id="font-size" min="16" max="32" value="24" class="slider">
+                                <span class="slider-value" id="font-size-value">24px</span>
+                            </div>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <span class="setting-name">smooth caret</span>
+                                <span class="setting-desc">animate cursor movement</span>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="smooth-caret" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <span class="setting-name">show live wpm</span>
+                                <span class="setting-desc">display speed while typing</span>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="show-live-wpm" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3>behavior</h3>
+                        
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <span class="setting-name">sound effects</span>
+                                <span class="setting-desc">keystroke feedback</span>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="sound-effects" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <span class="setting-name">sound volume</span>
+                                <span class="setting-desc">adjust feedback volume</span>
+                            </div>
+                            <div class="setting-control">
+                                <input type="range" id="sound-volume" min="0" max="100" value="30" class="slider">
+                                <span class="slider-value" id="sound-volume-value">30%</span>
+                            </div>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <span class="setting-name">stop on error</span>
+                                <span class="setting-desc">must fix mistakes</span>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="stop-on-error">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <span class="setting-name">confidence mode</span>
+                                <span class="setting-desc">no backspace allowed</span>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="confidence-mode">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <span class="setting-name">blind mode</span>
+                                <span class="setting-desc">hide error indicators</span>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="blind-mode">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <span class="footer-text">typeflux v1.0</span>
+                <span class="separator">•</span>
+                <span class="footer-text">by Dr. Baklava</span>
+            </div>
+        </footer>
+
+        <!-- Toast Notifications -->
+        <div class="toast-container" id="toast-container"></div>
+    </div>
+
+    <!-- Audio Elements -->
+    <div id="audio-container" style="display: none;"></div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
