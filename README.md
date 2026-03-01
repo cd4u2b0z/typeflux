@@ -134,7 +134,3 @@ typeflux uses the standard WPM formula:
 MIT License — feel free to use, modify, and share!
 
 ---
-
-<p align="center">
-  <strong>crafted with flow 󱐋</strong>
-</p>
