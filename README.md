@@ -1,26 +1,26 @@
-# ⌨️ typeflux
+# 󰌌 typeflux
 
 > **Flow state typing** — A beautiful, feature-rich typing test that makes practice feel like play.
 
 ![typeflux](https://img.shields.io/badge/version-1.0.0-purple?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 
-## ✨ Features
+##  Features
 
-### 🎮 Multiple Modes
+### 󰊗 Multiple Modes
 - **Words** — Classic random word typing with time limits
 - **Quotes** — Inspiring quotes from thought leaders and programmers
 - **Code** — Real code snippets in JavaScript, Python, Rust, TypeScript, Go, CSS & SQL
 - **Zen** — Endless flow-optimized words for pure practice
 
-### 📊 Real-time Statistics
+### 󰄧 Real-time Statistics
 - Live WPM (words per minute) tracking
 - Accuracy percentage
 - Character breakdown (correct/incorrect/total)
 - Consistency score based on WPM variance
 - Combo system with milestone sounds
 
-### 🎨 Beautiful Themes
+### 󰏘 Beautiful Themes
 - **Midnight** — Deep purple vibes (default)
 - **Aurora** — Northern lights inspired
 - **Sunset** — Warm sunset colors
@@ -30,7 +30,7 @@
 - **Paper** — Clean light mode
 - **Matrix** — Classic hacker green
 
-### 🔧 Customization
+### 󰒓 Customization
 - Adjustable font size
 - Smooth/instant caret animation
 - Sound effects with volume control
@@ -39,21 +39,21 @@
 - Blind mode (hide errors)
 - Multiple keyboard layouts
 
-### 📈 Progress Tracking
+### 󰄭 Progress Tracking
 - Complete test history
 - Best WPM tracking
 - Average WPM calculation
 - Total time spent typing
 - Visual charts for progress over time
 
-### 🔊 Satisfying Audio
+### 󰕾 Satisfying Audio
 - Mechanical keyboard-style keystroke sounds
 - Distinct sounds for space, backspace, errors
 - Combo milestone celebrations
 - Test completion fanfare
 - Personal best celebration
 
-## 🚀 Quick Start
+## 󰐊 Quick Start
 
 Simply open `index.html` in your browser — no build process required!
 
@@ -62,12 +62,10 @@ Simply open `index.html` in your browser — no build process required!
 cd /home/craig/projects/typeflux
 
 # Open in browser
-open index.html
-# or
-xdg-open index.html  # Linux
+xdg-open index.html
 ```
 
-## ⌨️ Keyboard Shortcuts
+## 󰌌 Keyboard Shortcuts
 
 | Shortcut | Action |
 |----------|--------|
@@ -75,7 +73,7 @@ xdg-open index.html  # Linux
 | `Esc` | Reset current test |
 | Any letter | Auto-focus typing area |
 
-## 📁 Project Structure
+## 󰉋 Project Structure
 
 ```
 typeflux/
@@ -94,16 +92,16 @@ typeflux/
 └── README.md
 ```
 
-## 🎯 WPM Calculation
+## 󰓾 WPM Calculation
 
 typeflux uses the standard WPM formula:
 - **Gross WPM** = (Characters Typed / 5) / Minutes
 - **Net WPM** = Gross WPM - (Errors / Minutes)
 - 5 characters = 1 standard word
 
-## 🏆 Grading System
+## 󰆥 Grading System
 
-| Grade | Score (WPM × Accuracy%) |
+| Grade | Score (WPM x Accuracy%) |
 |-------|-------------------------|
 | S+ | 100+ |
 | S | 80-99 |
@@ -115,7 +113,7 @@ typeflux uses the standard WPM formula:
 | C | 15-24 |
 | D | <15 |
 
-## 🛠️ Technologies
+## 󰜬 Technologies
 
 - **Vanilla JavaScript** — No frameworks, pure performance
 - **Web Audio API** — Synthesized sound effects
@@ -123,9 +121,7 @@ typeflux uses the standard WPM formula:
 - **CSS Custom Properties** — Dynamic theming
 - **LocalStorage** — Persistent settings & stats
 
-## 🎨 Design Philosophy
-
-typeflux is designed with the same love and attention to detail as oracle-weather:
+## 󰏘 Design Philosophy
 
 1. **Flow-first** — Every interaction should feel smooth and satisfying
 2. **Beautiful defaults** — Looks great out of the box
@@ -133,12 +129,12 @@ typeflux is designed with the same love and attention to detail as oracle-weathe
 4. **No friction** — Start typing immediately
 5. **Delightful feedback** — Sounds, animations, and visual polish
 
-## 📄 License
+##  License
 
 MIT License — feel free to use, modify, and share!
 
 ---
 
 <p align="center">
-  <strong>crafted with flow ✨</strong>
+  <strong>crafted with flow 󱐋</strong>
 </p>
