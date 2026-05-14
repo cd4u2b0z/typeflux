@@ -1,136 +1,139 @@
-# 󰌌 typeflux
+# typeflux
 
-> **Flow state typing** — A beautiful, feature-rich typing test that makes practice feel like play.
+> *An account of the typewright — a typing trial in the manner of an engraved manuscript.*
 
-![typeflux](https://img.shields.io/badge/version-1.0.0-purple?style=flat-square)
-![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
+![version](https://img.shields.io/badge/edition-prima_v1.0-c8a25c?style=flat-square&labelColor=2d353b)
+![license](https://img.shields.io/badge/license-MIT-7fbbb3?style=flat-square&labelColor=2d353b)
+![no build](https://img.shields.io/badge/build-none-a7c080?style=flat-square&labelColor=2d353b)
 
-##  Features
+A typing test rendered as a field manual: Cinzel for the engraved hand, EB Garamond for the marginalia, JetBrains Mono for the letterpress of the trial itself. No framework. No build step. Open and type.
 
-### 󰊗 Multiple Modes
-- **Words** — Classic random word typing with time limits
-- **Quotes** — Inspiring quotes from thought leaders and programmers
-- **Code** — Real code snippets in JavaScript, Python, Rust, TypeScript, Go, CSS & SQL
-- **Zen** — Endless flow-optimized words for pure practice
+---
 
-### 󰄧 Real-time Statistics
-- Live WPM (words per minute) tracking
-- Accuracy percentage
-- Character breakdown (correct/incorrect/total)
-- Consistency score based on WPM variance
-- Combo system with milestone sounds
+## Plate I — The Field
 
-### 󰏘 Beautiful Themes
-- **Midnight** — Deep purple vibes (default)
-- **Aurora** — Northern lights inspired
-- **Sunset** — Warm sunset colors
-- **Forest** — Deep green nature
-- **Ocean** — Deep blue depths
-- **Lavender** — Soft purple dreams
-- **Paper** — Clean light mode
-- **Matrix** — Classic hacker green
+Four manners of trial, set upon a vellum field with engraved gold corners:
 
-### 󰒓 Customization
-- Adjustable font size
-- Smooth/instant caret animation
-- Sound effects with volume control
-- Stop on error mode
-- Confidence mode (no backspace)
-- Blind mode (hide errors)
-- Multiple keyboard layouts
+- **words** — random words drawn from a curated lexicon
+- **quotes** — passages from authors, programmers, and thinkers
+- **code** — real snippets in JavaScript, Python, Rust, TypeScript, Go, CSS, and SQL
+- **zen** — an endless stream, for the practice of pure flow
 
-### 󰄭 Progress Tracking
-- Complete test history
-- Best WPM tracking
-- Average WPM calculation
-- Total time spent typing
-- Visual charts for progress over time
+The glass (timer) may be set to 15, 30, 60, or 120 seconds. Word count to x, xxv, l, or c.
 
-### 󰕾 Satisfying Audio
-- Mechanical keyboard-style keystroke sounds
-- Distinct sounds for space, backspace, errors
-- Combo milestone celebrations
-- Test completion fanfare
-- Personal best celebration
+## Plate II — The Ledger
 
-## 󰐊 Quick Start
+Each trial is recorded. The ledger keeps:
 
-Simply open `index.html` in your browser — no build process required!
+- trials concluded · crest of pace · mean pace · hours at the desk
+- a chart of pace across all trials past
+- a roll of the most recent trials
 
-```bash
-# Clone the repository
-cd /home/craig/projects/typeflux
+Strike from the record at your pleasure.
 
-# Open in browser
-xdg-open index.html
+## Plate III — The Scrivener's Desk
+
+Eight palettes of the page — each defined as a complete atmosphere, not a colour swap:
+
+| key | name | character |
+|---|---|---|
+| midnight | Everforest Night | warm green-grey night, gilt accent (default) |
+| aurora   | Astrolabe        | deep indigo, silvered moon |
+| sunset   | Sanguine Codex   | oxblood and cream |
+| forest   | Verdant Folio    | deep moss, bone, sage |
+| ocean    | Tidal Atlas      | teal-black and gold |
+| lavender | Mauve Apocrypha  | aubergine and rose-gold |
+| paper    | Vellum Manuscript| light parchment, ink black, vermillion |
+| matrix   | Phosphor Tube    | terminal green on near-black |
+
+Further rites at the desk:
+
+- stature of the letter (font size)
+- gliding caret · live pace declaration
+- voice of the quill (key sounds) + strength of voice
+- stay upon thine error · confidence of the hand (no backspace) · blind passage
+
+## The Certificate
+
+Upon conclusion, the trial is sealed: a ringed grade medallion, the grand pace and accuracy, a six-row ledger of details, a chart of pace through the glass, and a seal line — *signed this day, by your own hand*.
+
+A combo system runs alongside as the **fervor seal**: a circular medallion that breathes gold at five, ignites amber at ten (*fire*), and burns crimson at twenty-five (*blaze*).
+
+---
+
+## Quick start
+
+```sh
+./serve.sh           # serves on http://localhost:8080 via python3 -m http.server
+./serve.sh 9000      # custom port
 ```
 
-## 󰌌 Keyboard Shortcuts
+ES modules require an HTTP origin — opening `index.html` directly with `file://` will fail.
 
-| Shortcut | Action |
-|----------|--------|
-| `Tab` + `Enter` | Restart test |
-| `Esc` | Reset current test |
-| Any letter | Auto-focus typing area |
+## Keyboard
 
-## 󰉋 Project Structure
+| key | act |
+|---|---|
+| `Tab` + `Enter` | begin afresh |
+| `Esc` | reset the glass |
+| any letter | auto-focus the field |
+
+## Structure
 
 ```
 typeflux/
-├── index.html          # Main HTML file
+├── index.html          frontispiece + plates I/II/III + certificate
 ├── css/
-│   ├── styles.css      # Core styles
-│   └── themes.css      # Theme definitions
-├── js/
-│   ├── app.js          # Main application logic
-│   ├── words.js        # Word lists & generator
-│   ├── quotes.js       # Quote collections
-│   ├── code.js         # Code snippet library
-│   ├── sounds.js       # Web Audio API sound system
-│   ├── chart.js        # Canvas-based charts
-│   └── storage.js      # LocalStorage management
-└── README.md
+│   ├── styles.css      engraved layout, vellum frame, fervor seal, certificate
+│   └── themes.css      eight palettes (midnight default; matrix, paper, et al.)
+└── js/
+    ├── app.js          state machine, key handling, view routing
+    ├── words.js        word generator + lexicons
+    ├── quotes.js       quote corpus
+    ├── code.js         code snippet corpus
+    ├── sounds.js       Web Audio synthesised keystrokes
+    ├── chart.js        canvas pace charts
+    └── storage.js      localStorage settings & history
 ```
 
-## 󰓾 WPM Calculation
+## Pace, by the formula
 
-typeflux uses the standard WPM formula:
-- **Gross WPM** = (Characters Typed / 5) / Minutes
-- **Net WPM** = Gross WPM - (Errors / Minutes)
-- 5 characters = 1 standard word
+```
+gross wpm = (characters typed / 5) / minutes
+net wpm   = gross wpm − (errors / minutes)
+```
 
-## 󰆥 Grading System
+Five characters reckoned as one word, in the standard manner.
 
-| Grade | Score (WPM x Accuracy%) |
-|-------|-------------------------|
+## Grading
+
+The grade is the product of net WPM and accuracy:
+
+| grade | score (wpm × acc%) |
+|---|---|
 | S+ | 100+ |
-| S | 80-99 |
-| A+ | 65-79 |
-| A | 55-64 |
-| B+ | 45-54 |
-| B | 35-44 |
-| C+ | 25-34 |
-| C | 15-24 |
-| D | <15 |
+| S  | 80–99 |
+| A+ | 65–79 |
+| A  | 55–64 |
+| B+ | 45–54 |
+| B  | 35–44 |
+| C+ | 25–34 |
+| C  | 15–24 |
+| D  | < 15 |
 
-## 󰜬 Technologies
+## Tools
 
-- **Vanilla JavaScript** — No frameworks, pure performance
-- **Web Audio API** — Synthesized sound effects
-- **Canvas API** — Smooth charts and visualizations
-- **CSS Custom Properties** — Dynamic theming
-- **LocalStorage** — Persistent settings & stats
+- vanilla JavaScript (no framework, no bundler)
+- Web Audio API for synthesised keystroke audio
+- Canvas 2D for charts
+- CSS custom properties for the palette switch
+- `localStorage` for settings and trial history
 
-## 󰏘 Design Philosophy
+## License
 
-1. **Flow-first** — Every interaction should feel smooth and satisfying
-2. **Beautiful defaults** — Looks great out of the box
-3. **Powerful customization** — Make it yours
-4. **No friction** — Start typing immediately
-5. **Delightful feedback** — Sounds, animations, and visual polish
-
-##  License
-
-MIT License — feel free to use, modify, and share!
+MIT — use, modify, share.
 
 ---
+
+<p align="center"><em>set thy hand to the field. let the glass run.</em></p>
+<p align="center"><sub>editio prima · v1.0 · by Dr. Baklava</sub></p>

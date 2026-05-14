@@ -1,249 +1,293 @@
-/* ═══════════════════════════════════════════════════════════
-   TYPEFLUX — Theme System
-   Beautiful color palettes for every mood
-   ═══════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   TYPEFLUX — Palettes of the Page
+   ─────────────────────────────────────────────────────────────
+   Eight atmospheres for the engraved manuscript. Each defines:
+     · the document palette   (--ink, --gold, --bg-*, --teal, …)
+     · the rule & shadow tone (--rule-faint, --inset-shadow, …)
+     · the legacy variables read by chart.js & app.js
+       (--text-tertiary, --text-dim, --accent-primary,
+        --accent-secondary, --success)
+   Switch via [data-theme="…"] on <html>.
+   ═══════════════════════════════════════════════════════════════ */
 
-/* ─────────────────────────────────────────────────────────────
-   Theme: Midnight (Default)
-   Deep purple vibes
-   ───────────────────────────────────────────────────────────── */
+/* ─── I · MIDNIGHT (Everforest Night — default) ─────────────── */
+:root,
 [data-theme="midnight"] {
-    --bg-primary: #0a0a0f;
-    --bg-secondary: #12121a;
-    --bg-tertiary: #1a1a25;
-    --bg-elevated: #22222f;
-    
-    --text-primary: #e8e8ed;
-    --text-secondary: #8888a0;
-    --text-tertiary: #55556a;
-    --text-dim: #3a3a4a;
-    
-    --accent-primary: #7c5cff;
-    --accent-secondary: #5c9fff;
-    --accent-glow: rgba(124, 92, 255, 0.3);
-    
-    --success: #5cffb1;
-    --error: #ff5c8a;
-    --warning: #ffb85c;
+    --bg-primary:    #2d353b;
+    --bg-card:       #232a2f;
+    --bg-elevated:   #343f44;
+
+    --ink:           #d3c6aa;
+    --ink-dim:       #859289;
+    --ink-faint:     #545c62;
+
+    --gold:          #dbbc7f;
+    --gold-deep:     #a67e3e;
+    --gold-glow:     rgba(219, 188, 127, 0.28);
+
+    --teal:          #7fbbb3;
+    --teal-glow:     rgba(127, 187, 179, 0.32);
+    --forest:        #a7c080;
+    --plum:          #d699b6;
+
+    --warning:       #e69875;
+    --error:         #e67e80;
+    --success:       #a7c080;
+
+    --rule-faint:    rgba(133, 146, 137, 0.22);
+    --inset-shadow:  rgba(0, 0, 0, 0.42);
+    --vignette-color: rgba(15, 19, 22, 0.55);
+    --halo-warm:     rgba(219, 188, 127, 0.06);
+    --halo-cool:     rgba(127, 187, 179, 0.04);
+
+    /* legacy JS-read vars */
+    --text-tertiary:    var(--ink-dim);
+    --text-dim:         var(--ink-faint);
+    --accent-primary:   var(--gold);
+    --accent-secondary: var(--teal);
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Theme: Aurora
-   Northern lights inspired
-   ───────────────────────────────────────────────────────────── */
+/* ─── II · AURORA (Astrolabe — deep indigo, silvered moon) ──── */
 [data-theme="aurora"] {
-    --bg-primary: #0a1018;
-    --bg-secondary: #0f1628;
-    --bg-tertiary: #141e35;
-    --bg-elevated: #1a2642;
-    
-    --text-primary: #e0f0ff;
-    --text-secondary: #7da8d0;
-    --text-tertiary: #4a7090;
-    --text-dim: #2a4560;
-    
-    --accent-primary: #00d9ff;
-    --accent-secondary: #00ffaa;
-    --accent-glow: rgba(0, 217, 255, 0.3);
-    
-    --success: #00ffaa;
-    --error: #ff6b9d;
-    --warning: #ffd93d;
+    --bg-primary:    #0d1424;
+    --bg-card:       #131c33;
+    --bg-elevated:   #1b2746;
+
+    --ink:           #d6e0f2;
+    --ink-dim:       #8294b8;
+    --ink-faint:     #4a5b80;
+
+    --gold:          #b8c5d6;
+    --gold-deep:     #6d7f9c;
+    --gold-glow:     rgba(184, 197, 214, 0.28);
+
+    --teal:          #5fb8d8;
+    --teal-glow:     rgba(95, 184, 216, 0.32);
+    --forest:        #9bd1c4;
+    --plum:          #c8a6e0;
+
+    --warning:       #f0c674;
+    --error:         #e88b9d;
+    --success:       #9bd1c4;
+
+    --rule-faint:    rgba(130, 148, 184, 0.2);
+    --inset-shadow:  rgba(0, 0, 0, 0.55);
+    --vignette-color: rgba(5, 8, 18, 0.6);
+    --halo-warm:     rgba(184, 197, 214, 0.05);
+    --halo-cool:     rgba(95, 184, 216, 0.06);
+
+    --text-tertiary:    var(--ink-dim);
+    --text-dim:         var(--ink-faint);
+    --accent-primary:   var(--gold);
+    --accent-secondary: var(--teal);
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Theme: Sunset
-   Warm sunset colors
-   ───────────────────────────────────────────────────────────── */
+/* ─── III · SUNSET (Sanguine Codex — oxblood & cream) ───────── */
 [data-theme="sunset"] {
-    --bg-primary: #12080a;
-    --bg-secondary: #1a0a0f;
-    --bg-tertiary: #251015;
-    --bg-elevated: #30151a;
-    
-    --text-primary: #ffe8e0;
-    --text-secondary: #d08888;
-    --text-tertiary: #905555;
-    --text-dim: #603535;
-    
-    --accent-primary: #ff6b6b;
-    --accent-secondary: #ffd93d;
-    --accent-glow: rgba(255, 107, 107, 0.3);
-    
-    --success: #6bffa8;
-    --error: #ff6b6b;
-    --warning: #ffd93d;
+    --bg-primary:    #1a0e0c;
+    --bg-card:       #261612;
+    --bg-elevated:   #38201a;
+
+    --ink:           #f0d9b8;
+    --ink-dim:       #ad8569;
+    --ink-faint:     #6e503e;
+
+    --gold:          #d4a574;
+    --gold-deep:     #8c5e3a;
+    --gold-glow:     rgba(212, 165, 116, 0.3);
+
+    --teal:          #d4756b;
+    --teal-glow:     rgba(212, 117, 107, 0.32);
+    --forest:        #b8a07a;
+    --plum:          #c98e6a;
+
+    --warning:       #e8b568;
+    --error:         #c54848;
+    --success:       #a8c074;
+
+    --rule-faint:    rgba(173, 133, 105, 0.2);
+    --inset-shadow:  rgba(0, 0, 0, 0.5);
+    --vignette-color: rgba(10, 5, 4, 0.55);
+    --halo-warm:     rgba(212, 165, 116, 0.08);
+    --halo-cool:     rgba(212, 117, 107, 0.04);
+
+    --text-tertiary:    var(--ink-dim);
+    --text-dim:         var(--ink-faint);
+    --accent-primary:   var(--gold);
+    --accent-secondary: var(--teal);
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Theme: Forest
-   Deep green nature
-   ───────────────────────────────────────────────────────────── */
+/* ─── IV · FOREST (Verdant Folio — moss, bone, sage) ────────── */
 [data-theme="forest"] {
-    --bg-primary: #080f0a;
-    --bg-secondary: #0a150f;
-    --bg-tertiary: #101f15;
-    --bg-elevated: #152a1c;
-    
-    --text-primary: #e0ffe8;
-    --text-secondary: #88d0a0;
-    --text-tertiary: #559070;
-    --text-dim: #356045;
-    
-    --accent-primary: #4ade80;
-    --accent-secondary: #a3e635;
-    --accent-glow: rgba(74, 222, 128, 0.3);
-    
-    --success: #4ade80;
-    --error: #f87171;
-    --warning: #fbbf24;
+    --bg-primary:    #161f1a;
+    --bg-card:       #1d2a23;
+    --bg-elevated:   #29382f;
+
+    --ink:           #e3dcc4;
+    --ink-dim:       #92a08a;
+    --ink-faint:     #586655;
+
+    --gold:          #c9b88c;
+    --gold-deep:     #8a7848;
+    --gold-glow:     rgba(201, 184, 140, 0.28);
+
+    --teal:          #7fbb96;
+    --teal-glow:     rgba(127, 187, 150, 0.32);
+    --forest:        #a7c080;
+    --plum:          #b89bb0;
+
+    --warning:       #d8b86b;
+    --error:         #d47878;
+    --success:       #a7c080;
+
+    --rule-faint:    rgba(146, 160, 138, 0.2);
+    --inset-shadow:  rgba(0, 0, 0, 0.45);
+    --vignette-color: rgba(8, 12, 10, 0.55);
+    --halo-warm:     rgba(201, 184, 140, 0.06);
+    --halo-cool:     rgba(127, 187, 150, 0.05);
+
+    --text-tertiary:    var(--ink-dim);
+    --text-dim:         var(--ink-faint);
+    --accent-primary:   var(--gold);
+    --accent-secondary: var(--teal);
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Theme: Ocean
-   Deep blue depths
-   ───────────────────────────────────────────────────────────── */
+/* ─── V · OCEAN (Tidal Atlas — deep teal-black & foam) ──────── */
 [data-theme="ocean"] {
-    --bg-primary: #060a10;
-    --bg-secondary: #0a1520;
-    --bg-tertiary: #0f1f30;
-    --bg-elevated: #152a40;
-    
-    --text-primary: #e0f0ff;
-    --text-secondary: #88b8d0;
-    --text-tertiary: #558090;
-    --text-dim: #355060;
-    
-    --accent-primary: #0ea5e9;
-    --accent-secondary: #22d3ee;
-    --accent-glow: rgba(14, 165, 233, 0.3);
-    
-    --success: #22d3ee;
-    --error: #f472b6;
-    --warning: #fbbf24;
+    --bg-primary:    #0a1820;
+    --bg-card:       #102330;
+    --bg-elevated:   #173040;
+
+    --ink:           #d4e8e8;
+    --ink-dim:       #7a9eae;
+    --ink-faint:     #44606e;
+
+    --gold:          #c4a85e;
+    --gold-deep:     #826d36;
+    --gold-glow:     rgba(196, 168, 94, 0.26);
+
+    --teal:          #7fbbb3;
+    --teal-glow:     rgba(127, 187, 179, 0.38);
+    --forest:        #8cc4a4;
+    --plum:          #b89cc4;
+
+    --warning:       #e0b066;
+    --error:         #e08488;
+    --success:       #8cc4a4;
+
+    --rule-faint:    rgba(122, 158, 174, 0.2);
+    --inset-shadow:  rgba(0, 0, 0, 0.55);
+    --vignette-color: rgba(3, 10, 14, 0.6);
+    --halo-warm:     rgba(196, 168, 94, 0.04);
+    --halo-cool:     rgba(127, 187, 179, 0.07);
+
+    --text-tertiary:    var(--ink-dim);
+    --text-dim:         var(--ink-faint);
+    --accent-primary:   var(--gold);
+    --accent-secondary: var(--teal);
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Theme: Lavender
-   Soft purple dreams
-   ───────────────────────────────────────────────────────────── */
+/* ─── VI · LAVENDER (Mauve Apocrypha — aubergine & rose-gold) ─ */
 [data-theme="lavender"] {
-    --bg-primary: #0f0a12;
-    --bg-secondary: #150f1a;
-    --bg-tertiary: #1f1528;
-    --bg-elevated: #2a1a35;
-    
-    --text-primary: #f0e8ff;
-    --text-secondary: #b888d0;
-    --text-tertiary: #805590;
-    --text-dim: #503560;
-    
-    --accent-primary: #c084fc;
-    --accent-secondary: #e879f9;
-    --accent-glow: rgba(192, 132, 252, 0.3);
-    
-    --success: #86efac;
-    --error: #fb7185;
-    --warning: #fdba74;
+    --bg-primary:    #19121f;
+    --bg-card:       #241a2d;
+    --bg-elevated:   #32253e;
+
+    --ink:           #e8d8e8;
+    --ink-dim:       #9f87a0;
+    --ink-faint:     #5e4a64;
+
+    --gold:          #d6a6c2;
+    --gold-deep:     #8f6378;
+    --gold-glow:     rgba(214, 166, 194, 0.28);
+
+    --teal:          #a8b8d8;
+    --teal-glow:     rgba(168, 184, 216, 0.32);
+    --forest:        #b8d0a0;
+    --plum:          #d699b6;
+
+    --warning:       #e8c074;
+    --error:         #d878a8;
+    --success:       #a8d0a0;
+
+    --rule-faint:    rgba(159, 135, 160, 0.22);
+    --inset-shadow:  rgba(0, 0, 0, 0.5);
+    --vignette-color: rgba(10, 5, 14, 0.55);
+    --halo-warm:     rgba(214, 166, 194, 0.06);
+    --halo-cool:     rgba(168, 184, 216, 0.04);
+
+    --text-tertiary:    var(--ink-dim);
+    --text-dim:         var(--ink-faint);
+    --accent-primary:   var(--gold);
+    --accent-secondary: var(--teal);
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Theme: Paper
-   Clean light mode
-   ───────────────────────────────────────────────────────────── */
+/* ─── VII · PAPER (Vellum Manuscript — light parchment) ─────── */
 [data-theme="paper"] {
-    --bg-primary: #f5f5f0;
-    --bg-secondary: #eeeee8;
-    --bg-tertiary: #e5e5dd;
-    --bg-elevated: #ffffff;
-    
-    --text-primary: #1a1a1a;
-    --text-secondary: #555555;
-    --text-tertiary: #888888;
-    --text-dim: #bbbbbb;
-    
-    --accent-primary: #2563eb;
-    --accent-secondary: #3b82f6;
-    --accent-glow: rgba(37, 99, 235, 0.2);
-    
-    --success: #16a34a;
-    --error: #dc2626;
-    --warning: #d97706;
+    --bg-primary:    #f0e6d2;
+    --bg-card:       #e8dcc0;
+    --bg-elevated:   #dccfae;
+
+    --ink:           #2a1f17;
+    --ink-dim:       #6b5946;
+    --ink-faint:     #a08c70;
+
+    --gold:          #a8541a;
+    --gold-deep:     #6e3812;
+    --gold-glow:     rgba(168, 84, 26, 0.18);
+
+    --teal:          #2e5b6e;
+    --teal-glow:     rgba(46, 91, 110, 0.2);
+    --forest:        #4a6b3a;
+    --plum:          #8b3e6b;
+
+    --warning:       #b87a26;
+    --error:         #a8351e;
+    --success:       #4a6b3a;
+
+    --rule-faint:    rgba(107, 89, 70, 0.25);
+    --inset-shadow:  rgba(110, 56, 18, 0.12);
+    --vignette-color: rgba(168, 84, 26, 0.08);
+    --halo-warm:     rgba(168, 84, 26, 0.06);
+    --halo-cool:     rgba(46, 91, 110, 0.04);
+
+    --text-tertiary:    var(--ink-dim);
+    --text-dim:         var(--ink-faint);
+    --accent-primary:   var(--gold);
+    --accent-secondary: var(--teal);
 }
 
-[data-theme="paper"] .gradient-orb {
-    opacity: 0.1;
-}
-
-[data-theme="paper"] .header {
-    background: rgba(245, 245, 240, 0.8);
-    border-bottom-color: rgba(0, 0, 0, 0.1);
-}
-
-[data-theme="paper"] .mode-group,
-[data-theme="paper"] .typing-area,
-[data-theme="paper"] .stat-card,
-[data-theme="paper"] .setting-item,
-[data-theme="paper"] .test-item {
-    border-color: rgba(0, 0, 0, 0.1);
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Theme: Matrix
-   Classic hacker green
-   ───────────────────────────────────────────────────────────── */
+/* ─── VIII · MATRIX (Phosphor Tube — terminal green) ─────────── */
 [data-theme="matrix"] {
-    --bg-primary: #000000;
-    --bg-secondary: #050505;
-    --bg-tertiary: #0a0a0a;
-    --bg-elevated: #101010;
-    
-    --text-primary: #00ff00;
-    --text-secondary: #00bb00;
-    --text-tertiary: #008800;
-    --text-dim: #004400;
-    
-    --accent-primary: #00ff00;
-    --accent-secondary: #00ffaa;
-    --accent-glow: rgba(0, 255, 0, 0.3);
-    
-    --success: #00ff00;
-    --error: #ff0040;
-    --warning: #ffff00;
-}
+    --bg-primary:    #050a05;
+    --bg-card:       #0a140a;
+    --bg-elevated:   #0f1f0f;
 
-[data-theme="matrix"] .gradient-orb {
-    display: none;
-}
+    --ink:           #4ade80;
+    --ink-dim:       #2a8a4a;
+    --ink-faint:     #1a5a32;
 
-[data-theme="matrix"] .logo-icon {
-    filter: drop-shadow(0 0 10px #00ff00);
-}
+    --gold:          #d4c66a;
+    --gold-deep:     #8a7e30;
+    --gold-glow:     rgba(212, 198, 106, 0.32);
 
-[data-theme="matrix"] .cursor {
-    box-shadow: 0 0 15px #00ff00, 0 0 30px #00ff00;
-}
+    --teal:          #5fb8a8;
+    --teal-glow:     rgba(95, 184, 168, 0.35);
+    --forest:        #4ade80;
+    --plum:          #a8d878;
 
-/* ─────────────────────────────────────────────────────────────
-   Theme Transitions
-   Smooth color changes
-   ───────────────────────────────────────────────────────────── */
-body,
-.header,
-.typing-area,
-.mode-group,
-.stat-card,
-.setting-item,
-.test-item,
-.results-details,
-.chart-container,
-.stats-chart-container {
-    transition: 
-        background-color 0.4s ease,
-        border-color 0.4s ease,
-        color 0.4s ease;
-}
+    --warning:       #e8c060;
+    --error:         #ff5a5a;
+    --success:       #4ade80;
 
-.gradient-orb {
-    transition: opacity 0.4s ease;
+    --rule-faint:    rgba(74, 222, 128, 0.18);
+    --inset-shadow:  rgba(0, 30, 0, 0.6);
+    --vignette-color: rgba(0, 0, 0, 0.7);
+    --halo-warm:     rgba(212, 198, 106, 0.04);
+    --halo-cool:     rgba(74, 222, 128, 0.06);
+
+    --text-tertiary:    var(--ink-dim);
+    --text-dim:         var(--ink-faint);
+    --accent-primary:   var(--ink);
+    --accent-secondary: var(--gold);
 }

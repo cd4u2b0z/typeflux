@@ -1,367 +1,490 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="midnight">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>typeflux — flow state typing</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <title>Typeflux · An Account of the Typewright</title>
     <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="app">
-        <!-- Ambient Background -->
-        <div class="ambient-bg">
-            <div class="gradient-orb orb-1"></div>
-            <div class="gradient-orb orb-2"></div>
-            <div class="gradient-orb orb-3"></div>
-        </div>
 
-        <!-- Header -->
-        <header class="header">
-            <div class="logo">
-                <span class="logo-icon">⌨</span>
-                <span class="logo-text">typeflux</span>
+        <!-- ════ FRONTISPIECE ═══════════════════════════════════════ -->
+        <header class="frontispiece">
+            <div class="frontispiece-inner">
+                <a class="device" aria-label="typeflux">
+                    <!-- engraved seal: feather + key + compass tick -->
+                    <svg class="device-seal" viewBox="0 0 64 64" aria-hidden="true">
+                        <circle cx="32" cy="32" r="29" class="seal-ring"/>
+                        <circle cx="32" cy="32" r="24" class="seal-ring seal-ring-faint"/>
+                        <!-- compass ticks -->
+                        <g class="seal-ticks">
+                            <line x1="32" y1="6"  x2="32" y2="12"/>
+                            <line x1="32" y1="52" x2="32" y2="58"/>
+                            <line x1="6"  y1="32" x2="12" y2="32"/>
+                            <line x1="52" y1="32" x2="58" y2="32"/>
+                        </g>
+                        <!-- quill/feather glyph -->
+                        <path d="M 22 42 L 40 24 L 44 28 L 26 46 Z" class="seal-quill"/>
+                        <line x1="22" y1="42" x2="18" y2="46" class="seal-stroke"/>
+                        <line x1="40" y1="24" x2="44" y2="20" class="seal-stroke"/>
+                        <!-- ink drop -->
+                        <circle cx="18" cy="46" r="1.6" class="seal-ink"/>
+                    </svg>
+                    <span class="device-mark">
+                        <span class="device-name">TYPEFLUX</span>
+                        <span class="device-sub">an account of the typewright</span>
+                    </span>
+                </a>
+
+                <nav class="register" aria-label="primary">
+                    <button class="register-tab nav-btn active" data-view="test">
+                        <span class="tab-numeral">I</span><span class="tab-name">the field</span>
+                    </button>
+                    <button class="register-tab nav-btn" data-view="stats">
+                        <span class="tab-numeral">II</span><span class="tab-name">the ledger</span>
+                    </button>
+                    <button class="register-tab nav-btn" data-view="settings">
+                        <span class="tab-numeral">III</span><span class="tab-name">the desk</span>
+                    </button>
+                </nav>
+
+                <div class="signet">
+                    <button class="signet-btn" id="theme-toggle" title="change palette" aria-label="change palette">
+                        <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="1"/><path d="M 10 3 A 7 7 0 0 1 10 17 Z" fill="currentColor"/></svg>
+                    </button>
+                    <button class="signet-btn" id="sound-toggle" title="toggle quill" aria-label="toggle quill">
+                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M 3 8 L 6 8 L 10 4 L 10 16 L 6 12 L 3 12 Z" fill="currentColor"/><path d="M 13 7 Q 15 10 13 13" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+                    </button>
+                </div>
             </div>
-            <nav class="nav">
-                <button class="nav-btn active" data-view="test">test</button>
-                <button class="nav-btn" data-view="stats">stats</button>
-                <button class="nav-btn" data-view="settings">settings</button>
-            </nav>
-            <div class="header-actions">
-                <button class="icon-btn" id="theme-toggle" title="Toggle theme">
-                    <span class="icon">◐</span>
-                </button>
-                <button class="icon-btn" id="sound-toggle" title="Toggle sounds">
-                    <span class="icon">♪</span>
-                </button>
+            <div class="frontispiece-rule" aria-hidden="true">
+                <span class="rule-pip">·</span><span class="rule-pip">✦</span><span class="rule-pip">·</span>
             </div>
         </header>
 
-        <!-- Main Content -->
-        <main class="main">
-            <!-- Test View -->
+        <!-- soft ambient: paper grain + lantern halo (CSS only) -->
+        <div class="atmosphere" aria-hidden="true">
+            <div class="grain"></div>
+            <div class="halo"></div>
+            <div class="vignette"></div>
+        </div>
+
+        <main class="folio">
+
+            <!-- ════ PLATE I · THE FIELD ════════════════════════════ -->
             <section class="view view-test active" id="view-test">
-                <!-- Mode Selection -->
-                <div class="mode-bar">
-                    <div class="mode-group">
-                        <span class="mode-label">mode</span>
-                        <button class="mode-btn active" data-mode="words">words</button>
-                        <button class="mode-btn" data-mode="quotes">quotes</button>
-                        <button class="mode-btn" data-mode="code">code</button>
-                        <button class="mode-btn" data-mode="zen">zen</button>
+
+                <div class="plate-label">
+                    <span class="plate-numeral">PLATE I.</span>
+                    <h2 class="plate-title">The Field</h2>
+                    <span class="plate-subtitle">in which the typewright is set to his work</span>
+                </div>
+                <div class="plate-rule" aria-hidden="true"><span class="rule-pip">· · ·</span></div>
+
+                <!-- inscribed manifest: mode / duration / count -->
+                <div class="manifest">
+                    <div class="manifest-group">
+                        <span class="manifest-label">Mode</span>
+                        <div class="manifest-options">
+                            <button class="mode-btn active" data-mode="words">words</button>
+                            <button class="mode-btn" data-mode="quotes">quotes</button>
+                            <button class="mode-btn" data-mode="code">code</button>
+                            <button class="mode-btn" data-mode="zen">zen</button>
+                        </div>
                     </div>
-                    <div class="mode-group">
-                        <span class="mode-label">time</span>
-                        <button class="time-btn" data-time="15">15</button>
-                        <button class="time-btn active" data-time="30">30</button>
-                        <button class="time-btn" data-time="60">60</button>
-                        <button class="time-btn" data-time="120">120</button>
+                    <span class="manifest-divider" aria-hidden="true">·</span>
+                    <div class="manifest-group">
+                        <span class="manifest-label">Glass</span>
+                        <div class="manifest-options">
+                            <button class="time-btn" data-time="15">15<i>s</i></button>
+                            <button class="time-btn active" data-time="30">30<i>s</i></button>
+                            <button class="time-btn" data-time="60">60<i>s</i></button>
+                            <button class="time-btn" data-time="120">120<i>s</i></button>
+                        </div>
                     </div>
-                    <div class="mode-group">
-                        <span class="mode-label">words</span>
-                        <button class="word-btn" data-words="10">10</button>
-                        <button class="word-btn active" data-words="25">25</button>
-                        <button class="word-btn" data-words="50">50</button>
-                        <button class="word-btn" data-words="100">100</button>
+                    <span class="manifest-divider" aria-hidden="true">·</span>
+                    <div class="manifest-group">
+                        <span class="manifest-label">Count</span>
+                        <div class="manifest-options">
+                            <button class="word-btn" data-words="10">x</button>
+                            <button class="word-btn active" data-words="25">xxv</button>
+                            <button class="word-btn" data-words="50">l</button>
+                            <button class="word-btn" data-words="100">c</button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Live Stats Bar -->
-                <div class="live-stats">
-                    <div class="stat-item">
-                        <span class="stat-value" id="live-wpm">0</span>
-                        <span class="stat-label">wpm</span>
+                <!-- the vellum: typing surface inside engraved frame -->
+                <div class="vellum-frame">
+                    <span class="corner corner-tl" aria-hidden="true"></span>
+                    <span class="corner corner-tr" aria-hidden="true"></span>
+                    <span class="corner corner-bl" aria-hidden="true"></span>
+                    <span class="corner corner-br" aria-hidden="true"></span>
+
+                    <!-- chapter heading rendered above the field -->
+                    <div class="vellum-heading">
+                        <span class="folio-numeral">Folio</span>
+                        <span class="folio-mark">№ I</span>
+                        <span class="folio-rule" aria-hidden="true"></span>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-value" id="live-accuracy">100</span>
-                        <span class="stat-label">acc%</span>
+
+                    <div class="typing-container">
+                        <div class="typing-area" id="typing-area">
+                            <div class="words-display" id="words-display"></div>
+                            <div class="cursor" id="cursor"></div>
+                        </div>
+                        <input type="text" class="hidden-input" id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                     </div>
-                    <div class="stat-item timer-display">
-                        <span class="stat-value" id="live-timer">30</span>
-                        <span class="stat-label">sec</span>
+
+                    <!-- census tally beneath the vellum -->
+                    <div class="live-stats">
+                        <div class="stat-item">
+                            <span class="stat-numeral">i.</span>
+                            <span class="stat-value" id="live-wpm">0</span>
+                            <span class="stat-label">words ⁄ minute</span>
+                        </div>
+                        <span class="stat-divider" aria-hidden="true"></span>
+                        <div class="stat-item">
+                            <span class="stat-numeral">ii.</span>
+                            <span class="stat-value" id="live-accuracy">100</span>
+                            <span class="stat-label">accuracy ⁄ %</span>
+                        </div>
+                        <span class="stat-divider" aria-hidden="true"></span>
+                        <div class="stat-item timer-display">
+                            <span class="stat-numeral">iii.</span>
+                            <span class="stat-value" id="live-timer">30</span>
+                            <span class="stat-label">glass ⁄ sec</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Typing Area -->
-                <div class="typing-container">
-                    <div class="typing-area" id="typing-area">
-                        <div class="words-display" id="words-display"></div>
-                        <div class="cursor" id="cursor"></div>
-                    </div>
-                    <input type="text" class="hidden-input" id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                <div class="marginalia">
+                    <span class="key">tab</span><span class="margin-glyph">+</span><span class="key">enter</span>
+                    <em>to begin afresh</em>
+                    <span class="margin-glyph">·</span>
+                    <span class="key">esc</span>
+                    <em>to reset the glass</em>
                 </div>
 
-                <!-- Restart Hint -->
-                <div class="hint">
-                    <span class="key">tab</span> + <span class="key">enter</span> to restart
-                    <span class="separator">|</span>
-                    <span class="key">esc</span> to reset
+                <!-- fervor seal (combo) -->
+                <div class="fervor" id="combo-display">
+                    <span class="fervor-ring" aria-hidden="true"></span>
+                    <span class="fervor-numeral combo-count">0</span>
+                    <span class="fervor-label combo-label">fervor</span>
                 </div>
 
-                <!-- Combo & Streak -->
-                <div class="combo-display" id="combo-display">
-                    <span class="combo-count">0</span>
-                    <span class="combo-label">combo</span>
-                </div>
             </section>
 
-            <!-- Results View -->
+            <!-- ════ CERTIFICATE · THE TYPEWRIGHT'S RECORD ═══════════ -->
             <section class="view view-results" id="view-results">
-                <div class="results-container">
-                    <div class="results-header">
-                        <h2>test complete</h2>
-                        <div class="results-grade" id="results-grade">S</div>
+                <div class="certificate">
+                    <span class="cert-corner cert-corner-tl" aria-hidden="true"></span>
+                    <span class="cert-corner cert-corner-tr" aria-hidden="true"></span>
+                    <span class="cert-corner cert-corner-bl" aria-hidden="true"></span>
+                    <span class="cert-corner cert-corner-br" aria-hidden="true"></span>
+
+                    <p class="cert-eyebrow">— certificate of the typewright —</p>
+                    <h2 class="cert-title">The Test, Concluded</h2>
+                    <p class="cert-epigraph">surveyed at this hour upon a steady hand and willing eye</p>
+
+                    <div class="grade-seal">
+                        <svg class="grade-ring" viewBox="0 0 200 200" aria-hidden="true">
+                            <circle cx="100" cy="100" r="92" class="ring-outer"/>
+                            <circle cx="100" cy="100" r="78" class="ring-inner"/>
+                            <g class="ring-ticks">
+                                <line x1="100" y1="8"   x2="100" y2="20"/>
+                                <line x1="100" y1="180" x2="100" y2="192"/>
+                                <line x1="8"   y1="100" x2="20"  y2="100"/>
+                                <line x1="180" y1="100" x2="192" y2="100"/>
+                                <line x1="35"  y1="35"  x2="44"  y2="44"/>
+                                <line x1="156" y1="35"  x2="165" y2="44"/>
+                                <line x1="35"  y1="165" x2="44"  y2="156"/>
+                                <line x1="156" y1="165" x2="165" y2="156"/>
+                            </g>
+                        </svg>
+                        <span class="grade-letter" id="results-grade">S</span>
+                        <span class="grade-caption">grade</span>
                     </div>
-                    
-                    <div class="results-main">
-                        <div class="result-big">
-                            <span class="result-value" id="result-wpm">0</span>
-                            <span class="result-label">wpm</span>
+
+                    <div class="cert-grand">
+                        <div class="grand-item">
+                            <span class="grand-value" id="result-wpm">0</span>
+                            <span class="grand-label">words per minute</span>
                         </div>
-                        <div class="result-big">
-                            <span class="result-value" id="result-accuracy">0</span>
-                            <span class="result-label">accuracy</span>
+                        <span class="grand-sep" aria-hidden="true">✦</span>
+                        <div class="grand-item">
+                            <span class="grand-value" id="result-accuracy">0</span>
+                            <span class="grand-label">accuracy of hand</span>
                         </div>
                     </div>
 
-                    <div class="results-details">
-                        <div class="detail-item">
-                            <span class="detail-label">raw wpm</span>
-                            <span class="detail-value" id="result-raw">0</span>
+                    <div class="cert-ledger">
+                        <div class="ledger-row">
+                            <span class="ledger-key">item the first</span>
+                            <span class="ledger-name">raw words ⁄ min</span>
+                            <span class="ledger-value" id="result-raw">0</span>
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-label">characters</span>
-                            <span class="detail-value" id="result-chars">0/0/0</span>
+                        <div class="ledger-row">
+                            <span class="ledger-key">the second</span>
+                            <span class="ledger-name">characters c ⁄ i ⁄ e</span>
+                            <span class="ledger-value" id="result-chars">0/0/0</span>
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-label">consistency</span>
-                            <span class="detail-value" id="result-consistency">0%</span>
+                        <div class="ledger-row">
+                            <span class="ledger-key">the third</span>
+                            <span class="ledger-name">consistency of pace</span>
+                            <span class="ledger-value" id="result-consistency">0%</span>
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-label">time</span>
-                            <span class="detail-value" id="result-time">0s</span>
+                        <div class="ledger-row">
+                            <span class="ledger-key">the fourth</span>
+                            <span class="ledger-name">elapsed in the glass</span>
+                            <span class="ledger-value" id="result-time">0s</span>
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-label">max combo</span>
-                            <span class="detail-value" id="result-combo">0</span>
+                        <div class="ledger-row">
+                            <span class="ledger-key">the fifth</span>
+                            <span class="ledger-name">crest of fervor</span>
+                            <span class="ledger-value" id="result-combo">0</span>
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-label">test type</span>
-                            <span class="detail-value" id="result-type">words 25</span>
+                        <div class="ledger-row">
+                            <span class="ledger-key">the sixth</span>
+                            <span class="ledger-name">manner of trial</span>
+                            <span class="ledger-value" id="result-type">words 25</span>
                         </div>
                     </div>
 
-                    <!-- WPM Chart -->
-                    <div class="chart-container">
-                        <canvas id="wpm-chart"></canvas>
+                    <div class="chart-plate">
+                        <div class="chart-heading">
+                            <span class="plate-numeral">FIG.</span>
+                            <span class="chart-title">pace over the glass</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="wpm-chart"></canvas>
+                        </div>
                     </div>
 
-                    <div class="results-actions">
+                    <div class="cert-seal">
+                        <p class="seal-line">
+                            SIGNED <span>·</span> THIS DAY <span>·</span> BY YOUR OWN HAND
+                        </p>
+                    </div>
+
+                    <div class="cert-actions">
                         <button class="btn btn-primary" id="restart-btn">
-                            <span class="icon">↻</span> new test
+                            <span class="btn-numeral">↻</span> a fresh trial
                         </button>
                         <button class="btn btn-secondary" id="share-btn">
-                            <span class="icon">⎘</span> copy result
+                            <span class="btn-numeral">⎘</span> copy this account
                         </button>
                     </div>
                 </div>
             </section>
 
-            <!-- Stats View -->
+            <!-- ════ PLATE II · THE LEDGER ══════════════════════════ -->
             <section class="view view-stats" id="view-stats">
-                <div class="stats-container">
-                    <h2>your statistics</h2>
-                    
-                    <div class="stats-overview">
-                        <div class="stat-card">
-                            <span class="stat-card-value" id="stats-tests">0</span>
-                            <span class="stat-card-label">tests completed</span>
-                        </div>
-                        <div class="stat-card highlight">
-                            <span class="stat-card-value" id="stats-best">0</span>
-                            <span class="stat-card-label">best wpm</span>
-                        </div>
-                        <div class="stat-card">
-                            <span class="stat-card-value" id="stats-avg">0</span>
-                            <span class="stat-card-label">average wpm</span>
-                        </div>
-                        <div class="stat-card">
-                            <span class="stat-card-value" id="stats-time">0m</span>
-                            <span class="stat-card-label">time typing</span>
-                        </div>
-                    </div>
 
-                    <div class="stats-chart-container">
-                        <h3>wpm over time</h3>
-                        <canvas id="history-chart"></canvas>
-                    </div>
-
-                    <div class="recent-tests">
-                        <h3>recent tests</h3>
-                        <div class="tests-list" id="tests-list">
-                            <div class="empty-state">no tests yet — start typing!</div>
-                        </div>
-                    </div>
-
-                    <button class="btn btn-danger" id="clear-stats">clear all data</button>
+                <div class="plate-label">
+                    <span class="plate-numeral">PLATE II.</span>
+                    <h2 class="plate-title">The Ledger</h2>
+                    <span class="plate-subtitle">an account of all trials past, kept by your hand</span>
                 </div>
+                <div class="plate-rule" aria-hidden="true"><span class="rule-pip">· · ·</span></div>
+
+                <div class="stats-overview">
+                    <article class="stat-card">
+                        <span class="stat-card-numeral">I.</span>
+                        <span class="stat-card-value" id="stats-tests">0</span>
+                        <span class="stat-card-label">trials concluded</span>
+                    </article>
+                    <article class="stat-card highlight">
+                        <span class="stat-card-numeral">II.</span>
+                        <span class="stat-card-value" id="stats-best">0</span>
+                        <span class="stat-card-label">crest of pace</span>
+                    </article>
+                    <article class="stat-card">
+                        <span class="stat-card-numeral">III.</span>
+                        <span class="stat-card-value" id="stats-avg">0</span>
+                        <span class="stat-card-label">mean pace</span>
+                    </article>
+                    <article class="stat-card">
+                        <span class="stat-card-numeral">IV.</span>
+                        <span class="stat-card-value" id="stats-time">0m</span>
+                        <span class="stat-card-label">hours at the desk</span>
+                    </article>
+                </div>
+
+                <div class="stats-chart-container">
+                    <div class="chart-heading">
+                        <span class="plate-numeral">FIG.</span>
+                        <span class="chart-title">pace, charted over the trials</span>
+                    </div>
+                    <canvas id="history-chart"></canvas>
+                </div>
+
+                <div class="recent-tests">
+                    <div class="recent-heading">
+                        <span class="plate-numeral">ROLL.</span>
+                        <span class="chart-title">the recent trials</span>
+                    </div>
+                    <div class="tests-list" id="tests-list">
+                        <div class="empty-state">— no trials yet recorded; the desk awaits your hand —</div>
+                    </div>
+                </div>
+
+                <button class="btn btn-danger" id="clear-stats">strike from the record</button>
             </section>
 
-            <!-- Settings View -->
+            <!-- ════ PLATE III · THE SCRIVENER'S DESK ════════════════ -->
             <section class="view view-settings" id="view-settings">
-                <div class="settings-container">
-                    <h2>settings</h2>
-                    
-                    <div class="settings-group">
-                        <h3>appearance</h3>
-                        
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <span class="setting-name">theme</span>
-                                <span class="setting-desc">choose your vibe</span>
-                            </div>
-                            <div class="theme-selector" id="theme-selector">
-                                <button class="theme-option active" data-theme="midnight" title="midnight">
-                                    <span class="theme-preview midnight"></span>
-                                </button>
-                                <button class="theme-option" data-theme="aurora" title="aurora">
-                                    <span class="theme-preview aurora"></span>
-                                </button>
-                                <button class="theme-option" data-theme="sunset" title="sunset">
-                                    <span class="theme-preview sunset"></span>
-                                </button>
-                                <button class="theme-option" data-theme="forest" title="forest">
-                                    <span class="theme-preview forest"></span>
-                                </button>
-                                <button class="theme-option" data-theme="ocean" title="ocean">
-                                    <span class="theme-preview ocean"></span>
-                                </button>
-                                <button class="theme-option" data-theme="lavender" title="lavender">
-                                    <span class="theme-preview lavender"></span>
-                                </button>
-                                <button class="theme-option" data-theme="paper" title="paper">
-                                    <span class="theme-preview paper"></span>
-                                </button>
-                                <button class="theme-option" data-theme="matrix" title="matrix">
-                                    <span class="theme-preview matrix"></span>
-                                </button>
-                            </div>
-                        </div>
 
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <span class="setting-name">font size</span>
-                                <span class="setting-desc">adjust text size</span>
-                            </div>
-                            <div class="setting-control">
-                                <input type="range" id="font-size" min="16" max="32" value="24" class="slider">
-                                <span class="slider-value" id="font-size-value">24px</span>
-                            </div>
-                        </div>
+                <div class="plate-label">
+                    <span class="plate-numeral">PLATE III.</span>
+                    <h2 class="plate-title">The Scrivener's Desk</h2>
+                    <span class="plate-subtitle">in which the rites and tools may be amended</span>
+                </div>
+                <div class="plate-rule" aria-hidden="true"><span class="rule-pip">· · ·</span></div>
 
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <span class="setting-name">smooth caret</span>
-                                <span class="setting-desc">animate cursor movement</span>
-                            </div>
-                            <label class="toggle">
-                                <input type="checkbox" id="smooth-caret" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
+                <div class="settings-group">
+                    <div class="group-heading">
+                        <span class="plate-numeral">i.</span>
+                        <span class="group-title">Of Appearance</span>
+                    </div>
 
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <span class="setting-name">show live wpm</span>
-                                <span class="setting-desc">display speed while typing</span>
-                            </div>
-                            <label class="toggle">
-                                <input type="checkbox" id="show-live-wpm" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">palette of the page</span>
+                            <span class="setting-desc">the colour by which thy field is set</span>
+                        </div>
+                        <div class="theme-selector" id="theme-selector">
+                            <button class="theme-option active" data-theme="midnight" title="Everforest Night"><span class="theme-preview midnight"></span></button>
+                            <button class="theme-option" data-theme="aurora" title="Astrolabe"><span class="theme-preview aurora"></span></button>
+                            <button class="theme-option" data-theme="sunset" title="Sanguine Codex"><span class="theme-preview sunset"></span></button>
+                            <button class="theme-option" data-theme="forest" title="Verdant Folio"><span class="theme-preview forest"></span></button>
+                            <button class="theme-option" data-theme="ocean" title="Tidal Atlas"><span class="theme-preview ocean"></span></button>
+                            <button class="theme-option" data-theme="lavender" title="Mauve Apocrypha"><span class="theme-preview lavender"></span></button>
+                            <button class="theme-option" data-theme="paper" title="Vellum Manuscript"><span class="theme-preview paper"></span></button>
+                            <button class="theme-option" data-theme="matrix" title="Phosphor Tube"><span class="theme-preview matrix"></span></button>
                         </div>
                     </div>
 
-                    <div class="settings-group">
-                        <h3>behavior</h3>
-                        
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <span class="setting-name">sound effects</span>
-                                <span class="setting-desc">keystroke feedback</span>
-                            </div>
-                            <label class="toggle">
-                                <input type="checkbox" id="sound-effects" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">stature of the letter</span>
+                            <span class="setting-desc">the height to which thy glyphs may rise</span>
                         </div>
-
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <span class="setting-name">sound volume</span>
-                                <span class="setting-desc">adjust feedback volume</span>
-                            </div>
-                            <div class="setting-control">
-                                <input type="range" id="sound-volume" min="0" max="100" value="30" class="slider">
-                                <span class="slider-value" id="sound-volume-value">30%</span>
-                            </div>
-                        </div>
-
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <span class="setting-name">stop on error</span>
-                                <span class="setting-desc">must fix mistakes</span>
-                            </div>
-                            <label class="toggle">
-                                <input type="checkbox" id="stop-on-error">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <span class="setting-name">confidence mode</span>
-                                <span class="setting-desc">no backspace allowed</span>
-                            </div>
-                            <label class="toggle">
-                                <input type="checkbox" id="confidence-mode">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <span class="setting-name">blind mode</span>
-                                <span class="setting-desc">hide error indicators</span>
-                            </div>
-                            <label class="toggle">
-                                <input type="checkbox" id="blind-mode">
-                                <span class="toggle-slider"></span>
-                            </label>
+                        <div class="setting-control">
+                            <input type="range" id="font-size" min="16" max="32" value="24" class="slider">
+                            <span class="slider-value" id="font-size-value">24px</span>
                         </div>
                     </div>
 
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">gliding caret</span>
+                            <span class="setting-desc">that the cursor flow as ink upon glass</span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="smooth-caret" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">declare the pace as it runs</span>
+                            <span class="setting-desc">a tally kept whilst the glass is yet running</span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="show-live-wpm" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <div class="group-heading">
+                        <span class="plate-numeral">ii.</span>
+                        <span class="group-title">Of Practice</span>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">voice of the quill</span>
+                            <span class="setting-desc">the report of the keystroke against vellum</span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="sound-effects" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">strength of the voice</span>
+                            <span class="setting-desc">how loudly the quill speaks</span>
+                        </div>
+                        <div class="setting-control">
+                            <input type="range" id="sound-volume" min="0" max="100" value="30" class="slider">
+                            <span class="slider-value" id="sound-volume-value">30%</span>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">stay upon thine error</span>
+                            <span class="setting-desc">no advance until the mistake be corrected</span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="stop-on-error">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">confidence of the hand</span>
+                            <span class="setting-desc">no retreat: the backspace is forbidden</span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="confidence-mode">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">blind passage</span>
+                            <span class="setting-desc">errors made known only upon conclusion</span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="blind-mode">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                 </div>
             </section>
+
         </main>
 
-        <!-- Footer -->
-        <footer class="footer">
-            <div class="footer-content">
-                <span class="footer-text">typeflux v1.0</span>
-                <span class="separator">•</span>
-                <span class="footer-text">by Dr. Baklava</span>
-            </div>
+        <!-- ════ CARTOUCHE ══════════════════════════════════════════ -->
+        <footer class="cartouche">
+            <span class="cartouche-mark" aria-hidden="true">✦</span>
+            <p class="cartouche-creed">
+                <em>Set thy hand to the field. Let the glass run.</em>
+                <span class="cartouche-sep">·</span>
+                Mind the letter; the pace will follow.
+            </p>
+            <p class="cartouche-seal">
+                TYPEFLUX <span>·</span> EDITIO PRIMA <span>·</span> v1.0 <span>·</span> BY DR. BAKLAVA
+            </p>
         </footer>
 
-        <!-- Toast Notifications -->
         <div class="toast-container" id="toast-container"></div>
     </div>
 
-    <!-- Audio Elements -->
     <div id="audio-container" style="display: none;"></div>
 
     <script type="module" src="js/app.js"></script>
