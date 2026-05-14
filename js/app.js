@@ -18,6 +18,15 @@ class TypeFlux {
         this.sessionBlazes = 0;
         this._blazeArmed = true;
 
+        // Medals — per-trial dopamine, like arcade callouts
+        this.perfectStreak = 0;
+        this.wordErrorsThisWord = 0;
+        this.lastWordCompletedAt = 0;
+        this.medalCooldowns = {};
+        this.medalsSeenInTest = new Set();
+        this.crescendoFired = false;
+        this.zenithFired = false;
+
         // Test data
         this.words = [];
         this.currentWordIndex = 0;
@@ -94,6 +103,7 @@ class TypeFlux {
             chronicles: document.getElementById('chronicles'),
             chroniclesCount: document.getElementById('chronicles-count'),
             stampStack: document.getElementById('stamp-stack'),
+            medalStack: document.getElementById('medal-stack'),
             
             // Live stats
             liveWpm: document.getElementById('live-wpm'),
@@ -537,6 +547,7 @@ class TypeFlux {
             } else {
                 SoundSystem.error();
                 this.incorrectChars++;
+                this.wordErrorsThisWord++;
                 this.combo = 0;
                 this.updateCombo();
             }
@@ -575,7 +586,17 @@ class TypeFlux {
             this.combo = 0;
             this.updateCombo();
         }
-        
+
+        // ── Medals on word completion ─────────────────────────
+        const now = Date.now();
+        const duration = this.lastWordCompletedAt ? (now - this.lastWordCompletedAt) : Infinity;
+        const perfect = isCorrect && this.wordErrorsThisWord === 0;
+        this.checkWordMedals(currentWord || '', perfect, duration);
+        if (perfect) this.perfectStreak++;
+        else this.perfectStreak = 0;
+        this.wordErrorsThisWord = 0;
+        this.lastWordCompletedAt = now;
+
         // Move to next word
         this.currentWordIndex++;
         this.currentLetterIndex = 0;
@@ -840,6 +861,88 @@ class TypeFlux {
     }
 
     // ─────────────────────────────────────────────────────────────
+    // Medals — arcade callouts during a trial. Halo multikill,
+    // Guitar Hero streak, Tony Hawk combo. They pop and fade.
+    // ─────────────────────────────────────────────────────────────
+
+    /* Per-medal cooldown gate. Returns true and stamps if ready. */
+    medalReady(id, ms) {
+        const now = Date.now();
+        if ((this.medalCooldowns[id] || 0) > now) return false;
+        this.medalCooldowns[id] = now + ms;
+        return true;
+    }
+
+    /* Spawn a medal card in the medal stack. Tier drives accent
+       colour: common (gold), rare (teal), epic (plum), legendary
+       (crimson). All fade and remove themselves. */
+    spawnMedal(name, glyph, tier = 'common') {
+        const stack = this.elements.medalStack;
+        if (!stack) return;
+
+        const card = document.createElement('div');
+        card.className = `medal medal-${tier}`;
+        card.innerHTML = `
+            <span class="medal-glyph" aria-hidden="true">${glyph}</span>
+            <span class="medal-name">${name}</span>
+        `;
+        stack.appendChild(card);
+
+        // Limit visible stack — drop the oldest if we're past 4
+        const cards = stack.querySelectorAll('.medal');
+        if (cards.length > 4) {
+            cards[0].classList.add('leaving');
+            setTimeout(() => cards[0].remove(), 280);
+        }
+
+        SoundSystem.combo && SoundSystem.combo(2);
+
+        setTimeout(() => {
+            card.classList.add('leaving');
+            setTimeout(() => card.remove(), 320);
+        }, 1300);
+    }
+
+    /* Called from completeWord. word = the target word; perfect =
+       isCorrect && zero errors during typing; duration = ms since
+       last word completed. */
+    checkWordMedals(word, perfect, duration) {
+        if (!perfect) return;
+
+        // First-blood: only fires once per trial
+        if (!this.medalsSeenInTest.has('first-blood')) {
+            this.medalsSeenInTest.add('first-blood');
+            this.spawnMedal('FIRST BLOOD', '✦', 'rare');
+        }
+
+        // Streak escalations — fire on exact thresholds so each
+        // tier reads as its own moment.
+        const streakAfter = this.perfectStreak + 1; // about to be incremented
+        switch (streakAfter) {
+            case 2:  this.spawnMedal('DOUBLE FLOURISH',    '✦',  'common');    break;
+            case 3:  this.spawnMedal('TRIPLE FLOURISH',    '✦',  'rare');      break;
+            case 5:  this.spawnMedal('THE SPREE',          '⚔',  'rare');      break;
+            case 10: this.spawnMedal('CONSUMMATE',         '❉',  'epic');      break;
+            case 20: this.spawnMedal('FLAWLESS',           '◈',  'legendary'); break;
+            case 30: this.spawnMedal('TRANSCENDENT',       '✺',  'legendary'); break;
+        }
+
+        // Per-word feats
+        if (word.length >= 8 && this.medalReady('heavy-hand', 1200)) {
+            this.spawnMedal('HEAVY HAND', '⚒', 'rare');
+        }
+        if (duration < 500 && word.length >= 4 && this.medalReady('snap', 1500)) {
+            this.spawnMedal('SNAP', '⚡', 'rare');
+        }
+
+        // Last-gasp — perfect word completed in the dying breath of a timed trial
+        if (this.timerValue === 1 && !this.medalsSeenInTest.has('last-gasp')) {
+            this.medalsSeenInTest.add('last-gasp');
+            this.spawnMedal('LAST GASP', '⌛', 'epic');
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // Confetti — pure DOM particles, animated by CSS
     // ─────────────────────────────────────────────────────────────
     spawnConfetti(count = 40) {
@@ -965,15 +1068,30 @@ class TypeFlux {
 
     trackWpm() {
         if (!this.isActive) return;
-        
+
         const elapsed = (Date.now() - this.startTime) / 1000 / 60;
         if (elapsed <= 0) return;
-        
+
         const wpm = Math.round((this.correctChars / 5) / elapsed);
         const rawWpm = Math.round(((this.correctChars + this.incorrectChars) / 5) / elapsed);
-        
+
         this.wpmHistory.push(wpm);
         this.rawWpmHistory.push(rawWpm);
+
+        // Sustained-speed medals — average of the trailing window
+        const avg = (n) => {
+            if (this.wpmHistory.length < n) return 0;
+            const tail = this.wpmHistory.slice(-n);
+            return tail.reduce((a, b) => a + b, 0) / n;
+        };
+
+        if (avg(5) >= 120 && this.medalReady('overture', 8000)) {
+            this.spawnMedal('OVERTURE', '☉', 'legendary');
+        } else if (avg(5) >= 100 && this.medalReady('thunderclap', 7000)) {
+            this.spawnMedal('THUNDERCLAP', '☇', 'epic');
+        } else if (avg(3) >= 80 && this.medalReady('burst', 6000)) {
+            this.spawnMedal('THE BURST', '✺', 'rare');
+        }
     }
 
     reset() {
@@ -1004,6 +1122,16 @@ class TypeFlux {
         // Reset scroll & code mode
         this.scrollOffset = 0;
         this.lineBreaks = new Set();
+
+        // Reset medal state
+        this.perfectStreak = 0;
+        this.wordErrorsThisWord = 0;
+        this.lastWordCompletedAt = 0;
+        this.medalCooldowns = {};
+        this.medalsSeenInTest = new Set();
+        this.crescendoFired = false;
+        this.zenithFired = false;
+        if (this.elements.medalStack) this.elements.medalStack.textContent = '';
 
         // Reset UI
         this.elements.hiddenInput.value = '';
@@ -1180,6 +1308,16 @@ class TypeFlux {
         // Play combo sound at milestones
         if ([10, 25, 50, 75, 100].includes(this.combo)) {
             SoundSystem.combo(Math.floor(this.combo / 10));
+        }
+
+        // Combo-cross medals — once each per trial
+        if (this.combo >= 50 && !this.crescendoFired) {
+            this.crescendoFired = true;
+            this.spawnMedal('CRESCENDO', '✹', 'epic');
+        }
+        if (this.combo >= 100 && !this.zenithFired) {
+            this.zenithFired = true;
+            this.spawnMedal('ZENITH', '☉', 'legendary');
         }
     }
 
