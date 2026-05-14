@@ -224,6 +224,18 @@ body {
     letter-spacing: 0.2em;
 }
 
+/* ── Click-target safety ─────────────────────────────────────────
+   app.js reads e.target.dataset.* on nav/mode/time/word buttons,
+   so any decorative child inside those buttons must not capture
+   the click — otherwise e.target is the child and dataset is
+   undefined.
+   ──────────────────────────────────────────────────────────────── */
+.nav-btn *, .register-tab *,
+.mode-btn *, .time-btn *, .word-btn *,
+.btn * {
+    pointer-events: none;
+}
+
 .register-tab:hover { color: var(--ink); background: var(--bg-elevated); }
 
 .register-tab.active {
