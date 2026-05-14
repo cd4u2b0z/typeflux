@@ -21,6 +21,7 @@ const Storage = {
         stopOnError: false,
         confidenceMode: false,
         blindMode: false,
+        readyCountdown: true,
         defaultMode: 'words',
         defaultTime: 30,
         defaultWords: 25
@@ -189,6 +190,42 @@ const Storage = {
     
     generateId() {
         return Date.now().toString(36) + Math.random().toString(36).slice(2);
+    },
+
+    // Daily streak: count consecutive local days ending at today (or yesterday
+    // if today has no test yet) on which the user completed at least one trial.
+    getStreak() {
+        const tests = this.getTests() || [];
+        if (tests.length === 0) return 0;
+
+        // Set of local-day keys (YYYY-MM-DD) on which a test was completed
+        const dayKey = (ts) => {
+            const d = new Date(ts);
+            return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        };
+        const days = new Set(tests.map(t => dayKey(t.timestamp)));
+
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+
+        // Anchor: today if there's a test today, else yesterday if there is
+        // one yesterday, else the streak is broken.
+        let cursor;
+        if (days.has(dayKey(today.getTime()))) {
+            cursor = today;
+        } else if (days.has(dayKey(yesterday.getTime()))) {
+            cursor = yesterday;
+        } else {
+            return 0;
+        }
+
+        let streak = 0;
+        while (days.has(dayKey(cursor.getTime()))) {
+            streak++;
+            cursor.setDate(cursor.getDate() - 1);
+        }
+        return streak;
     },
 
     clearAll() {

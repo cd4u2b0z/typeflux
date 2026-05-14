@@ -72,6 +72,16 @@
             <div class="grain"></div>
             <div class="halo"></div>
             <div class="vignette"></div>
+            <div class="scanlines"></div>
+            <canvas id="matrix-rain" class="matrix-rain"></canvas>
+            <div class="motes"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+
+        <!-- Ready-state countdown — III · II · I · GO -->
+        <div class="countdown" id="countdown" aria-hidden="true">
+            <span class="countdown-ring"></span>
+            <span class="countdown-numeral" id="countdown-numeral">III</span>
+            <span class="countdown-caption">at the ready</span>
         </div>
 
         <main class="folio">
@@ -136,6 +146,8 @@
                     <div class="typing-container">
                         <div class="typing-area" id="typing-area">
                             <div class="words-display" id="words-display"></div>
+                            <div class="cursor-trail cursor-trail-2" aria-hidden="true"></div>
+                            <div class="cursor-trail cursor-trail-1" aria-hidden="true"></div>
                             <div class="cursor" id="cursor"></div>
                         </div>
                         <input type="text" class="hidden-input" id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
@@ -187,6 +199,16 @@
                     <span class="cert-corner cert-corner-tr" aria-hidden="true"></span>
                     <span class="cert-corner cert-corner-bl" aria-hidden="true"></span>
                     <span class="cert-corner cert-corner-br" aria-hidden="true"></span>
+
+                    <!-- PB ribbon — wax-stamped sash, shown only when .is-pb -->
+                    <div class="pb-ribbon" id="pb-ribbon" aria-hidden="true">
+                        <span class="pb-ribbon-stamp">✦</span>
+                        <span class="pb-ribbon-text">new personal best</span>
+                        <span class="pb-ribbon-stamp">✦</span>
+                    </div>
+
+                    <!-- Confetti layer — particles spawned by JS on PB -->
+                    <div class="confetti-layer" id="confetti-layer" aria-hidden="true"></div>
 
                     <p class="cert-eyebrow">— certificate of the typewright —</p>
                     <h2 class="cert-title">The Test, Concluded</h2>
@@ -313,6 +335,12 @@
                         <span class="stat-card-numeral">IV.</span>
                         <span class="stat-card-value" id="stats-time">0m</span>
                         <span class="stat-card-label">hours at the desk</span>
+                    </article>
+                    <article class="stat-card streak-card">
+                        <span class="stat-card-numeral">V.</span>
+                        <span class="stat-card-value" id="stats-streak">0</span>
+                        <span class="stat-card-label">days unbroken</span>
+                        <span class="streak-flame" aria-hidden="true">▲</span>
                     </article>
                 </div>
 
@@ -461,6 +489,17 @@
                         </div>
                         <label class="toggle">
                             <input type="checkbox" id="blind-mode">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">at the ready</span>
+                            <span class="setting-desc">a three-count before each trial begins</span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="ready-countdown" checked>
                             <span class="toggle-slider"></span>
                         </label>
                     </div>

@@ -1,0 +1,12 @@
+# Project notes for Claude — kept local, not pushed.
+CLAUDE.md
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor cruft
+.vscode/
+.idea/
+*.swp
+*~

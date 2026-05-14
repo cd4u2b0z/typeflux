@@ -74,7 +74,16 @@ class TypeFlux {
             wordsDisplay: document.getElementById('words-display'),
             hiddenInput: document.getElementById('hidden-input'),
             cursor: document.getElementById('cursor'),
+            cursorTrails: document.querySelectorAll('.cursor-trail'),
             typingArea: document.querySelector('.typing-area'),
+            vellumFrame: document.querySelector('.vellum-frame'),
+            countdown: document.getElementById('countdown'),
+            countdownNumeral: document.getElementById('countdown-numeral'),
+            certificate: document.querySelector('.certificate'),
+            pbRibbon: document.getElementById('pb-ribbon'),
+            confettiLayer: document.getElementById('confetti-layer'),
+            statsStreak: document.getElementById('stats-streak'),
+            matrixCanvas: document.getElementById('matrix-rain'),
             
             // Live stats
             liveWpm: document.getElementById('live-wpm'),
@@ -125,6 +134,7 @@ class TypeFlux {
             stopOnError: document.getElementById('stop-on-error'),
             confidenceMode: document.getElementById('confidence-mode'),
             blindMode: document.getElementById('blind-mode'),
+            readyCountdown: document.getElementById('ready-countdown'),
 
             // Toast
             toastContainer: document.getElementById('toast-container')
@@ -246,6 +256,12 @@ class TypeFlux {
         this.elements.blindMode.addEventListener('change', (e) => {
             this.updateSetting('blindMode', e.target.checked);
         });
+
+        if (this.elements.readyCountdown) {
+            this.elements.readyCountdown.addEventListener('change', (e) => {
+                this.updateSetting('readyCountdown', e.target.checked);
+            });
+        }
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -382,12 +398,22 @@ class TypeFlux {
     
     handleInput(e) {
         if (this.isFinished) return;
-        
+        if (this.isCountingDown) {
+            // Discard input during the ready countdown
+            e.target.value = '';
+            return;
+        }
+
         const inputValue = e.target.value;
         const inputChar = inputValue.slice(-1);
-        
+
         // Start test on first input
         if (!this.isActive && inputValue.length > 0) {
+            if (this.settings.readyCountdown) {
+                e.target.value = '';
+                this.runCountdown(() => {});
+                return;
+            }
             this.startTest();
         }
         
@@ -528,6 +554,11 @@ class TypeFlux {
         
         if (isCorrect) {
             SoundSystem.wordComplete();
+            // Word-pop kinesthetic — quick scale + glow, removed automatically.
+            if (wordElement) {
+                wordElement.classList.add('word-pop');
+                setTimeout(() => wordElement.classList.remove('word-pop'), 420);
+            }
         } else {
             this.combo = 0;
             this.updateCombo();
@@ -633,12 +664,15 @@ class TypeFlux {
         this.timer = setInterval(() => {
             this.timerValue--;
             this.updateTimer();
-            
-            // Warning sound at 5 seconds
+
+            // Last-5-second urgency: crimson rim on the vellum frame.
             if (this.timerValue <= 5 && this.timerValue > 0) {
                 SoundSystem.timerWarning();
+                if (this.elements.vellumFrame) {
+                    this.elements.vellumFrame.classList.add('urgent');
+                }
             }
-            
+
             if (this.timerValue <= 0) {
                 this.finishTest();
             }
@@ -647,34 +681,71 @@ class TypeFlux {
 
     finishTest() {
         if (this.isFinished) return;
-        
+
         this.isFinished = true;
         this.isActive = false;
         this.endTime = Date.now();
-        
+
         // Stop timers
         if (this.timer) clearInterval(this.timer);
         if (this.wpmInterval) clearInterval(this.wpmInterval);
         if (this.elapsedInterval) clearInterval(this.elapsedInterval);
 
-        // Calculate results
+        // Drop urgency styling
+        if (this.elements.vellumFrame) {
+            this.elements.vellumFrame.classList.remove('urgent');
+        }
+
+        // Capture previous best BEFORE addTest mutates stats.
+        const prevStats = Storage.getStats() || { bestWpm: 0, testsCompleted: 0 };
+        const previousBest = prevStats.bestWpm || 0;
+        const hadPriorTests = (prevStats.testsCompleted || 0) > 0;
+
         const results = this.calculateResults();
-        
-        // Save test
-        const savedTest = Storage.addTest(results);
-        
-        // Check for new record
-        const stats = Storage.getStats();
-        if (results.wpm >= stats.bestWpm) {
+        Storage.addTest(results);
+
+        const isPersonalBest = hadPriorTests && results.wpm > previousBest;
+
+        if (isPersonalBest) {
             SoundSystem.newRecord();
-            this.showToast('🎉 New personal best!', 'success');
+            this.showToast(`new personal best — ${results.wpm} wpm`, 'success');
         } else {
             SoundSystem.testComplete();
         }
-        
-        // Display results
+
         this.displayResults(results);
         this.showResults();
+
+        // PB ribbon + confetti — fire after the certificate is on screen
+        if (this.elements.certificate) {
+            this.elements.certificate.classList.toggle('is-pb', isPersonalBest);
+        }
+        if (isPersonalBest) {
+            setTimeout(() => this.spawnConfetti(48), 320);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Confetti — pure DOM particles, animated by CSS
+    // ─────────────────────────────────────────────────────────────
+    spawnConfetti(count = 40) {
+        const layer = this.elements.confettiLayer;
+        if (!layer) return;
+        layer.textContent = '';
+        const colors = ['var(--gold)', 'var(--teal)', 'var(--forest)', 'var(--plum)', 'var(--ink)'];
+        for (let i = 0; i < count; i++) {
+            const p = document.createElement('span');
+            p.className = 'confetti-piece';
+            p.style.setProperty('--cx',     `${(Math.random() * 100).toFixed(1)}%`);
+            p.style.setProperty('--cdx',    `${(Math.random() * 200 - 100).toFixed(0)}px`);
+            p.style.setProperty('--cdur',   `${(1.4 + Math.random() * 1.6).toFixed(2)}s`);
+            p.style.setProperty('--cdelay', `${(Math.random() * 0.4).toFixed(2)}s`);
+            p.style.setProperty('--crot',   `${(Math.random() * 720 - 360).toFixed(0)}deg`);
+            p.style.background = colors[i % colors.length];
+            layer.appendChild(p);
+        }
+        // Cleanup after animations complete
+        setTimeout(() => { layer.textContent = ''; }, 3600);
     }
 
     calculateResults() {
@@ -804,6 +875,11 @@ class TypeFlux {
         this.elements.liveStats.classList.remove('active');
         this.elements.comboDisplay.classList.remove('active', 'fire', 'blaze');
         this.elements.wordsDisplay.style.transform = '';
+        if (this.elements.vellumFrame) this.elements.vellumFrame.classList.remove('urgent');
+        if (this.elements.certificate) this.elements.certificate.classList.remove('is-pb');
+        if (this.elements.confettiLayer) this.elements.confettiLayer.textContent = '';
+        if (this.elements.countdown) this.elements.countdown.classList.remove('active');
+        this.isCountingDown = false;
 
         // Reset live stats display
         this.elements.liveWpm.textContent = '0';
@@ -814,6 +890,9 @@ class TypeFlux {
         // Hide results if showing
         this.elements.viewResults.classList.remove('active');
         this.elements.viewTest.classList.add('active');
+        if (this.elements.certificate) this.elements.certificate.classList.remove('is-pb');
+        if (this.elements.confettiLayer) this.elements.confettiLayer.textContent = '';
+        if (this.elements.vellumFrame) this.elements.vellumFrame.classList.remove('urgent');
         
         // Make sure we're on test view
         this.switchView('test');
@@ -834,34 +913,79 @@ class TypeFlux {
     updateCursorPosition() {
         const currentWord = this.elements.wordsDisplay.querySelector(`.word[data-word="${this.currentWordIndex}"]`);
         if (!currentWord) return;
-        
+
+        const apply = (left, top) => {
+            this.elements.cursor.style.left = `${left}px`;
+            this.elements.cursor.style.top = `${top}px`;
+            // Trails inherit position; their longer transitions create the lag.
+            this.elements.cursorTrails.forEach(t => {
+                t.style.left = `${left}px`;
+                t.style.top = `${top}px`;
+            });
+        };
+
         let targetElement;
-        
+
         if (this.currentLetterIndex < this.words[this.currentWordIndex]?.length) {
-            // Position at current letter
             targetElement = currentWord.querySelector(`.letter[data-letter="${this.currentLetterIndex}"]`);
         } else {
-            // Position after last letter (or extra letters)
             const letters = currentWord.querySelectorAll('.letter');
             targetElement = letters[letters.length - 1];
-            
+
             if (targetElement) {
                 const rect = targetElement.getBoundingClientRect();
                 const containerRect = this.elements.typingArea.getBoundingClientRect();
-                
-                this.elements.cursor.style.left = `${rect.right - containerRect.left}px`;
-                this.elements.cursor.style.top = `${rect.top - containerRect.top}px`;
+                apply(rect.right - containerRect.left, rect.top - containerRect.top);
                 return;
             }
         }
-        
+
         if (targetElement) {
             const rect = targetElement.getBoundingClientRect();
             const containerRect = this.elements.typingArea.getBoundingClientRect();
-            
-            this.elements.cursor.style.left = `${rect.left - containerRect.left}px`;
-            this.elements.cursor.style.top = `${rect.top - containerRect.top}px`;
+            apply(rect.left - containerRect.left, rect.top - containerRect.top);
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Ready countdown — III · II · I · GO before a test begins
+    // ─────────────────────────────────────────────────────────────
+    runCountdown(onDone) {
+        this.isCountingDown = true;
+        const overlay = this.elements.countdown;
+        const numeral = this.elements.countdownNumeral;
+        if (!overlay || !numeral) {
+            this.isCountingDown = false;
+            this.startTest();
+            if (onDone) onDone();
+            return;
+        }
+        const steps = ['III', 'II', 'I', 'GO'];
+        overlay.classList.add('active');
+        let i = 0;
+        const tick = () => {
+            const text = steps[i];
+            numeral.textContent = text;
+            numeral.classList.remove('pulse', 'go');
+            // restart animation
+            void numeral.offsetWidth;
+            numeral.classList.add(text === 'GO' ? 'go' : 'pulse');
+            if (text === 'GO') SoundSystem.newRecord && SoundSystem.click();
+            else SoundSystem.timerWarning && SoundSystem.click();
+            i++;
+            if (i < steps.length) {
+                setTimeout(tick, 700);
+            } else {
+                setTimeout(() => {
+                    overlay.classList.remove('active');
+                    this.isCountingDown = false;
+                    this.startTest();
+                    this.elements.hiddenInput.focus();
+                    if (onDone) onDone();
+                }, 380);
+            }
+        };
+        tick();
     }
 
     updateTimer() {
@@ -921,11 +1045,14 @@ class TypeFlux {
     updateStatsView() {
         const stats = Storage.getStats();
         const tests = Storage.getTests();
-        
+
         this.elements.statsTests.textContent = stats.testsCompleted;
         this.elements.statsBest.textContent = stats.bestWpm;
         this.elements.statsAvg.textContent = stats.averageWpm;
         this.elements.statsTime.textContent = Storage.formatTime(stats.totalTime);
+        if (this.elements.statsStreak) {
+            this.elements.statsStreak.textContent = Storage.getStreak();
+        }
         
         // Render test history
         this.elements.testsList.textContent = '';
@@ -1029,6 +1156,9 @@ class TypeFlux {
         this.elements.stopOnError.checked = this.settings.stopOnError;
         this.elements.confidenceMode.checked = this.settings.confidenceMode;
         this.elements.blindMode.checked = this.settings.blindMode;
+        if (this.elements.readyCountdown) {
+            this.elements.readyCountdown.checked = this.settings.readyCountdown !== false;
+        }
 
         // Sound system
         SoundSystem.enabled = this.settings.soundEffects;
@@ -1038,20 +1168,91 @@ class TypeFlux {
 
     setTheme(theme, save = true) {
         document.documentElement.setAttribute('data-theme', theme);
-        
+
         document.querySelectorAll('.theme-option').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.theme === theme);
         });
-        
+
         if (save) {
             this.settings.theme = theme;
             this.updateSetting('theme', theme);
         }
-        
+
         // Redraw charts with new colors
         if (this.elements.historyChart) {
             const tests = Storage.getTests();
             setTimeout(() => ChartSystem.drawHistoryChart(this.elements.historyChart, tests), 100);
+        }
+
+        // Theme-specific atmosphere: matrix gets falling-character rain
+        this.updateThemeEffects(theme);
+    }
+
+    updateThemeEffects(theme) {
+        const canvas = this.elements.matrixCanvas;
+        if (!canvas) return;
+        if (theme === 'matrix') {
+            this.startMatrixRain(canvas);
+        } else {
+            this.stopMatrixRain();
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Matrix rain — Canvas2D, only on data-theme="matrix"
+    // ─────────────────────────────────────────────────────────────
+    startMatrixRain(canvas) {
+        if (this._rainRaf) return;
+        const ctx = canvas.getContext('2d');
+        const glyphs = 'アァカサタナハマヤラワ0123456789{}[]()<>=+-*/&|';
+        let cols, drops, w, h, fontPx;
+
+        const resize = () => {
+            w = canvas.width  = window.innerWidth * window.devicePixelRatio;
+            h = canvas.height = window.innerHeight * window.devicePixelRatio;
+            canvas.style.width  = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            fontPx = 16 * window.devicePixelRatio;
+            cols = Math.ceil(w / fontPx);
+            drops = new Array(cols).fill(0).map(() => Math.random() * -50);
+        };
+        resize();
+        this._rainResize = resize;
+        window.addEventListener('resize', resize);
+
+        const draw = () => {
+            // Trail fade — translucent fill creates the falling-trail look
+            ctx.fillStyle = 'rgba(5, 10, 5, 0.08)';
+            ctx.fillRect(0, 0, w, h);
+            ctx.font = `${fontPx}px "JetBrains Mono", monospace`;
+            for (let i = 0; i < cols; i++) {
+                const ch = glyphs[Math.floor(Math.random() * glyphs.length)];
+                const x = i * fontPx;
+                const y = drops[i] * fontPx;
+                // head bright, body dim
+                ctx.fillStyle = Math.random() < 0.06 ? '#d4ffa8' : '#4ade80';
+                ctx.fillText(ch, x, y);
+                if (y > h && Math.random() > 0.975) drops[i] = 0;
+                drops[i] += 0.55;
+            }
+            this._rainRaf = requestAnimationFrame(draw);
+        };
+        draw();
+    }
+
+    stopMatrixRain() {
+        if (this._rainRaf) {
+            cancelAnimationFrame(this._rainRaf);
+            this._rainRaf = null;
+        }
+        if (this._rainResize) {
+            window.removeEventListener('resize', this._rainResize);
+            this._rainResize = null;
+        }
+        const canvas = this.elements.matrixCanvas;
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx && ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
     }
 

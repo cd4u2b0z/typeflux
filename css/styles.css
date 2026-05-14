@@ -1103,7 +1103,7 @@ body {
 /* ═══ THE LEDGER (stats view) ═════════════════════════════════ */
 .stats-overview {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: var(--space-4);
     margin-bottom: var(--space-10);
 }
@@ -1627,3 +1627,499 @@ button:focus-visible {
     outline: 1px solid var(--gold);
     outline-offset: 3px;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   GAME FEEL — kinesthetics, tension, celebration
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Cursor trail ────────────────────────────────────────────────
+   Two ghost cursors lag behind the main one via longer transitions.
+   JS sets all three to the same left/top; only the durations differ.
+   ──────────────────────────────────────────────────────────────── */
+.cursor-trail {
+    position: absolute;
+    width: 2px;
+    height: calc(var(--typing-font-size) * var(--line-height));
+    background: var(--gold);
+    pointer-events: none;
+    z-index: 9;
+    border-radius: 1px;
+    opacity: 0;
+    will-change: left, top, opacity;
+}
+
+.live-stats.active ~ * .cursor-trail,
+.typing-area .cursor-trail { /* visible whenever cursor is visible */ }
+
+.cursor-trail-1 {
+    opacity: 0.45;
+    filter: blur(0.6px);
+    box-shadow: 0 0 10px var(--gold-glow);
+    transition: left 0.20s cubic-bezier(0.22, 1, 0.36, 1),
+                top  0.20s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cursor-trail-2 {
+    opacity: 0.22;
+    filter: blur(1.4px);
+    box-shadow: 0 0 14px var(--gold-glow);
+    transition: left 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+                top  0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cursor.smooth ~ .cursor-trail-1,
+.cursor-trail-1.smooth { transition-duration: 0.26s; }
+.cursor.smooth ~ .cursor-trail-2,
+.cursor-trail-2.smooth { transition-duration: 0.44s; }
+
+/* ── Word-pop ─────────────────────────────────────────────────────
+   On correct word completion, a brief scale + gold breath.
+   ──────────────────────────────────────────────────────────────── */
+@keyframes wordPop {
+    0%   { transform: scale(1);    filter: drop-shadow(0 0 0 transparent); }
+    35%  { transform: scale(1.045); filter: drop-shadow(0 0 8px var(--gold-glow)); }
+    100% { transform: scale(1);    filter: drop-shadow(0 0 0 transparent); }
+}
+
+.word.word-pop {
+    animation: wordPop 420ms var(--ease-bounce);
+    will-change: transform, filter;
+}
+
+.word.word-pop .letter.correct {
+    color: var(--gold);
+    transition: color 200ms ease;
+}
+
+/* ── Ready countdown ─────────────────────────────────────────────
+   Fullscreen veil; engraved ring; massive Roman numeral steps.
+   ──────────────────────────────────────────────────────────────── */
+.countdown {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: radial-gradient(ellipse at center,
+        rgba(0,0,0,0.55) 0%,
+        rgba(0,0,0,0.85) 70%);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    z-index: 9000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms var(--ease-engraved);
+}
+
+.countdown.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.countdown-ring {
+    position: absolute;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    border: 1px solid var(--gold);
+    box-shadow:
+        0 0 0 1px var(--bg-primary),
+        0 0 0 2px var(--gold-deep),
+        inset 0 0 40px var(--gold-glow),
+        0 0 80px var(--gold-glow);
+    opacity: 0.85;
+    animation: ringBreath 1.6s ease-in-out infinite;
+}
+
+.countdown-ring::before,
+.countdown-ring::after {
+    content: "";
+    position: absolute;
+    inset: 14px;
+    border-radius: 50%;
+    border: 1px dashed var(--gold);
+    opacity: 0.35;
+}
+.countdown-ring::after {
+    inset: -22px;
+    border-style: solid;
+    border-color: var(--gold-deep);
+    opacity: 0.4;
+}
+
+@keyframes ringBreath {
+    0%, 100% { transform: scale(1);    opacity: 0.85; }
+    50%      { transform: scale(1.04); opacity: 1; }
+}
+
+.countdown-numeral {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(6rem, 18vw, 11rem);
+    line-height: 1;
+    color: var(--gold);
+    letter-spacing: 0.04em;
+    text-shadow:
+        0 0 30px var(--gold-glow),
+        0 0 80px var(--gold-glow);
+    z-index: 2;
+}
+
+.countdown-numeral.pulse {
+    animation: numeralIn 0.7s var(--ease-bounce);
+}
+
+.countdown-numeral.go {
+    color: var(--teal);
+    text-shadow:
+        0 0 30px var(--teal-glow),
+        0 0 90px var(--teal-glow);
+    animation: numeralGo 0.55s var(--ease-bounce);
+    letter-spacing: 0.16em;
+}
+
+@keyframes numeralIn {
+    0%   { transform: scale(0.35) rotate(-6deg); opacity: 0;   filter: blur(8px); }
+    55%  { transform: scale(1.08) rotate(0);     opacity: 1;   filter: blur(0); }
+    100% { transform: scale(1)    rotate(0);     opacity: 0.95; filter: blur(0); }
+}
+
+@keyframes numeralGo {
+    0%   { transform: scale(0.6);  opacity: 0; }
+    40%  { transform: scale(1.2);  opacity: 1; }
+    100% { transform: scale(1);    opacity: 1; }
+}
+
+.countdown-caption {
+    position: absolute;
+    bottom: calc(50% - 200px);
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 1rem;
+    color: var(--ink-dim);
+    letter-spacing: 0.32em;
+    text-transform: lowercase;
+    font-variant: small-caps;
+}
+
+/* ── Last-5-seconds urgency ──────────────────────────────────────
+   Crimson candlelight crawls around the vellum rim.
+   ──────────────────────────────────────────────────────────────── */
+.vellum-frame.urgent {
+    border-color: var(--error);
+    box-shadow:
+        inset 0 0 0 1px var(--error),
+        inset 0 0 80px rgba(228, 126, 128, 0.18),
+        0 0 36px rgba(228, 126, 128, 0.45),
+        0 24px 64px rgba(0, 0, 0, 0.35);
+    animation: urgentPulse 0.8s ease-in-out infinite;
+}
+
+.vellum-frame.urgent .corner {
+    border-color: var(--error);
+    opacity: 1;
+    animation: cornerFlare 0.8s ease-in-out infinite alternate;
+}
+
+.vellum-frame.urgent .timer-display .stat-value {
+    color: var(--error);
+    text-shadow: 0 0 22px var(--error);
+    animation: timerThump 0.5s ease infinite alternate;
+}
+
+@keyframes urgentPulse {
+    0%, 100% {
+        box-shadow:
+            inset 0 0 0 1px var(--error),
+            inset 0 0 60px rgba(228, 126, 128, 0.10),
+            0 0 22px rgba(228, 126, 128, 0.35),
+            0 24px 64px rgba(0, 0, 0, 0.35);
+    }
+    50% {
+        box-shadow:
+            inset 0 0 0 1px var(--error),
+            inset 0 0 100px rgba(228, 126, 128, 0.22),
+            0 0 56px rgba(228, 126, 128, 0.65),
+            0 24px 64px rgba(0, 0, 0, 0.35);
+    }
+}
+
+@keyframes cornerFlare {
+    from { transform: scale(1);    filter: drop-shadow(0 0 0 transparent); }
+    to   { transform: scale(1.18); filter: drop-shadow(0 0 6px var(--error)); }
+}
+
+@keyframes timerThump {
+    from { transform: scale(1); }
+    to   { transform: scale(1.08); }
+}
+
+/* ── PB ribbon — wax-stamped sash on the certificate ────────────── */
+.pb-ribbon {
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-1.5deg) scale(0.6);
+    background:
+        linear-gradient(180deg, var(--gold) 0%, var(--gold-deep) 100%);
+    color: var(--bg-primary);
+    padding: 10px 38px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.88rem;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    box-shadow:
+        0 0 0 1px var(--gold),
+        0 0 0 4px var(--bg-card),
+        0 0 0 5px var(--gold-deep),
+        0 18px 36px rgba(0, 0, 0, 0.5),
+        0 0 60px var(--gold-glow);
+    opacity: 0;
+    pointer-events: none;
+    transition: none;
+    /* sash tails */
+    clip-path: polygon(
+        16px 0,
+        calc(100% - 16px) 0,
+        100% 50%,
+        calc(100% - 16px) 100%,
+        16px 100%,
+        0 50%
+    );
+}
+
+.certificate.is-pb .pb-ribbon {
+    opacity: 1;
+    animation: ribbonSlam 720ms var(--ease-bounce);
+}
+
+@keyframes ribbonSlam {
+    0%   { transform: translateX(-50%) translateY(-80px) rotate(-12deg) scale(0.4); opacity: 0; }
+    55%  { transform: translateX(-50%) translateY(8px)   rotate(2deg)   scale(1.06); opacity: 1; }
+    72%  { transform: translateX(-50%) translateY(-3px)  rotate(-2.5deg) scale(0.98); }
+    100% { transform: translateX(-50%) translateY(0)     rotate(-1.5deg) scale(1); opacity: 1; }
+}
+
+.pb-ribbon-stamp {
+    font-size: 1rem;
+    color: var(--bg-primary);
+    opacity: 0.85;
+}
+
+.certificate.is-pb .grade-letter {
+    animation: gradeShimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes gradeShimmer {
+    0%, 100% { filter: drop-shadow(0 0 14px var(--gold-glow)); }
+    50%      { filter: drop-shadow(0 0 44px var(--gold)) drop-shadow(0 0 80px var(--gold)); }
+}
+
+/* ── Confetti ──────────────────────────────────────────────────── */
+.confetti-layer {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 9500;
+}
+
+.confetti-piece {
+    position: absolute;
+    top: -20px;
+    left: var(--cx, 50%);
+    width: 8px;
+    height: 14px;
+    background: var(--gold);
+    border-radius: 1px;
+    box-shadow: 0 0 6px currentColor;
+    transform-origin: center;
+    animation:
+        confettiFall var(--cdur, 2s) cubic-bezier(0.33, 0, 0.67, 1) var(--cdelay, 0s) forwards,
+        confettiSpin var(--cdur, 2s) linear var(--cdelay, 0s) forwards;
+    will-change: transform, opacity;
+}
+
+@keyframes confettiFall {
+    0%   { transform: translate(0, -20px) rotate(0); opacity: 1; }
+    100% { transform: translate(var(--cdx, 0), 110vh) rotate(var(--crot, 360deg)); opacity: 0; }
+}
+
+@keyframes confettiSpin {
+    0%   { filter: hue-rotate(0); }
+    100% { filter: hue-rotate(-25deg); }
+}
+
+/* ── Streak card — the unbroken-days flame ─────────────────────── */
+.stat-card.streak-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card.streak-card .streak-flame {
+    position: absolute;
+    bottom: -10px;
+    right: -8px;
+    font-size: 3.2rem;
+    line-height: 1;
+    color: var(--gold);
+    opacity: 0.18;
+    transform: rotate(8deg);
+    pointer-events: none;
+    transition: all 280ms var(--ease-engraved);
+    text-shadow: 0 0 24px var(--gold-glow);
+}
+
+.stat-card.streak-card:hover .streak-flame,
+.stat-card.streak-card.lit .streak-flame {
+    opacity: 0.55;
+    color: var(--warning);
+    transform: rotate(0deg) translateY(-4px);
+    text-shadow: 0 0 32px var(--warning);
+}
+
+/* ── Theme atmospheres — registered here; visibility per-theme ── */
+.matrix-rain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 320ms var(--ease-engraved);
+}
+
+[data-theme="matrix"] .matrix-rain { opacity: 0.55; }
+
+.scanlines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0px,
+        rgba(0, 0, 0, 0) 2px,
+        rgba(0, 0, 0, 0.18) 3px,
+        rgba(0, 0, 0, 0.18) 3px
+    );
+    opacity: 0;
+    transition: opacity 320ms var(--ease-engraved);
+}
+
+[data-theme="matrix"] .scanlines { opacity: 0.55; }
+
+/* CRT chromatic aberration on the cursor in matrix theme */
+[data-theme="matrix"] .cursor {
+    background: var(--ink);
+    box-shadow:
+        -2px 0 0 rgba(255, 64, 64, 0.45),
+        2px 0 0 rgba(64, 200, 255, 0.45),
+        0 0 14px var(--ink),
+        0 0 28px var(--ink);
+}
+
+/* Paper: ink-bleed on incorrect letters — soft radial halo
+   that fades as the user corrects. Visible only in paper theme. */
+[data-theme="paper"] .letter.incorrect {
+    text-shadow:
+        0 0 4px rgba(168, 53, 30, 0.5),
+        0 0 10px rgba(168, 53, 30, 0.35);
+    background: radial-gradient(circle at 50% 60%,
+        rgba(168, 53, 30, 0.18),
+        transparent 70%);
+    border-radius: 1px;
+}
+
+[data-theme="paper"] .vellum-frame {
+    background:
+        radial-gradient(ellipse at 30% 20%, rgba(168, 84, 26, 0.04), transparent 60%),
+        linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-card) 100%);
+}
+
+/* Sunset: combo intensifies the warm halo. Body class set via JS
+   would be cleaner; for now, use .fervor descendant selectors as
+   a proxy — the halo isn't a sibling, so we tint the body. */
+[data-theme="sunset"] body { transition: background 600ms ease; }
+
+[data-theme="sunset"]:has(.fervor.fire) .halo {
+    background:
+        radial-gradient(ellipse 80% 60% at 50% 22%, rgba(232, 181, 104, 0.16), transparent 62%),
+        radial-gradient(ellipse 70% 60% at 50% 92%, rgba(212, 117, 107, 0.10), transparent 62%);
+}
+
+[data-theme="sunset"]:has(.fervor.blaze) .halo {
+    background:
+        radial-gradient(ellipse 90% 70% at 50% 22%, rgba(232, 181, 104, 0.28), transparent 62%),
+        radial-gradient(ellipse 80% 70% at 50% 92%, rgba(212, 117, 107, 0.18), transparent 62%);
+}
+
+/* Forest, Ocean, Lavender, Aurora, Midnight: drifting motes */
+.motes {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 320ms var(--ease-engraved);
+}
+
+[data-theme="forest"] .motes,
+[data-theme="ocean"] .motes,
+[data-theme="lavender"] .motes,
+[data-theme="aurora"] .motes,
+[data-theme="midnight"] .motes { opacity: 0.7; }
+
+.motes span {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 6px var(--gold-glow);
+    opacity: 0.6;
+    animation: moteDrift 22s linear infinite;
+}
+
+.motes span:nth-child(1) { left: 12%; animation-duration: 26s; animation-delay: -3s;  }
+.motes span:nth-child(2) { left: 28%; animation-duration: 31s; animation-delay: -11s; background: var(--teal); box-shadow: 0 0 6px var(--teal-glow); }
+.motes span:nth-child(3) { left: 47%; animation-duration: 24s; animation-delay: -7s;  }
+.motes span:nth-child(4) { left: 63%; animation-duration: 29s; animation-delay: -14s; background: var(--forest); }
+.motes span:nth-child(5) { left: 78%; animation-duration: 27s; animation-delay: -2s;  }
+.motes span:nth-child(6) { left: 91%; animation-duration: 33s; animation-delay: -18s; background: var(--plum); }
+
+@keyframes moteDrift {
+    0%   { transform: translateY(110vh) scale(0.6); opacity: 0; }
+    10%  {                                          opacity: 0.7; }
+    50%  { transform: translateY(50vh)  translateX(20px) scale(1); }
+    90%  {                                          opacity: 0.7; }
+    100% { transform: translateY(-10vh) translateX(-20px) scale(0.6); opacity: 0; }
+}
+
+/* Responsive: 5-card stats grid → 2-col on narrow viewports */
+@media (max-width: 900px) {
+    .stats-overview {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .countdown-ring { width: 240px; height: 240px; }
+    .countdown-caption { bottom: calc(50% - 160px); }
+}
+
+/* Reduced motion: kill the loud animations, keep states static */
+@media (prefers-reduced-motion: reduce) {
+    .countdown-numeral.pulse,
+    .countdown-numeral.go,
+    .countdown-ring,
+    .vellum-frame.urgent,
+    .vellum-frame.urgent .corner,
+    .vellum-frame.urgent .timer-display .stat-value,
+    .certificate.is-pb .grade-letter,
+    .certificate.is-pb .pb-ribbon,
+    .motes span,
+    .confetti-piece,
+    .word.word-pop {
+        animation: none !important;
+    }
+}
+
