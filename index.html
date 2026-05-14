@@ -210,6 +210,9 @@
                     <!-- Confetti layer — particles spawned by JS on PB -->
                     <div class="confetti-layer" id="confetti-layer" aria-hidden="true"></div>
 
+                    <!-- Stamp stack — newly-earned seals slam in here -->
+                    <div class="stamp-stack" id="stamp-stack" aria-live="polite"></div>
+
                     <p class="cert-eyebrow">— certificate of the typewright —</p>
                     <h2 class="cert-title">The Test, Concluded</h2>
                     <p class="cert-epigraph">surveyed at this hour upon a steady hand and willing eye</p>
@@ -368,6 +371,18 @@
                     </div>
                     <div class="tests-list" id="tests-list">
                         <div class="empty-state">— no trials yet recorded; the desk awaits your hand —</div>
+                    </div>
+                </div>
+
+                <!-- ════ THE CHRONICLES — engraved seals ════════════ -->
+                <div class="chronicles-plate">
+                    <div class="recent-heading">
+                        <span class="plate-numeral">CHRON.</span>
+                        <span class="chart-title">the chronicles · seals earned</span>
+                        <span class="chronicles-count" id="chronicles-count">0 of 22</span>
+                    </div>
+                    <div class="chronicles" id="chronicles" role="list">
+                        <!-- seal cards rendered by app.js -->
                     </div>
                 </div>
 
@@ -541,6 +556,7 @@
     <script src="js/sounds.js"></script>
     <script src="js/chart.js"></script>
     <script src="js/storage.js"></script>
+    <script src="js/achievements.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

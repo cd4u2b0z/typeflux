@@ -7,7 +7,8 @@ const Storage = {
     KEYS: {
         SETTINGS: 'typeflux_settings',
         TESTS: 'typeflux_tests',
-        STATS: 'typeflux_stats'
+        STATS: 'typeflux_stats',
+        ACHIEVEMENTS: 'typeflux_achievements'
     },
 
     // Default settings
@@ -43,6 +44,12 @@ const Storage = {
         if (!this.getStats()) {
             this.saveStats(this.getDefaultStats());
         }
+
+        // Ensure achievement state exists; backfill modes from history.
+        if (!localStorage.getItem(this.KEYS.ACHIEVEMENTS)) {
+            this.saveAchievementState(this.defaultAchievementState());
+        }
+        this.backfillFromHistory();
     },
 
     // Default stats structure
@@ -192,6 +199,94 @@ const Storage = {
         return Date.now().toString(36) + Math.random().toString(36).slice(2);
     },
 
+    // ─────────────────────────────────────────────────────────────
+    // Achievements — { unlocked: {id: ts}, themesUsed, languagesUsed, modesUsed }
+    // ─────────────────────────────────────────────────────────────
+
+    defaultAchievementState() {
+        return {
+            unlocked: {},
+            themesUsed: [],
+            languagesUsed: [],
+            modesUsed: []
+        };
+    },
+
+    getAchievementState() {
+        try {
+            const data = localStorage.getItem(this.KEYS.ACHIEVEMENTS);
+            const parsed = data ? JSON.parse(data) : null;
+            return { ...this.defaultAchievementState(), ...(parsed || {}) };
+        } catch (e) {
+            console.error('Error reading achievements:', e);
+            return this.defaultAchievementState();
+        }
+    },
+
+    saveAchievementState(state) {
+        try {
+            localStorage.setItem(this.KEYS.ACHIEVEMENTS, JSON.stringify(state));
+            return true;
+        } catch (e) {
+            console.error('Error saving achievements:', e);
+            return false;
+        }
+    },
+
+    _addToSet(state, key, value) {
+        if (!value) return state;
+        if (!state[key]) state[key] = [];
+        if (!state[key].includes(value)) state[key].push(value);
+        return state;
+    },
+
+    markThemeUsed(theme) {
+        const s = this.getAchievementState();
+        this._addToSet(s, 'themesUsed', theme);
+        this.saveAchievementState(s);
+    },
+
+    markLanguageUsed(lang) {
+        if (!lang) return;
+        const s = this.getAchievementState();
+        this._addToSet(s, 'languagesUsed', lang);
+        this.saveAchievementState(s);
+    },
+
+    markModeUsed(mode) {
+        if (!mode) return;
+        const s = this.getAchievementState();
+        this._addToSet(s, 'modesUsed', mode);
+        this.saveAchievementState(s);
+    },
+
+    /* Returns true if newly unlocked, false if already had it */
+    unlockAchievement(id) {
+        const s = this.getAchievementState();
+        if (s.unlocked[id]) return false;
+        s.unlocked[id] = Date.now();
+        this.saveAchievementState(s);
+        return true;
+    },
+
+    /* On startup, backfill modesUsed from existing test history so users
+       upgrading from a pre-achievement build don't have to redo tests
+       in modes they've already played. Languages aren't in test records
+       so they only accumulate from this point forward. */
+    backfillFromHistory() {
+        const tests = this.getTests() || [];
+        if (tests.length === 0) return;
+        const s = this.getAchievementState();
+        let changed = false;
+        for (const t of tests) {
+            if (t.mode && !s.modesUsed.includes(t.mode)) {
+                s.modesUsed.push(t.mode);
+                changed = true;
+            }
+        }
+        if (changed) this.saveAchievementState(s);
+    },
+
     // Daily streak: count consecutive local days ending at today (or yesterday
     // if today has no test yet) on which the user completed at least one trial.
     getStreak() {
@@ -233,6 +328,7 @@ const Storage = {
             localStorage.removeItem(this.KEYS.SETTINGS);
             localStorage.removeItem(this.KEYS.TESTS);
             localStorage.removeItem(this.KEYS.STATS);
+            localStorage.removeItem(this.KEYS.ACHIEVEMENTS);
             this.init();
             return true;
         } catch (e) {

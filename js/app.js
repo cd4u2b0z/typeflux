@@ -14,6 +14,10 @@ class TypeFlux {
         this.isPaused = false;
         this.isFinished = false;
         
+        // Session-only state (resets on page load)
+        this.sessionBlazes = 0;
+        this._blazeArmed = true;
+
         // Test data
         this.words = [];
         this.currentWordIndex = 0;
@@ -87,6 +91,9 @@ class TypeFlux {
             certTipBody: document.getElementById('cert-tip-body'),
             statsStreak: document.getElementById('stats-streak'),
             matrixCanvas: document.getElementById('matrix-rain'),
+            chronicles: document.getElementById('chronicles'),
+            chroniclesCount: document.getElementById('chronicles-count'),
+            stampStack: document.getElementById('stamp-stack'),
             
             // Live stats
             liveWpm: document.getElementById('live-wpm'),
@@ -728,6 +735,108 @@ class TypeFlux {
         if (isPersonalBest) {
             setTimeout(() => this.spawnConfetti(48), 320);
         }
+
+        // ── Achievements: mark, evaluate, stamp ────────────────
+        Storage.markModeUsed(this.mode);
+        if (this.mode === 'code' && this.lastLanguage) {
+            Storage.markLanguageUsed(this.lastLanguage);
+        }
+
+        const tests = Storage.getTests() || [];
+        const stats = Storage.getStats();
+        const state = Storage.getAchievementState();
+        const streak = Storage.getStreak();
+
+        const ctx = {
+            test: { ...results, timestamp: Date.now() },
+            tests, stats, state, streak,
+            session: { blazes: this.sessionBlazes }
+        };
+
+        const newly = Achievements.evaluate(ctx);
+        if (newly.length > 0) {
+            // Persist + queue stamps. Stagger so multiple unlocks read clearly.
+            newly.forEach((id, i) => {
+                Storage.unlockAchievement(id);
+                const ach = Achievements.byId(id);
+                if (ach) setTimeout(() => this.spawnStamp(ach), 900 + i * 700);
+            });
+            // Refresh chronicles silently in case the user opens the ledger
+            this.renderChronicles();
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Chronicles — the engraved register of seals
+    // ─────────────────────────────────────────────────────────────
+    renderChronicles() {
+        const grid = this.elements.chronicles;
+        if (!grid) return;
+        const state = Storage.getAchievementState();
+        const unlocked = state.unlocked || {};
+        const all = Achievements.all();
+        const summary = Achievements.summary(state);
+
+        if (this.elements.chroniclesCount) {
+            this.elements.chroniclesCount.textContent = `${summary.earned} of ${summary.total}`;
+        }
+
+        grid.textContent = '';
+        const fmtDate = (ts) => {
+            const d = new Date(ts);
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        };
+
+        for (const a of all) {
+            const isUnlocked = !!unlocked[a.id];
+            const isHidden = a.secret && !isUnlocked;
+
+            const card = document.createElement('article');
+            card.className = `seal seal-${a.category}` + (isUnlocked ? ' unlocked' : ' locked') + (isHidden ? ' hidden' : '');
+
+            card.innerHTML = `
+                <span class="seal-corner seal-corner-tl" aria-hidden="true"></span>
+                <span class="seal-corner seal-corner-tr" aria-hidden="true"></span>
+                <span class="seal-corner seal-corner-bl" aria-hidden="true"></span>
+                <span class="seal-corner seal-corner-br" aria-hidden="true"></span>
+                <div class="seal-glyph">${isHidden ? '?' : a.glyph}</div>
+                <div class="seal-name">${isHidden ? 'a seal yet hidden' : a.name}</div>
+                <div class="seal-motto">${isHidden ? '— in tempore —' : '— ' + a.motto + ' —'}</div>
+                <div class="seal-rule">${isHidden ? 'Earn it to read its mark.' : a.rule}</div>
+                <div class="seal-tag">${a.category}</div>
+                ${isUnlocked ? `<div class="seal-date">${fmtDate(unlocked[a.id])}</div>` : ''}
+            `;
+            grid.appendChild(card);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Achievement stamp — gold seal slams onto the certificate
+    // ─────────────────────────────────────────────────────────────
+    spawnStamp(achievement) {
+        const stack = this.elements.stampStack;
+        if (!stack || !achievement) return;
+
+        const card = document.createElement('div');
+        card.className = 'stamp';
+        card.innerHTML = `
+            <span class="stamp-ring" aria-hidden="true"></span>
+            <span class="stamp-glyph">${achievement.glyph}</span>
+            <div class="stamp-meta">
+                <span class="stamp-eyebrow">a seal earned</span>
+                <span class="stamp-name">${achievement.name}</span>
+                <span class="stamp-motto">— ${achievement.motto} —</span>
+            </div>
+        `;
+        stack.appendChild(card);
+
+        SoundSystem.newRecord && SoundSystem.newRecord();
+
+        // Auto-remove after the read window
+        setTimeout(() => {
+            card.classList.add('leaving');
+            setTimeout(() => card.remove(), 480);
+        }, 4200);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -1055,11 +1164,17 @@ class TypeFlux {
         if (this.combo >= 25) {
             this.elements.comboDisplay.classList.add('blaze');
             this.elements.comboDisplay.classList.remove('fire');
+            // Count the blaze peak once per arming — re-arms when combo drops
+            if (this._blazeArmed) {
+                this.sessionBlazes++;
+                this._blazeArmed = false;
+            }
         } else if (this.combo >= 10) {
             this.elements.comboDisplay.classList.add('fire');
             this.elements.comboDisplay.classList.remove('blaze');
         } else {
             this.elements.comboDisplay.classList.remove('fire', 'blaze');
+            this._blazeArmed = true;
         }
         
         // Play combo sound at milestones
@@ -1079,6 +1194,8 @@ class TypeFlux {
         if (this.elements.statsStreak) {
             this.elements.statsStreak.textContent = Storage.getStreak();
         }
+
+        this.renderChronicles();
         
         // Render test history
         this.elements.testsList.textContent = '';
@@ -1198,6 +1315,9 @@ class TypeFlux {
         document.querySelectorAll('.theme-option').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.theme === theme);
         });
+
+        // Track for The Cartographer
+        Storage.markThemeUsed(theme);
 
         if (save) {
             this.settings.theme = theme;
