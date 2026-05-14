@@ -921,7 +921,7 @@ class TypeFlux {
         switch (streakAfter) {
             case 2:  this.spawnMedal('DOUBLE FLOURISH',    '✦',  'common');    break;
             case 3:  this.spawnMedal('TRIPLE FLOURISH',    '✦',  'rare');      break;
-            case 5:  this.spawnMedal('THE SPREE',          '⚔',  'rare');      break;
+            case 5:  this.spawnMedal('THE SPREE',          '✚',  'rare');      break;
             case 10: this.spawnMedal('CONSUMMATE',         '❉',  'epic');      break;
             case 20: this.spawnMedal('FLAWLESS',           '◈',  'legendary'); break;
             case 30: this.spawnMedal('TRANSCENDENT',       '✺',  'legendary'); break;
@@ -929,16 +929,16 @@ class TypeFlux {
 
         // Per-word feats
         if (word.length >= 8 && this.medalReady('heavy-hand', 1200)) {
-            this.spawnMedal('HEAVY HAND', '⚒', 'rare');
+            this.spawnMedal('HEAVY HAND', '⊞', 'rare');
         }
         if (duration < 500 && word.length >= 4 && this.medalReady('snap', 1500)) {
-            this.spawnMedal('SNAP', '⚡', 'rare');
+            this.spawnMedal('SNAP', '☇', 'rare');
         }
 
         // Last-gasp — perfect word completed in the dying breath of a timed trial
         if (this.timerValue === 1 && !this.medalsSeenInTest.has('last-gasp')) {
             this.medalsSeenInTest.add('last-gasp');
-            this.spawnMedal('LAST GASP', '⌛', 'epic');
+            this.spawnMedal('LAST GASP', '⧗', 'epic');
         }
     }
 
@@ -1598,17 +1598,22 @@ class TypeFlux {
         
         if (!lastTest) return;
         
-        const text = `typeflux 🚀
-━━━━━━━━━━━━━━━━━━━━
-wpm: ${lastTest.wpm} | accuracy: ${lastTest.accuracy}%
-raw: ${lastTest.rawWpm} | consistency: ${lastTest.characters ? Math.round(lastTest.characters.correct / (lastTest.characters.correct + lastTest.characters.incorrect) * 100) : lastTest.accuracy}%
-mode: ${lastTest.mode} ${lastTest.wordCount || lastTest.timeLimit}
-━━━━━━━━━━━━━━━━━━━━`;
-        
+        const cons = lastTest.characters
+            ? Math.round(lastTest.characters.correct / (lastTest.characters.correct + lastTest.characters.incorrect) * 100)
+            : lastTest.accuracy;
+        const text = [
+            'typeflux — an account of the typewright',
+            '────────────────────────────────────────',
+            `   ${lastTest.wpm} wpm  ·  ${lastTest.accuracy}% accuracy`,
+            `   raw ${lastTest.rawWpm}  ·  consistency ${cons}%`,
+            `   mode  ${lastTest.mode} ${lastTest.wordCount || lastTest.timeLimit}`,
+            '────────────────────────────────────────'
+        ].join('\n');
+
         navigator.clipboard.writeText(text).then(() => {
-            this.showToast('Result copied to clipboard!', 'success');
+            this.showToast('the account is copied to thy clipboard', 'success');
         }).catch(() => {
-            this.showToast('Failed to copy', 'error');
+            this.showToast('the clipboard was unwilling', 'error');
         });
     }
 

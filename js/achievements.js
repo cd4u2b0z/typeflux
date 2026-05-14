@@ -70,7 +70,7 @@ const ACHIEVEMENTS = [
         id: 'three-blades', category: 'skill',
         name: 'Three Blades', motto: 'tria gladia',
         rule: 'Three S-grade trials in succession.',
-        glyph: '⚔',
+        glyph: '✚',
         check: (c) => {
             const last = _lastNGrades(c.tests, 3);
             if (last.length < 3) return false;
@@ -141,7 +141,7 @@ const ACHIEVEMENTS = [
         id: 'cartographer', category: 'breadth',
         name: 'The Cartographer', motto: 'omnes regiones',
         rule: 'Set hand to the field beneath all eight palettes.',
-        glyph: '⚜',
+        glyph: '❖',
         check: (c) => c.state.themesUsed.length >= 8
     },
 
@@ -157,7 +157,7 @@ const ACHIEVEMENTS = [
         id: 'journeyman', category: 'endurance',
         name: 'The Journeyman', motto: 'operarius',
         rule: 'Conclude fifty trials.',
-        glyph: '⚒',
+        glyph: '⊞',
         check: (c) => c.stats.testsCompleted >= 50
     },
     {
@@ -185,7 +185,7 @@ const ACHIEVEMENTS = [
         id: 'unbroken-quill', category: 'endurance',
         name: 'The Unbroken Quill', motto: 'calamus integer',
         rule: 'Type on seven consecutive days.',
-        glyph: '✒',
+        glyph: '✐',
         check: (c) => c.streak >= 7
     },
     {
@@ -228,7 +228,7 @@ const ACHIEVEMENTS = [
         id: 'returning-hand', category: 'secret', secret: true,
         name: 'The Returning Hand', motto: 'manus rediens',
         rule: 'Conclude a trial thirty days after the last.',
-        glyph: '☘',
+        glyph: '❀',
         check: (c) => {
             // tests is post-add, so the previous trial is at index -2
             if (c.tests.length < 2) return false;
