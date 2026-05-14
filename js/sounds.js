@@ -195,4 +195,3 @@ const SoundSystem = {
     }
 };
 
-export { SoundSystem };

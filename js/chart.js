@@ -280,4 +280,3 @@ const ChartSystem = {
     }
 };
 
-export { ChartSystem };

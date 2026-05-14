@@ -3,12 +3,6 @@
    Flow state typing experience
    ═══════════════════════════════════════════════════════════ */
 
-import { WordGenerator } from './words.js';
-import { QuoteGenerator } from './quotes.js';
-import { CodeGenerator } from './code.js';
-import { SoundSystem } from './sounds.js';
-import { ChartSystem } from './chart.js';
-import { Storage } from './storage.js';
 
 class TypeFlux {
     constructor() {

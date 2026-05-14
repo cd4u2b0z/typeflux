@@ -289,4 +289,3 @@ const QuoteGenerator = {
     }
 };
 
-export { QuoteGenerator };

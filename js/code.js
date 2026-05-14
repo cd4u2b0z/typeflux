@@ -316,4 +316,3 @@ const CodeGenerator = {
     }
 };
 
-export { CodeGenerator };

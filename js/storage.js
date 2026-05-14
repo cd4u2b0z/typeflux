@@ -255,4 +255,3 @@ const Storage = {
 // Initialize on load
 Storage.init();
 
-export { Storage };

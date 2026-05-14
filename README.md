@@ -63,12 +63,12 @@ A combo system runs alongside as the **fervor seal**: a circular medallion that 
 
 ## Quick start
 
+Open `index.html` directly in a browser — works under `file://` with no server. Or, to serve over HTTP:
+
 ```sh
-./serve.sh           # serves on http://localhost:8080 via python3 -m http.server
+./serve.sh           # http://localhost:8080 via python3 -m http.server
 ./serve.sh 9000      # custom port
 ```
-
-ES modules require an HTTP origin — opening `index.html` directly with `file://` will fail.
 
 ## Keyboard
 

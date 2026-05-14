@@ -150,4 +150,3 @@ const WordGenerator = {
     }
 };
 
-export { WordGenerator };
