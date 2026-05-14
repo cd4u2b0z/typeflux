@@ -1081,6 +1081,73 @@ body {
 .chart-container { height: 200px; }
 .chart-container canvas, .stats-chart-container canvas { width: 100% !important; height: 100% !important; }
 
+/* cert tip — marginalia, language-tagged */
+.cert-tip {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    align-items: center;
+    gap: var(--space-3);
+    margin: var(--space-8) 0 var(--space-6);
+    padding: var(--space-4) var(--space-5);
+    border-top:    1px solid var(--rule-faint);
+    border-bottom: 1px solid var(--rule-faint);
+    text-align: left;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 360ms var(--ease-engraved) 200ms,
+                transform 360ms var(--ease-engraved) 200ms;
+}
+
+.cert-tip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.cert-tip-mark {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    color: var(--gold);
+    line-height: 1;
+    text-shadow: 0 0 12px var(--gold-glow);
+}
+
+.cert-tip-lang {
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    letter-spacing: 0.32em;
+    color: var(--gold);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.cert-tip-rule {
+    height: 1px;
+    background: linear-gradient(90deg, var(--rule-faint) 0%, transparent 100%);
+    grid-column: 3 / 4;
+    /* the rule sits between the lang label and the body underneath; on
+       wider widths it actually appears at the top of column 3. The body
+       below spans the full width via the grid trick below. */
+    align-self: end;
+    margin-bottom: 4px;
+}
+
+.cert-tip-body {
+    grid-column: 1 / -1;
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 1.05rem;
+    line-height: 1.55;
+    color: var(--ink);
+    margin: 0;
+    padding-left: calc(1.4rem + var(--space-3));
+}
+
+.cert-tip-body::before,
+.cert-tip-body::after {
+    content: "";
+    display: inline;
+}
+
 /* cert seal line */
 .cert-seal {
     margin: var(--space-6) 0;

@@ -82,6 +82,9 @@ class TypeFlux {
             certificate: document.querySelector('.certificate'),
             pbRibbon: document.getElementById('pb-ribbon'),
             confettiLayer: document.getElementById('confetti-layer'),
+            certTip: document.getElementById('cert-tip'),
+            certTipLang: document.getElementById('cert-tip-lang'),
+            certTipBody: document.getElementById('cert-tip-body'),
             statsStreak: document.getElementById('stats-streak'),
             matrixCanvas: document.getElementById('matrix-rain'),
             
@@ -317,7 +320,8 @@ class TypeFlux {
     
     generateTest() {
         this.reset();
-        
+        this.lastLanguage = null;
+
         switch (this.mode) {
             case 'words':
                 this.words = WordGenerator.generateSequence(this.wordCount);
@@ -332,6 +336,7 @@ class TypeFlux {
                 
             case 'code':
                 const snippet = CodeGenerator.getAny();
+                this.lastLanguage = snippet.language;
                 this.words = [];
                 this.lineBreaks = new Set();
                 snippet.code.split('\n').forEach(line => {
@@ -812,6 +817,27 @@ class TypeFlux {
         // Calculate grade
         const grade = this.calculateGrade(results.wpm, results.accuracy);
         this.elements.resultGrade.textContent = grade;
+
+        // Marginalia tip on the certificate — language-specific for code,
+        // a general typing tip otherwise.
+        if (this.elements.certTip && this.elements.certTipBody) {
+            let tip = null;
+            let label = '';
+            if (results.mode === 'code' && this.lastLanguage) {
+                tip = CodeGenerator.getTip(this.lastLanguage);
+                label = `tip ⁄ ${this.lastLanguage}`;
+            } else {
+                tip = CodeGenerator.getTypingTip();
+                label = 'tip ⁄ of the trial';
+            }
+            if (tip) {
+                if (this.elements.certTipLang) this.elements.certTipLang.textContent = label;
+                this.elements.certTipBody.textContent = tip;
+                this.elements.certTip.classList.add('visible');
+            } else {
+                this.elements.certTip.classList.remove('visible');
+            }
+        }
     }
 
     calculateGrade(wpm, accuracy) {
