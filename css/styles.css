@@ -4056,3 +4056,49 @@ body.ahead-of-ghost:not(.is-urgent) .vellum-frame {
     ::view-transition-old(root),
     ::view-transition-new(root) { animation-duration: 1ms; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   MORE AFFLICTIONS — opt-in burdens, off by default
+   ════════════════════════════════════════════════════════════ */
+
+/* the cramped hand — the letters set tight upon the line */
+body.aff-cramped .words-display { letter-spacing: -0.045em; }
+
+/* the guttering candle — the lantern flickers as in a draught */
+@keyframes affGutter {
+    0%, 100% { opacity: 1; }
+    9%   { opacity: 0.5; }
+    13%  { opacity: 0.92; }
+    41%  { opacity: 0.66; }
+    45%  { opacity: 1; }
+    72%  { opacity: 0.46; }
+    77%  { opacity: 0.9; }
+}
+body.aff-gutter:not(.is-urgent) .halo {
+    animation: affGutter 5.5s ease-in-out infinite;
+}
+
+/* the foxed page — age-stains bloom across the vellum */
+body.aff-foxed .vellum-frame::after {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    pointer-events: none;
+    z-index: 2;
+    background:
+        radial-gradient(ellipse 13% 9%  at 21% 28%, rgba(124, 84, 38, 0.26), transparent 70%),
+        radial-gradient(ellipse 9%  7%  at 73% 22%, rgba(124, 84, 38, 0.20), transparent 72%),
+        radial-gradient(ellipse 15% 11% at 82% 70%, rgba(110, 72, 34, 0.24), transparent 70%),
+        radial-gradient(ellipse 8%  7%  at 36% 78%, rgba(124, 84, 38, 0.18), transparent 72%),
+        radial-gradient(ellipse 6%  5%  at 55% 48%, rgba(110, 72, 34, 0.16), transparent 74%),
+        radial-gradient(ellipse 5%  6%  at 12% 62%, rgba(124, 84, 38, 0.16), transparent 74%);
+}
+
+/* the heavy air — the ink wans, its contrast washed thin */
+body.aff-heavy .words-display {
+    filter: contrast(0.68) brightness(0.93) saturate(0.62);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.aff-gutter:not(.is-urgent) .halo { animation: none; opacity: 0.62; }
+}

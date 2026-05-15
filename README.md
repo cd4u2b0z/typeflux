@@ -64,7 +64,7 @@ The **glass is optional** across words, quotes, prose, and code. A **words** tri
 - **Word-pop.** Each correctly-completed word scales briefly and breathes a gold halo — the page acknowledges you.
 - **Ready countdown.** Before a *timed* trial, an engraved ring rises and counts *III · II · I · GO* — a glass is about to run. Untimed passages, count-bound words, and zen begin straight away. Toggleable at the desk.
 - **Last-5-second urgency.** When the glass falls under five, the vellum rim flares crimson, corners flicker, the timer numeral thumps — and the wider room responds: the lantern halo warms to crimson and breathes; drifting motes shift colour; matrix rain (if active) turns its heads to amber. Gentle, not strobing.
-- **Ghost runs — race thy past best.** When you complete a `words` trial faster than your prior best for that exact format (e.g. `words 25 @ 30s`), the run is sealed as a **ghost**: a translucent teal cursor that, on every subsequent trial of the same format, replays its pace word-by-word. A small flag floats above it: *your best · N wpm*. When you fall behind it goes gold. Set new ghosts; race them; break them.
+- **Ghost runs — race thy past best.** Beat your prior best for a format and the run is sealed as a **ghost**: a translucent teal cursor that, on every subsequent trial, replays its pace word-by-word. A flag floats above it — *your best · N wpm* — and when you fall behind it goes gold and the field warms. The tracer races you in **every manner of trial** — words, quotes, prose, code (the content may differ run to run, so it paces by word index, a fair rival for the sport of it). Toggle it off at the desk if you'd rather run alone.
 - **A counsel above the field.** A quiet one-line italic above the vellum, drawn from your recent trials — *"a ghost waits for this format at 67 wpm — race it"*, *"thy accuracy hath slipped of late — slow thy pace"*, *"thy pace hath plateaued near 54 wpm — try a longer glass."* Hidden when there's nothing useful to say.
 - **Fervor seal.** A circular medallion that breathes gold at five hits, ignites amber **fire** at ten, and burns crimson **blaze** at twenty-five.
 - **The letterpress.** The caret has mass — it stretches in the direction of travel on a word advance, taller on a line drop, then settles. Each struck letter presses into the vellum; a wrong one blots with a soft crimson ink-stain.
@@ -169,7 +169,7 @@ The format is versioned (`format: "typeflux-ledger"`, `version: 1`) so a newer e
 
 ### Of Affliction — optional burdens
 
-Four visual debuffs you may take up at your choosing. None intercept input or alter timing — they only test the eye. Combine as you dare; remove them whenever. All respect `prefers-reduced-motion`.
+Eight visual debuffs you may take up at your choosing — all **off by default**. None intercept input or alter timing — they only test the eye. Combine as you dare; remove them whenever. All respect `prefers-reduced-motion`.
 
 | affliction | what it does |
 |---|---|
@@ -177,6 +177,10 @@ Four visual debuffs you may take up at your choosing. None intercept input or al
 | **the fading ink** | words past dim to a faint impression behind you |
 | **the dim lantern** | the lantern halo darkens and gutters; the room sinks into shadow |
 | **the narrow eye** | the field is veiled at its left, right, top and bottom — only the centre is plain |
+| **the cramped hand** | the letters are set tight upon the line, crowding the eye |
+| **the guttering candle** | the lantern light flickers and gutters as if caught in a draught |
+| **the foxed page** | age-stains bloom across the vellum, mottling the field |
+| **the heavy air** | the ink wans, its contrast washed thin as through a haze |
 
 ## The Certificate
 

@@ -193,6 +193,11 @@ class TypeFlux {
             affFade: document.getElementById('aff-fade'),
             affLantern: document.getElementById('aff-lantern'),
             affNarrow: document.getElementById('aff-narrow'),
+            affCramped: document.getElementById('aff-cramped'),
+            affGutter: document.getElementById('aff-gutter'),
+            affFoxed: document.getElementById('aff-foxed'),
+            affHeavy: document.getElementById('aff-heavy'),
+            ghostTracer: document.getElementById('ghost-tracer'),
 
             ambientEffects: document.getElementById('ambient-effects'),
             ambientIntensity: document.getElementById('ambient-intensity'),
@@ -390,12 +395,26 @@ class TypeFlux {
             el.addEventListener('change', (e) => {
                 this.updateSetting(settingKey, e.target.checked);
                 document.body.classList.toggle(bodyClass, e.target.checked);
+                // Some afflictions reflow the field — re-seat the caret.
+                this.updateCursorPosition();
             });
         };
         bindAffliction(this.elements.affMist,    'affMist',    'aff-mist');
         bindAffliction(this.elements.affFade,    'affFade',    'aff-fade');
         bindAffliction(this.elements.affLantern, 'affLantern', 'aff-lantern');
         bindAffliction(this.elements.affNarrow,  'affNarrow',  'aff-narrow');
+        bindAffliction(this.elements.affCramped, 'affCramped', 'aff-cramped');
+        bindAffliction(this.elements.affGutter,  'affGutter',  'aff-gutter');
+        bindAffliction(this.elements.affFoxed,   'affFoxed',   'aff-foxed');
+        bindAffliction(this.elements.affHeavy,   'affHeavy',   'aff-heavy');
+
+        // The ghost tracer — racing thy past best
+        if (this.elements.ghostTracer) {
+            this.elements.ghostTracer.addEventListener('change', (e) => {
+                this.updateSetting('ghostTracer', e.target.checked);
+                this.generateTest();
+            });
+        }
 
         // Ambient effects toggle + intensity knob
         if (this.elements.ambientEffects) {
@@ -679,14 +698,15 @@ class TypeFlux {
         this.updateTimer();
         this.updateCursorPosition();
 
-        // Load the ghost for this format bucket — only meaningful for words
-        // mode, which is the only mode where the same seed-bucket has
-        // comparable runs. Quote/code/zen would need same-snippet matching
-        // which is a richer feature; leave them ghost-less for now.
+        // Load the ghost for this format bucket. The tracer races thy
+        // best run in ANY manner of trial — the content may differ run
+        // to run (a fresh quote each time), so the ghost paces by word
+        // index, a fair rival for the sport of it. Zen has no conclusion
+        // to record, so it alone is ghost-less.
         this.ghost = null;
         this.ghostWordIndex = 0;
         if (this.elements.ghostCursor) this.elements.ghostCursor.classList.remove('active', 'behind');
-        if (this.mode === 'words') {
+        if (this.mode !== 'zen' && this.settings.ghostTracer !== false) {
             const [gw, gt] = this.ghostBucket();
             const g = Storage.getGhost(this.mode, gw, gt);
             if (g && Array.isArray(g.wordTimes) && g.wordTimes.length > 0) {
@@ -722,14 +742,17 @@ class TypeFlux {
         return words;
     }
 
-    /* Ghost bucket args for the current words trial. Time-bound and
-       count-bound runs live in separate buckets — one arg is zeroed so
-       the two never share a ghost. */
+    /* Ghost bucket args for the current trial. Words split time-bound
+       from count-bound; the passage modes split timed from untimed —
+       so a ghost only ever races a comparable run. */
     ghostBucket() {
-        return [
-            this.boundBy === 'count' ? this.wordCount : 0,
-            this.boundBy === 'time'  ? this.timeLimit : 0
-        ];
+        if (this.mode === 'words') {
+            return [
+                this.boundBy === 'count' ? this.wordCount : 0,
+                this.boundBy === 'time'  ? this.timeLimit : 0
+            ];
+        }
+        return [0, this.effectiveBound() === 'time' ? this.timeLimit : 0];
     }
 
     /* Context-aware manifest. The Glass governs words AND quotes/prose/
@@ -1551,12 +1574,16 @@ class TypeFlux {
         // Save ghost if this run is the best for its bucket — only words mode
         // gets ghosts (other modes need same-snippet matching to be meaningful).
         let ghostUpdated = false;
-        if (this.mode === 'words' && this.runWordTimes.length > 0) {
+        if (this.mode !== 'zen' && this.settings.ghostTracer !== false
+            && this.runWordTimes.length > 0) {
             const [gw, gt] = this.ghostBucket();
             ghostUpdated = Storage.maybeSaveGhost(this.mode, gw, gt, {
                 wpm: results.wpm,
                 accuracy: results.accuracy,
-                words: this.words.slice(0, this.runWordTimes.length),
+                // Positioning replays by word index, not text — only words
+                // mode needs the words kept; others stay lean.
+                words: this.mode === 'words'
+                    ? this.words.slice(0, this.runWordTimes.length) : [],
                 wordTimes: this.runWordTimes
             });
         }
@@ -1867,7 +1894,7 @@ class TypeFlux {
         }
 
         // Suggest a ghost race when one exists for the current format
-        if (this.mode === 'words') {
+        if (this.mode !== 'zen' && this.settings.ghostTracer !== false) {
             const [gw, gt] = this.ghostBucket();
             const g = Storage.getGhost(this.mode, gw, gt);
             if (g) {
@@ -2762,6 +2789,9 @@ class TypeFlux {
         if (this.elements.adaptiveField) {
             this.elements.adaptiveField.checked = this.settings.adaptiveField !== false;
         }
+        if (this.elements.ghostTracer) {
+            this.elements.ghostTracer.checked = this.settings.ghostTracer !== false;
+        }
 
         // Apply afflictions on load — checkbox + body class
         const setAfflict = (el, key, cls) => {
@@ -2773,6 +2803,10 @@ class TypeFlux {
         setAfflict(this.elements.affFade,    'affFade',    'aff-fade');
         setAfflict(this.elements.affLantern, 'affLantern', 'aff-lantern');
         setAfflict(this.elements.affNarrow,  'affNarrow',  'aff-narrow');
+        setAfflict(this.elements.affCramped, 'affCramped', 'aff-cramped');
+        setAfflict(this.elements.affGutter,  'affGutter',  'aff-gutter');
+        setAfflict(this.elements.affFoxed,   'affFoxed',   'aff-foxed');
+        setAfflict(this.elements.affHeavy,   'affHeavy',   'aff-heavy');
 
         // Ambient settings — toggle + intensity
         const ambientOn = this.settings.ambientEffects !== false;

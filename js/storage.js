@@ -43,6 +43,11 @@ const Storage = {
         affFade: false,
         affLantern: false,
         affNarrow: false,
+        affCramped: false,
+        affGutter: false,
+        affFoxed: false,
+        affHeavy: false,
+        ghostTracer: true,
         ambientEffects: true,
         ambientIntensity: 60,
         adaptiveField: true,
@@ -292,12 +297,11 @@ const Storage = {
     // The next time you start a trial in the same bucket, the ghost
     // replays at the same pace as a translucent cursor.
     // ─────────────────────────────────────────────────────────────
-    ghostKey(mode, wordCount, timeLimit) {
-        if (mode === 'words')  return `words:${wordCount}@${timeLimit}`;
-        if (mode === 'quotes') return `quotes`;
-        if (mode === 'code')   return `code`;
-        if (mode === 'zen')    return `zen`;
-        return `${mode}`;
+    /* A ghost bucket key. Words split time/count; the passage modes
+       split timed-duration from untimed — so a ghost only ever races
+       a comparable run. Uniform across modes. */
+    ghostKey(mode, a, b) {
+        return `${mode}:${a || 0}@${b || 0}`;
     },
 
     getGhost(mode, wordCount, timeLimit) {
