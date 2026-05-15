@@ -50,8 +50,8 @@ Modern only — Firefox, Chrome, LibreWolf, Brave, Edge, Safari. No browser exte
 
 Five manners of trial, set upon a vellum field with gold corner brackets:
 
-- **words** — random words drawn from a curated lexicon
-- **quotes** — passages from authors, programmers, and thinkers
+- **words** — random words drawn from five curated lexicons (common, medium, advanced, programming, rhythmic flow) — two hundred words apiece
+- **quotes** — over 1,600 attributed lines: film and television, world and American history, authors and poets, philosophers, and the classic public-domain library
 - **prose** — real, everyday English: working correspondence and plain talk, set as coherent passages. The sentences a hand actually writes on a working day — meeting follow-ups, plans for the weekend, the kind of text you type for real.
 - **code** — real snippets across fifteen languages: JavaScript, TypeScript, Python, Rust, Go, C, C++, Zig, Ruby, Lua, Bash, SQL, Haskell, HTML, CSS. **Indentation is real** — every space, tab, and line break is a required keystroke. Lines are completed with `Enter`; indent depth shows as faint middle-dots so the eye reads it without ambiguity. The active line gets a gold rule down its left edge.
 - **zen** — a **truly endless** stream, for the practice of pure flow. No glass, no word count, no grade, no conclusion — the buffer is topped up as you go, and the trial ends only when you walk away.
