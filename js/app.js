@@ -204,6 +204,22 @@ class TypeFlux {
             typeNext:    document.getElementById('type-next'),
             typeNextBody: document.getElementById('type-next-body'),
 
+            // Restart tease — the reason the hand returns
+            restartLabel: document.getElementById('restart-label'),
+
+            // The typewright — persistent rank + nemesis
+            deviceRank:    document.getElementById('device-rank'),
+            rankName:      document.getElementById('rank-name'),
+            rankMotto:     document.getElementById('rank-motto'),
+            rankBarFill:   document.getElementById('rank-bar-fill'),
+            rankNext:      document.getElementById('rank-next'),
+            rankSeal:        document.getElementById('rank-seal'),
+            rankSealNumeral: document.getElementById('rank-seal-numeral'),
+            nemesisPlate:  document.getElementById('nemesis-plate'),
+            nemesisWord:   document.getElementById('nemesis-word'),
+            nemesisCount:  document.getElementById('nemesis-count'),
+            nemesisSettle: document.getElementById('nemesis-settle'),
+
             // Toast
             toastContainer: document.getElementById('toast-container')
         };
@@ -261,6 +277,11 @@ class TypeFlux {
         
         // Clear stats
         this.elements.clearStats.addEventListener('click', () => this.clearStats());
+
+        // Nemesis — settle the score
+        if (this.elements.nemesisSettle) {
+            this.elements.nemesisSettle.addEventListener('click', () => this.settleNemesis());
+        }
         
         // Theme toggle
         this.elements.themeToggle.addEventListener('click', () => this.cycleTheme());
@@ -478,15 +499,24 @@ class TypeFlux {
     showResults() {
         this.elements.viewTest.classList.remove('active');
         this.elements.viewResults.classList.add('active');
-        
-        // Animate results
+
+        // Staged reveal — clear then re-add the class after a forced
+        // reflow so the cascade animations restart every trial.
+        const cert = this.elements.certificate;
+        if (cert) {
+            cert.classList.remove('reveal');
+            void cert.offsetWidth;
+            cert.classList.add('reveal');
+        }
+
+        // Draw the pace chart as its plate cascades into view.
         setTimeout(() => {
             ChartSystem.drawWpmChart(
                 this.elements.wpmChart,
                 this.wpmHistory,
                 this.rawWpmHistory
             );
-        }, 300);
+        }, 900);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -563,7 +593,18 @@ class TypeFlux {
                 this.words = WordGenerator.generateSequence(this.wordCount);
                 this.timerValue = this.timeLimit;
         }
-        
+
+        // Nemesis trial — lace the field with the word that has felled
+        // the hand most, so the score may be settled head-on.
+        if (this.mode === 'words' && this._nemesisInject) {
+            const foe = this._nemesisInject;
+            this._nemesisInject = null;
+            const step = Math.max(3, Math.floor(this.words.length / 6));
+            for (let k = 1; k < this.words.length; k += step) {
+                this.words[k] = foe;
+            }
+        }
+
         this.renderWords();
         this.updateTimer();
         this.updateCursorPosition();
@@ -663,6 +704,157 @@ class TypeFlux {
             });
             container.appendChild(wordEl);
         });
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Near-miss tease — the reason the hand presses "again"
+    // ─────────────────────────────────────────────────────────────
+    restartTease(results, previousBest, isPB, hadPrior) {
+        if (isPB) return 'thy finest hand yet — once more';
+
+        // Shy of thy best by a hair
+        if (hadPrior && previousBest > 0) {
+            const gap = previousBest - results.wpm;
+            if (gap > 0 && gap <= 5) {
+                return `${gap} wpm shy of thy best — again`;
+            }
+        }
+
+        // A breath from the next grade
+        const grades = [
+            { g: 'S+', s: 100 }, { g: 'S', s: 80 }, { g: 'A+', s: 65 },
+            { g: 'A', s: 55 }, { g: 'B+', s: 45 }, { g: 'B', s: 35 },
+            { g: 'C+', s: 25 }, { g: 'C', s: 15 }
+        ];
+        const score = results.wpm * (results.accuracy / 100);
+        let next = null;
+        for (let i = grades.length - 1; i >= 0; i--) {
+            if (grades[i].s > score) { next = grades[i]; break; }
+        }
+        if (next && next.s - score <= 5) {
+            return `a breath from an ${next.g} — again`;
+        }
+
+        // So near a clean hand
+        if (results.accuracy >= 96 && results.accuracy < 100) {
+            return 'so near a clean hand — again';
+        }
+
+        return 'a fresh trial';
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Rolling number — eased count to a target. A number that snaps
+    // reads as a glitch; a number that rolls reads as a verdict.
+    // ─────────────────────────────────────────────────────────────
+    rollNumber(el, to, opts = {}) {
+        if (!el) return;
+        const { duration = 800, delay = 0, suffix = '' } = opts;
+        const target = Math.round(to) || 0;
+
+        // Honour reduced-motion — land the value at once.
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            el.textContent = `${target}${suffix}`;
+            return;
+        }
+
+        const ease = (t) => 1 - Math.pow(1 - t, 3); // easeOutCubic
+        const startAt = performance.now() + delay;
+        el.textContent = `0${suffix}`;
+        const tick = (now) => {
+            if (now < startAt) { requestAnimationFrame(tick); return; }
+            const t = Math.min(1, (now - startAt) / duration);
+            el.textContent = `${Math.round(target * ease(t))}${suffix}`;
+            if (t < 1) requestAnimationFrame(tick);
+            else el.textContent = `${target}${suffix}`;
+        };
+        requestAnimationFrame(tick);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // The typewright — persistent rank + nemesis word
+    // ─────────────────────────────────────────────────────────────
+    updateIdentity() {
+        const stats = Storage.getStats() || Storage.getDefaultStats();
+        const rank  = Storage.getRank(stats);
+
+        // Frontispiece chip
+        if (this.elements.deviceRank) this.elements.deviceRank.textContent = rank.name;
+
+        // Ledger rank plate
+        if (this.elements.rankName)  this.elements.rankName.textContent  = rank.name;
+        if (this.elements.rankMotto) this.elements.rankMotto.textContent = `— ${rank.motto} —`;
+
+        // The wax seal — its detail grows with the tier; the numeral is
+        // the tier in Roman.
+        const tierRoman = ['I', 'II', 'III', 'IV', 'V', 'VI'];
+        if (this.elements.rankSeal) {
+            this.elements.rankSeal.style.setProperty('--tier', rank.index);
+        }
+        if (this.elements.rankSealNumeral) {
+            this.elements.rankSealNumeral.textContent = tierRoman[rank.index] || 'I';
+        }
+
+        if (this.elements.rankBarFill && this.elements.rankNext) {
+            if (rank.next) {
+                const tHave = stats.testsCompleted || 0, tNeed = rank.next.trials;
+                const wHave = stats.bestWpm || 0,        wNeed = rank.next.wpm;
+                const tRatio = tNeed ? Math.min(1, tHave / tNeed) : 1;
+                const wRatio = wNeed ? Math.min(1, wHave / wNeed) : 1;
+                this.elements.rankBarFill.style.width =
+                    `${Math.round(Math.min(tRatio, wRatio) * 100)}%`;
+                if (tRatio <= wRatio) {
+                    const left = Math.max(0, tNeed - tHave);
+                    this.elements.rankNext.textContent =
+                        `${left} trial${left === 1 ? '' : 's'} to ${rank.next.name}`;
+                } else {
+                    const left = Math.max(0, wNeed - wHave);
+                    this.elements.rankNext.textContent =
+                        `raise thy best ${left} wpm for ${rank.next.name}`;
+                }
+            } else {
+                this.elements.rankBarFill.style.width = '100%';
+                this.elements.rankNext.textContent = 'the summit — no rank lies beyond';
+            }
+        }
+
+        // Nemesis
+        const nem = Storage.getNemesis();
+        if (this.elements.nemesisPlate) {
+            if (nem && nem.count > 0) {
+                this.elements.nemesisPlate.classList.add('has-nemesis');
+                if (this.elements.nemesisWord)  this.elements.nemesisWord.textContent = nem.word;
+                if (this.elements.nemesisCount) {
+                    this.elements.nemesisCount.textContent =
+                        `it hath felled thy hand ${nem.count} time${nem.count === 1 ? '' : 's'}`;
+                }
+            } else {
+                this.elements.nemesisPlate.classList.remove('has-nemesis');
+                if (this.elements.nemesisWord)  this.elements.nemesisWord.textContent = '—';
+                if (this.elements.nemesisCount) this.elements.nemesisCount.textContent = 'no foe yet named';
+            }
+        }
+    }
+
+    /* Settle the score — a count-bound words trial laced with the
+       nemesis word, opened straight away. */
+    settleNemesis() {
+        const nem = Storage.getNemesis();
+        if (!nem) {
+            this.showToast('no nemesis is yet named — type on', 'info');
+            return;
+        }
+        this._nemesisInject = nem.word;
+        this.mode = 'words';
+        this.boundBy = 'count';
+        this.updateSetting('boundBy', 'count');
+        document.querySelectorAll('.mode-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.mode === 'words');
+        });
+        this.switchView('test');
+        this.generateTest();
+        this.elements.hiddenInput.focus();
+        this.showToast(`face thy nemesis — ${nem.word}`, 'info');
     }
 
     renderWords() {
@@ -1151,10 +1343,18 @@ class TypeFlux {
         const prevStats = Storage.getStats() || { bestWpm: 0, testsCompleted: 0 };
         const previousBest = prevStats.bestWpm || 0;
         const hadPriorTests = (prevStats.testsCompleted || 0) > 0;
+        const rankBefore = Storage.getRank(prevStats);
 
         const results = this.calculateResults();
         Storage.addTest(results);
 
+        // Lifetime miss tally — feeds the nemesis. Code "words" are whole
+        // lines, not real words, so they are kept out of the reckoning.
+        if (this.mode !== 'code') {
+            Storage.recordMisses(this.wordMisses);
+        }
+
+        const rankAfter = Storage.getRank(Storage.getStats());
         const isPersonalBest = hadPriorTests && results.wpm > previousBest;
 
         // Save ghost if this run is the best for its bucket — only words mode
@@ -1180,8 +1380,11 @@ class TypeFlux {
             SoundSystem.testComplete();
         }
 
-        this.displayResults(results);
+        // The certificate is staged: reveal the surface first, then
+        // write its content so the cascade animations catch every part.
+        this._restartTease = this.restartTease(results, previousBest, isPersonalBest, hadPriorTests);
         this.showResults();
+        this.displayResults(results);
 
         // PB ribbon + confetti — fire after the certificate is on screen
         if (this.elements.certificate) {
@@ -1229,6 +1432,18 @@ class TypeFlux {
 
         // Render the stumble panel — top-3 missed words + a counsel line.
         this.renderStumble();
+
+        // Rank raised — a quiet honour, distinct from the seals, landed
+        // after the certificate's reveal has settled.
+        if (rankAfter.index > rankBefore.index) {
+            setTimeout(() => {
+                this.showToast(`the desk raises thee — ${rankAfter.name}`, 'success');
+                SoundSystem.newRecord && SoundSystem.newRecord();
+            }, 1700);
+        }
+
+        // Refresh the persistent identity — frontispiece chip + ledger.
+        this.updateIdentity();
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -1662,8 +1877,15 @@ class TypeFlux {
     }
 
     displayResults(results) {
-        this.elements.resultWpm.textContent = results.wpm;
-        this.elements.resultAccuracy.textContent = `${results.accuracy}%`;
+        // The two hero numbers roll up as the grand plate cascades in.
+        this.rollNumber(this.elements.resultWpm, results.wpm, { delay: 560, duration: 880 });
+        this.rollNumber(this.elements.resultAccuracy, results.accuracy, { delay: 620, duration: 760, suffix: '%' });
+
+        // The restart button carries the reason to press it again.
+        if (this.elements.restartLabel) {
+            this.elements.restartLabel.textContent = this._restartTease || 'a fresh trial';
+        }
+
         this.elements.resultRaw.textContent = results.rawWpm;
         this.elements.resultChars.textContent = `${results.characters.correct}/${results.characters.incorrect}/${results.characters.total}`;
         this.elements.resultConsistency.textContent = `${results.consistency}%`;
@@ -1988,7 +2210,8 @@ class TypeFlux {
         }
 
         this.renderChronicles();
-        
+        this.updateIdentity();
+
         // Render test history
         this.elements.testsList.textContent = '';
 

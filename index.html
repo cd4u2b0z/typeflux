@@ -38,6 +38,7 @@
                     <span class="device-mark">
                         <span class="device-name">TYPEFLUX</span>
                         <span class="device-sub">an account of the typewright</span>
+                        <span class="device-rank" id="device-rank">Apprentice of the Desk</span>
                     </span>
                 </a>
 
@@ -363,7 +364,7 @@
 
                     <div class="cert-actions">
                         <button class="btn btn-primary" id="restart-btn">
-                            <span class="btn-numeral">↻</span> a fresh trial
+                            <span class="btn-numeral">↻</span> <span class="btn-label" id="restart-label">a fresh trial</span>
                         </button>
                         <button class="btn btn-secondary" id="share-btn">
                             <span class="btn-numeral">⎘</span> copy this account
@@ -381,6 +382,34 @@
                     <span class="plate-subtitle">an account of all trials past, kept by your hand</span>
                 </div>
                 <div class="plate-rule" aria-hidden="true"><span class="rule-pip">· · ·</span></div>
+
+                <!-- The typewright — persistent identity: rank carried
+                     across sessions, and the nemesis word that has
+                     felled the hand most across all trials past. -->
+                <div class="typewright-banner">
+                    <article class="rank-plate">
+                        <div class="rank-seal" id="rank-seal" style="--tier:0">
+                            <span class="rank-seal-numeral" id="rank-seal-numeral">I</span>
+                        </div>
+                        <div class="rank-body">
+                            <span class="rank-eyebrow">rank of the typewright</span>
+                            <span class="rank-name" id="rank-name">Apprentice of the Desk</span>
+                            <span class="rank-motto" id="rank-motto">— the first nib is cut —</span>
+                            <div class="rank-track">
+                                <div class="rank-bar"><span class="rank-bar-fill" id="rank-bar-fill"></span></div>
+                                <span class="rank-next" id="rank-next">—</span>
+                            </div>
+                        </div>
+                    </article>
+                    <article class="nemesis-plate" id="nemesis-plate">
+                        <span class="nemesis-eyebrow">thy nemesis</span>
+                        <span class="nemesis-word" id="nemesis-word">—</span>
+                        <span class="nemesis-count" id="nemesis-count">no foe yet named</span>
+                        <button class="btn btn-secondary" id="nemesis-settle">
+                            <span class="btn-numeral">⚔</span> settle the score
+                        </button>
+                    </article>
+                </div>
 
                 <div class="stats-overview">
                     <article class="stat-card">

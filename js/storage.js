@@ -9,8 +9,21 @@ const Storage = {
         TESTS: 'typeflux_tests',
         STATS: 'typeflux_stats',
         ACHIEVEMENTS: 'typeflux_achievements',
-        GHOSTS: 'typeflux_ghosts'
+        GHOSTS: 'typeflux_ghosts',
+        MISSES: 'typeflux_misses'
     },
+
+    // The rank ladder — a persistent title the typewright carries,
+    // raised by trials weathered and the crest of pace reached. Each
+    // rank requires BOTH a trial count and a best-WPM mark.
+    RANKS: [
+        { name: 'Apprentice of the Desk', motto: 'the first nib is cut',         trials: 0,   wpm: 0   },
+        { name: 'Scrivener',              motto: 'a steady hand at the page',    trials: 10,  wpm: 40  },
+        { name: 'Copyist',                motto: 'the ledger fills by thy hand', trials: 30,  wpm: 60  },
+        { name: 'Cartographer',           motto: 'thou mappest the whole field', trials: 75,  wpm: 80  },
+        { name: 'Master Typewright',      motto: 'the press answers thy will',   trials: 150, wpm: 100 },
+        { name: 'Grand Archivist',        motto: 'keeper of every glass run',    trials: 300, wpm: 120 }
+    ],
 
     // Default settings
     defaultSettings: {
@@ -310,6 +323,59 @@ const Storage = {
         try { localStorage.removeItem(this.KEYS.GHOSTS); } catch (e) {}
     },
 
+    // ─────────────────────────────────────────────────────────────
+    // Rank — derived purely from career stats, never stored.
+    // ─────────────────────────────────────────────────────────────
+    getRank(stats) {
+        const s = stats || this.getStats() || this.getDefaultStats();
+        const trials = s.testsCompleted || 0;
+        const wpm = s.bestWpm || 0;
+        let idx = 0;
+        this.RANKS.forEach((r, i) => {
+            if (trials >= r.trials && wpm >= r.wpm) idx = i;
+        });
+        return { ...this.RANKS[idx], index: idx, next: this.RANKS[idx + 1] || null };
+    },
+
+    // ─────────────────────────────────────────────────────────────
+    // Misses — a cumulative tally of every word the hand has faltered
+    // on, across all trials. The nemesis is simply the word with the
+    // most falls to its name.
+    // ─────────────────────────────────────────────────────────────
+    getMisses() {
+        try {
+            const data = localStorage.getItem(this.KEYS.MISSES);
+            return data ? JSON.parse(data) : {};
+        } catch (e) { return {}; }
+    },
+
+    /* Merge one trial's per-word miss tally into the lifetime record. */
+    recordMisses(missMap) {
+        if (!missMap || typeof missMap !== 'object') return;
+        try {
+            const all = this.getMisses();
+            for (const [word, n] of Object.entries(missMap)) {
+                if (!word || !n) continue;
+                all[word] = (all[word] || 0) + n;
+            }
+            localStorage.setItem(this.KEYS.MISSES, JSON.stringify(all));
+        } catch (e) {}
+    },
+
+    /* The word that has felled the hand most. null until one is named. */
+    getNemesis() {
+        const all = this.getMisses();
+        let word = null, count = 0;
+        for (const [w, n] of Object.entries(all)) {
+            if (n > count) { word = w; count = n; }
+        }
+        return word ? { word, count } : null;
+    },
+
+    clearMisses() {
+        try { localStorage.removeItem(this.KEYS.MISSES); } catch (e) {}
+    },
+
     /* Returns true if newly unlocked, false if already had it */
     unlockAchievement(id) {
         const s = this.getAchievementState();
@@ -380,6 +446,7 @@ const Storage = {
             localStorage.removeItem(this.KEYS.STATS);
             localStorage.removeItem(this.KEYS.ACHIEVEMENTS);
             localStorage.removeItem(this.KEYS.GHOSTS);
+            localStorage.removeItem(this.KEYS.MISSES);
             this.init();
             return true;
         } catch (e) {
@@ -391,6 +458,7 @@ const Storage = {
     clearTests() {
         this.saveTests([]);
         this.saveStats(this.getDefaultStats());
+        this.clearMisses();
     },
 
     /* The vault — full snapshot of everything localStorage holds for
@@ -407,7 +475,8 @@ const Storage = {
             tests: this.getTests() || [],
             stats: this.getStats() || this.getDefaultStats(),
             achievements: this.getAchievementState(),
-            ghosts
+            ghosts,
+            misses: this.getMisses()
         };
     },
 
@@ -432,6 +501,11 @@ const Storage = {
             }
             if (data.ghosts && typeof data.ghosts === 'object') {
                 try { localStorage.setItem(this.KEYS.GHOSTS, JSON.stringify(data.ghosts)); } catch (e) {}
+            }
+            if (data.misses && typeof data.misses === 'object') {
+                try { localStorage.setItem(this.KEYS.MISSES, JSON.stringify(data.misses)); } catch (e) {}
+            } else {
+                this.clearMisses();
             }
             return { ok: true };
         } catch (e) {

@@ -3423,3 +3423,378 @@ body.ambient-off { --ambient-intensity: 0; }
     color: var(--ink-dim);
     letter-spacing: 0.02em;
 }
+
+/* ════════════════════════════════════════════════════════════
+   THE TYPEWRIGHT — persistent rank chip + ledger identity banner
+   ════════════════════════════════════════════════════════════ */
+
+.device-rank {
+    align-self: flex-start;
+    margin-top: 4px;
+    padding: 2px 8px;
+    font-family: var(--font-display);
+    font-size: 0.56rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid var(--gold-deep);
+    background: var(--bg-elevated);
+}
+
+.typewright-banner {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: var(--space-5);
+    margin-bottom: var(--space-8);
+}
+@media (max-width: 760px) {
+    .typewright-banner { grid-template-columns: 1fr; }
+}
+
+.rank-plate,
+.nemesis-plate {
+    position: relative;
+    background: var(--bg-card);
+}
+
+/* ── The rank plate — a pressed wax seal beside the title ─────── */
+.rank-plate {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    padding: var(--space-5) var(--space-6);
+    border: 1px solid var(--gold-deep);
+}
+
+.rank-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+/* the wax seal — its detail grows with --tier (0..5), set by JS */
+.rank-seal {
+    --tier: 0;
+    position: relative;
+    flex: 0 0 84px;
+    width: 84px;
+    height: 84px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* an organic, hand-pressed rim — not a perfect circle */
+    border-radius: 49% 51% 52% 48% / 51% 49% 51% 49%;
+    background: radial-gradient(circle at 36% 30%,
+        var(--gold) 0%, var(--gold) 30%, var(--gold-deep) 80%);
+    box-shadow:
+        inset 0 3px 6px rgba(255, 255, 255, 0.30),
+        inset 0 -6px 12px rgba(0, 0, 0, 0.45),
+        0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+/* engraved tick ring — fades up across the lower ranks */
+.rank-seal::before {
+    content: "";
+    position: absolute;
+    inset: 7px;
+    border-radius: 50%;
+    background: repeating-conic-gradient(from 0deg,
+        var(--gold-deep) 0deg 1.6deg,
+        transparent 1.6deg 15deg);
+    -webkit-mask: radial-gradient(circle, transparent 60%, #000 62%, #000 72%, transparent 74%);
+            mask: radial-gradient(circle, transparent 60%, #000 62%, #000 72%, transparent 74%);
+    opacity: clamp(0, calc(var(--tier) / 4), 1);
+}
+
+/* an outer ring + radiant glow — the upper ranks earn it */
+.rank-seal::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1px solid var(--gold);
+    box-shadow: 0 0 20px var(--gold-glow);
+    opacity: clamp(0, calc((var(--tier) - 2) / 3), 1);
+}
+
+.rank-seal-numeral {
+    position: relative;
+    z-index: 1;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.7rem;
+    color: var(--bg-primary);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.rank-eyebrow {
+    font-family: var(--font-display);
+    font-size: 0.62rem;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.85;
+}
+
+.rank-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.5rem;
+    letter-spacing: var(--tracking-engraved);
+    color: var(--ink);
+    text-shadow: 0 0 20px var(--gold-glow);
+}
+
+.rank-motto {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 0.92rem;
+    color: var(--ink-dim);
+}
+
+.rank-track {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+}
+
+.rank-bar {
+    flex: 1;
+    height: 5px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--rule-faint);
+    overflow: hidden;
+}
+
+.rank-bar-fill {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, var(--gold-deep), var(--gold));
+    box-shadow: 0 0 10px var(--gold-glow);
+    transition: width 1000ms var(--ease-engraved);
+}
+
+.rank-next {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 0.78rem;
+    color: var(--ink-dim);
+    white-space: nowrap;
+}
+
+/* ── The nemesis — a grievance nailed askew to the desk ──────── */
+.nemesis-plate {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: var(--space-6) var(--space-5) var(--space-5);
+    text-align: center;
+    border: 1px solid var(--rule-faint);
+    overflow: hidden;
+    transition: transform 260ms var(--ease-engraved),
+                border-color 260ms var(--ease-engraved);
+}
+
+/* charged when a foe is named — crimson rim, pinned off-true */
+.nemesis-plate.has-nemesis {
+    border-color: var(--error);
+    transform: rotate(-1.7deg);
+}
+.nemesis-plate.has-nemesis:hover { transform: rotate(0deg); }
+
+/* the tack that pins the writ to the desk */
+.nemesis-plate::before {
+    content: "";
+    position: absolute;
+    top: 7px;
+    left: 50%;
+    width: 9px;
+    height: 9px;
+    margin-left: -4.5px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #d8d2c4 0%, #6b6557 60%, #2a2620 100%);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.6);
+    z-index: 3;
+}
+
+/* crimson ink-stain bleeding behind the foe's name */
+.nemesis-plate::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 52%;
+    width: 74%;
+    height: 48%;
+    transform: translate(-50%, -50%) rotate(-6deg);
+    background:
+        radial-gradient(ellipse 58% 54% at 42% 46%, var(--error), transparent 72%),
+        radial-gradient(ellipse 40% 44% at 66% 60%, var(--error), transparent 70%);
+    filter: blur(7px);
+    opacity: 0;
+    transition: opacity 320ms var(--ease-engraved);
+    z-index: 0;
+}
+.nemesis-plate.has-nemesis::after { opacity: 0.22; }
+
+.nemesis-eyebrow {
+    position: relative;
+    z-index: 1;
+    font-family: var(--font-display);
+    font-size: 0.62rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--error);
+    opacity: 0.9;
+}
+
+.nemesis-word {
+    position: relative;
+    z-index: 1;
+    padding: 2px 4px;
+    font-family: var(--font-mono);
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+    word-break: break-word;
+}
+.nemesis-plate:not(.has-nemesis) .nemesis-word { opacity: 0.3; }
+
+/* a faint crimson score struck through the name — marked, not erased */
+.nemesis-word::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 52%;
+    height: 2px;
+    background: var(--error);
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 440ms var(--ease-engraved) 220ms,
+                opacity 200ms var(--ease-engraved) 220ms;
+}
+.nemesis-plate.has-nemesis .nemesis-word::after {
+    opacity: 0.42;
+    transform: scaleX(1);
+}
+
+.nemesis-count {
+    position: relative;
+    z-index: 1;
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 0.8rem;
+    color: var(--ink-dim);
+    margin-bottom: var(--space-3);
+}
+
+#nemesis-settle {
+    position: relative;
+    z-index: 1;
+    font-size: 0.78rem;
+    padding: var(--space-2) var(--space-4);
+    border-color: var(--error);
+    color: var(--error);
+}
+#nemesis-settle:hover {
+    background: var(--error);
+    color: var(--bg-primary);
+}
+.nemesis-plate:not(.has-nemesis) #nemesis-settle { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    .nemesis-plate,
+    .nemesis-word::after { transition: none; }
+    .nemesis-plate.has-nemesis .nemesis-word::after { transform: scaleX(1); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   STAGED CERTIFICATE REVEAL — the verdict lands part by part
+   ════════════════════════════════════════════════════════════ */
+
+@keyframes cert-rise {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cert-stamp {
+    0%   { opacity: 0; transform: scale(2.3) rotate(-14deg); }
+    55%  { opacity: 1; }
+    78%  { transform: scale(0.94) rotate(2deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+.certificate.reveal .cert-eyebrow,
+.certificate.reveal .cert-title,
+.certificate.reveal .cert-epigraph,
+.certificate.reveal .cert-grand,
+.certificate.reveal .chart-plate,
+.certificate.reveal .cert-stumble,
+.certificate.reveal .cert-honours,
+.certificate.reveal .cert-seal,
+.certificate.reveal .cert-actions {
+    opacity: 0;
+    animation: cert-rise 540ms var(--ease-engraved) forwards;
+}
+.certificate.reveal .cert-eyebrow  { animation-delay: 80ms;   }
+.certificate.reveal .cert-title    { animation-delay: 160ms;  }
+.certificate.reveal .cert-epigraph { animation-delay: 250ms;  }
+.certificate.reveal .cert-grand    { animation-delay: 560ms;  }
+.certificate.reveal .chart-plate   { animation-delay: 1000ms; }
+.certificate.reveal .cert-stumble  { animation-delay: 1140ms; }
+.certificate.reveal .cert-honours  { animation-delay: 1240ms; }
+.certificate.reveal .cert-seal     { animation-delay: 1440ms; }
+.certificate.reveal .cert-actions  { animation-delay: 1540ms; }
+
+/* The grade is stamped onto the page, not raised into it. */
+.certificate.reveal .grade-seal {
+    opacity: 0;
+    animation: cert-stamp 640ms var(--ease-engraved) 380ms forwards;
+}
+
+/* The ledger draws in one hairline row at a time. */
+.certificate.reveal .cert-ledger .ledger-row {
+    opacity: 0;
+    animation: cert-rise 440ms var(--ease-engraved) forwards;
+}
+.certificate.reveal .cert-ledger .ledger-row:nth-child(1) { animation-delay: 720ms;  }
+.certificate.reveal .cert-ledger .ledger-row:nth-child(2) { animation-delay: 800ms;  }
+.certificate.reveal .cert-ledger .ledger-row:nth-child(3) { animation-delay: 880ms;  }
+.certificate.reveal .cert-ledger .ledger-row:nth-child(4) { animation-delay: 960ms;  }
+.certificate.reveal .cert-ledger .ledger-row:nth-child(5) { animation-delay: 1040ms; }
+.certificate.reveal .cert-ledger .ledger-row:nth-child(6) { animation-delay: 1120ms; }
+
+/* The tip keeps its own fade — delayed to land last in the cascade. */
+.certificate.reveal .cert-tip.visible {
+    transition: opacity 420ms var(--ease-engraved) 1340ms,
+                transform 420ms var(--ease-engraved) 1340ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .certificate.reveal .cert-eyebrow,
+    .certificate.reveal .cert-title,
+    .certificate.reveal .cert-epigraph,
+    .certificate.reveal .cert-grand,
+    .certificate.reveal .chart-plate,
+    .certificate.reveal .cert-stumble,
+    .certificate.reveal .cert-honours,
+    .certificate.reveal .cert-seal,
+    .certificate.reveal .cert-actions,
+    .certificate.reveal .grade-seal,
+    .certificate.reveal .cert-ledger .ledger-row {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+    .certificate.reveal .cert-tip.visible {
+        transition: opacity 200ms linear;
+    }
+}

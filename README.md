@@ -87,6 +87,13 @@ Small bronze cards that flash in from the right of the field as you earn them �
 
 ## Plate II — The Ledger
 
+### The typewright — who you become
+
+The ledger opens with a persistent identity carried across every session:
+
+- **Rank** — a title raised by trials weathered and the crest of pace reached, from *Apprentice of the Desk* through *Scrivener*, *Copyist*, *Cartographer*, *Master Typewright*, to *Grand Archivist*. A pressed wax seal sits beside it, its tier engraved in Roman and its detail — tick ring, outer halo — *growing as you rise*. The current rank also rides as a small chip on the frontispiece. Raising it draws a quiet honour, distinct from the seals.
+- **Nemesis** — the single word that has felled your hand most across all trials past, named on a writ pinned askew to the desk with crimson ink bled behind it. **Settle the score** opens a trial laced with that very word.
+
 Each trial is recorded. Five accountings are kept:
 
 | key | what |
@@ -158,6 +165,10 @@ Four visual debuffs you may take up at your choosing. None intercept input or al
 ## The Certificate
 
 Upon conclusion, the trial is sealed: a ringed grade medallion with compass ticks, the grand pace and accuracy in Cinzel caps, a six-row ledger of details, a chart of pace through the glass, and a seal line — *signed this day, by your own hand*.
+
+The certificate is **revealed in stages**, not all at once — the title rises, the grade is *stamped* down, the two grand numbers roll up from nought, the ledger draws in one hairline row at a time, then the chart, defects, and honours follow. An orchestrated reveal, collapsed to a plain fade under `prefers-reduced-motion`.
+
+The **restart button carries the reason to press it** — *"3 wpm shy of thy best — again"*, *"a breath from an S — again"*, *"so near a clean hand — again"*. A fresh trial is never just a fresh trial.
 
 A **marginalia tip** sits beneath, in italic Garamond — a one-line counsel drawn from the language you typed (eight per language, twenty for prose) so the certificate teaches as well as scores.
 
