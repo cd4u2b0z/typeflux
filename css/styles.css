@@ -2910,6 +2910,25 @@ body.aff-narrow .typing-area {
 :root { --ambient-intensity: 0.6; }
 body.ambient-off { --ambient-intensity: 0; }
 
+/* ── A lighter hand — for an older or labouring desk ──────────
+   Stills every *continuous* GPU cost: the ambient atmospheres
+   (which carry the big animated blurs), the lagging cursor
+   trails, the canvas rain, scanlines and motes. The per-keystroke
+   feel (transform-only — .struck / .leap / .drop / word-pop) and
+   the one-shot certificate reveal are left intact: they are cheap
+   and brief. This is reduced-motion's harder-edged cousin. */
+body.lite .ambient,
+body.lite .cursor-trail,
+body.lite .scanlines,
+body.lite .motes,
+body.lite .matrix-rain { display: none !important; }
+
+body.lite .grain { opacity: 0.045; }
+
+/* The blaze tier's drop-shadow pulse loops forever — the one
+   remaining infinite filter animation once ambient is stilled. */
+body.lite .blaze { animation: none !important; }
+
 .ambient {
     position: absolute;
     inset: 0;

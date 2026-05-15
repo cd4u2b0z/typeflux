@@ -106,6 +106,9 @@ class TypeFlux {
 
         // Greet the returning typewright once the desk has settled.
         setTimeout(() => this.showToast(this.returningGreeting(), 'info'), 700);
+
+        // Once the desk has fully settled, take the room's measure.
+        setTimeout(() => this.probePerformance(), 1900);
     }
 
     cacheElements() {
@@ -204,6 +207,7 @@ class TypeFlux {
             ambientEffects: document.getElementById('ambient-effects'),
             ambientIntensity: document.getElementById('ambient-intensity'),
             ambientIntensityValue: document.getElementById('ambient-intensity-value'),
+            liteMode: document.getElementById('lite-mode'),
 
             // The vault — export / import
             exportData: document.getElementById('export-data'),
@@ -487,6 +491,16 @@ class TypeFlux {
                 this.updateSetting('ambientIntensity', v);
                 this.elements.ambientIntensityValue.textContent = `${v}%`;
                 document.documentElement.style.setProperty('--ambient-intensity', (v / 100).toFixed(2));
+            });
+        }
+
+        // A lighter hand — perf relief. Once set by hand, the desk
+        // remembers the choice and the auto-probe stands down.
+        if (this.elements.liteMode) {
+            this.elements.liteMode.addEventListener('change', (e) => {
+                this.updateSetting('lite', e.target.checked);
+                this.updateSetting('liteChosen', true);
+                this.applyLite(e.target.checked);
             });
         }
 
@@ -2290,6 +2304,8 @@ class TypeFlux {
     spawnConfetti(count = 40) {
         const layer = this.elements.confettiLayer;
         if (!layer) return;
+        // A lighter hand throws a thinner fall of leaf.
+        if (this.lite) count = Math.min(count, 12);
         layer.textContent = '';
         const colors = ['var(--gold)', 'var(--teal)', 'var(--forest)', 'var(--plum)', 'var(--ink)'];
         for (let i = 0; i < count; i++) {
@@ -2912,6 +2928,9 @@ class TypeFlux {
         if (this.elements.ambientIntensityValue) this.elements.ambientIntensityValue.textContent = `${intensity}%`;
         document.documentElement.style.setProperty('--ambient-intensity', (intensity / 100).toFixed(2));
 
+        // A lighter hand
+        this.applyLite(!!this.settings.lite);
+
         // Restore the desk — the mode, glass, and count last set, so a
         // returning typewright opens exactly where they left off.
         const sm = this.settings.defaultMode;
@@ -2979,8 +2998,47 @@ class TypeFlux {
     // ─────────────────────────────────────────────────────────────
     // Matrix rain — Canvas2D, only on data-theme="matrix"
     // ─────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────
+    // A lighter hand — perf relief for a labouring desk
+    // ─────────────────────────────────────────────────────────────
+    applyLite(on) {
+        this.lite = !!on;
+        document.body.classList.toggle('lite', this.lite);
+        if (this.elements.liteMode) this.elements.liteMode.checked = this.lite;
+        // The canvas rain is a continuous draw — stop it outright
+        // under a lighter hand; restore it if we leave lite while
+        // the matrix palette is set.
+        if (this.lite) {
+            this.stopMatrixRain();
+        } else if (this.settings.theme === 'matrix' && this.elements.matrixCanvas) {
+            this.startMatrixRain(this.elements.matrixCanvas);
+        }
+    }
+
+    // Sample a second of frames once the desk has settled. A
+    // labouring machine (sub-45fps) is given a lighter hand without
+    // being asked — the choice is then theirs to keep or undo.
+    probePerformance() {
+        if (this.settings.liteChosen || this.settings.lite) return;
+        let frames = 0, start = 0, last = 0;
+        const SAMPLE = 1100;
+        const step = (t) => {
+            if (!start) { start = last = t; requestAnimationFrame(step); return; }
+            frames++;
+            last = t;
+            if (t - start < SAMPLE) { requestAnimationFrame(step); return; }
+            const fps = frames / ((last - start) / 1000);
+            if (fps < 45) {
+                this.updateSetting('lite', true);
+                this.applyLite(true);
+                this.showToast('this desk laboured — eased the hand. plate ii of the registry restores the full atmosphere.', 'info');
+            }
+        };
+        requestAnimationFrame(step);
+    }
+
     startMatrixRain(canvas) {
-        if (this._rainRaf) return;
+        if (this._rainRaf || this.lite) return;
         const ctx = canvas.getContext('2d');
         const glyphs = 'アァカサタナハマヤラワ0123456789{}[]()<>=+-*/&|';
         let cols, drops, w, h, fontPx;
