@@ -48,14 +48,15 @@ Modern only — Firefox, Chrome, LibreWolf, Brave, Edge, Safari. No browser exte
 
 ## Plate I — The Field
 
-Four manners of trial, set upon a vellum field with gold corner brackets:
+Five manners of trial, set upon a vellum field with gold corner brackets:
 
 - **words** — random words drawn from a curated lexicon
 - **quotes** — passages from authors, programmers, and thinkers
+- **prose** — real, everyday English: working correspondence and plain talk, set as coherent passages. The sentences a hand actually writes on a working day — meeting follow-ups, plans for the weekend, the kind of text you type for real.
 - **code** — real snippets across fifteen languages: JavaScript, TypeScript, Python, Rust, Go, C, C++, Zig, Ruby, Lua, Bash, SQL, Haskell, HTML, CSS. **Indentation is real** — every space, tab, and line break is a required keystroke. Lines are completed with `Enter`; indent depth shows as faint middle-dots so the eye reads it without ambiguity. The active line gets a gold rule down its left edge.
-- **zen** — an endless stream, for the practice of pure flow
+- **zen** — a **truly endless** stream, for the practice of pure flow. No glass, no word count, no grade, no conclusion — the buffer is topped up as you go, and the trial ends only when you walk away.
 
-The glass (timer) may be set to 15, 30, 60, or 120 seconds. Count to x, xxv, l, or c.
+A **words** trial is bounded one of two ways, and the manifest makes the contract plain. Choose a **Glass** (15, 30, 60, or 120 seconds) and the trial is *time-bound* — the glass counts down. Choose a **Count** (x, xxv, l, c) and it is *count-bound* — a fixed number of words, the glass counting up. Whichever knob does not govern the current trial is muted; in other modes both fall inert. Every trial is labelled with its unit — `words · 30 seconds`, `words · 25 words` — never a bare, ambiguous number.
 
 ### Kinesthetics — the feel of the keystroke
 
@@ -195,6 +196,7 @@ typeflux/
 │   │                   medals, stamp queue, chronicles render
 │   ├── words.js        word generator + lexicons
 │   ├── quotes.js       quote corpus
+│   ├── sentences.js    everyday-English prose passages
 │   ├── code.js         15-language snippet corpus + tips
 │   ├── achievements.js 22 seals across four orders
 │   ├── sounds.js       Web Audio synthesised keystrokes

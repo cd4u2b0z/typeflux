@@ -414,7 +414,14 @@ body {
     display: flex;
     align-items: center;
     gap: var(--space-3);
+    transition: opacity 240ms var(--ease-engraved);
 }
+
+/* Glass + Count govern only a `words` trial. The non-governing knob is
+   muted; in other modes both fall inert and untouchable, so the
+   manifest never lies about what bounds the trial. */
+.manifest-group.muted { opacity: 0.42; }
+.manifest-group.inert { opacity: 0.24; pointer-events: none; }
 
 .manifest-label {
     font-family: var(--font-display);

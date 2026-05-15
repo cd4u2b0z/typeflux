@@ -10,6 +10,10 @@ class TypeFlux {
         this.mode = 'words';
         this.timeLimit = 30;
         this.wordCount = 25;
+        // How a `words` trial is bounded: 'time' (countdown glass) or
+        // 'count' (fixed number of words, glass counts up). Picking a
+        // Glass duration sets 'time'; picking a Count sets 'count'.
+        this.boundBy = 'time';
         this.isActive = false;
         this.isPaused = false;
         this.isFinished = false;
@@ -495,15 +499,33 @@ class TypeFlux {
 
         switch (this.mode) {
             case 'words':
-                this.words = WordGenerator.generateSequence(this.wordCount);
-                this.timerValue = this.timeLimit;
+                if (this.boundBy === 'count') {
+                    // Count-bound: exactly this many words, glass counts up.
+                    this.words = WordGenerator.generateSequence(this.wordCount);
+                    this.timerValue = 0;
+                } else {
+                    // Time-bound: a deep well of words so even a very fast
+                    // hand cannot drain the field before the glass empties
+                    // (sized well past any sustainable pace).
+                    this.words = WordGenerator.generateSequence(this.timeLimit * 6);
+                    this.timerValue = this.timeLimit;
+                }
                 break;
-                
+
             case 'quotes':
                 const quote = QuoteGenerator.getAny();
                 this.words = quote.text.split(' ');
                 this.timerValue = 0; // No timer for quotes
                 break;
+
+            case 'prose': {
+                // Real, everyday English — a coherent passage of working
+                // prose. Completed when the passage is, like a quote.
+                const passage = SentenceGenerator.getAny();
+                this.words = passage.text.split(' ');
+                this.timerValue = 0;
+                break;
+            }
                 
             case 'code': {
                 const snippet = CodeGenerator.getAny();
@@ -529,8 +551,11 @@ class TypeFlux {
             }
                 
             case 'zen':
-                this.words = WordGenerator.getFlow(100);
-                this.timerValue = 0; // Endless mode
+                // Truly endless — no glass, no word count, no conclusion.
+                // The buffer is topped up as the hand advances; the trial
+                // ends only when the typewright walks away.
+                this.words = WordGenerator.getFlow(120);
+                this.timerValue = 0;
                 break;
                 
             default:
@@ -550,7 +575,8 @@ class TypeFlux {
         this.ghostWordIndex = 0;
         if (this.elements.ghostCursor) this.elements.ghostCursor.classList.remove('active', 'behind');
         if (this.mode === 'words') {
-            const g = Storage.getGhost(this.mode, this.wordCount, this.timeLimit);
+            const [gw, gt] = this.ghostBucket();
+            const g = Storage.getGhost(this.mode, gw, gt);
             if (g && Array.isArray(g.wordTimes) && g.wordTimes.length > 0) {
                 this.ghost = g;
                 if (this.elements.ghostWpm) this.elements.ghostWpm.textContent = g.wpm;
@@ -558,6 +584,81 @@ class TypeFlux {
         }
 
         this.renderTypeNext();
+        this.updateManifest();
+        this.updateTimerLabel();
+    }
+
+    /* Ghost bucket args for the current words trial. Time-bound and
+       count-bound runs live in separate buckets — one arg is zeroed so
+       the two never share a ghost. */
+    ghostBucket() {
+        return [
+            this.boundBy === 'count' ? this.wordCount : 0,
+            this.boundBy === 'time'  ? this.timeLimit : 0
+        ];
+    }
+
+    /* Context-aware manifest: Glass + Count only govern a `words` trial.
+       In other modes both are inert. Within `words`, whichever knob does
+       not govern the current trial is muted so the contract is plain. */
+    updateManifest() {
+        const glass = document.querySelector('.manifest-group-glass');
+        const count = document.querySelector('.manifest-group-count');
+        const isWords = this.mode === 'words';
+        [glass, count].forEach(g => { if (g) g.classList.toggle('inert', !isWords); });
+        if (glass) glass.classList.toggle('muted', isWords && this.boundBy !== 'time');
+        if (count) count.classList.toggle('muted', isWords && this.boundBy !== 'count');
+    }
+
+    /* The live timer's caption tells the hand whether the glass is
+       running down or up — countdown for a time-bound words trial,
+       elapsed for everything else. */
+    updateTimerLabel() {
+        const label = document.querySelector('.timer-display .stat-label');
+        if (!label) return;
+        const countdown = this.mode === 'words' && this.boundBy === 'time';
+        label.textContent = countdown ? 'glass ⁄ sec' : 'elapsed ⁄ sec';
+    }
+
+    /* A clear, unit-bearing label for a trial — used on the certificate,
+       the ledger roll, and the shared account. Never a bare number. */
+    trialLabel(t) {
+        const m = (t && t.mode) || 'words';
+        if (m === 'words') {
+            if (t && t.boundBy === 'count') {
+                return `words · ${(t && t.wordCount) || this.wordCount} words`;
+            }
+            return `words · ${(t && t.timeLimit) || this.timeLimit} seconds`;
+        }
+        if (m === 'code')   return (t && t.language) ? `code · ${t.language}` : 'code';
+        if (m === 'quotes') return 'quotes · passage';
+        if (m === 'prose')  return 'prose · passage';
+        if (m === 'zen')    return 'zen · endless';
+        return m;
+    }
+
+    /* Zen is endless — quietly extend the word buffer as the hand
+       nears its end so the field never runs dry. */
+    appendZenWords(n = 80) {
+        const container = this.elements.wordsDisplay;
+        if (!container) return;
+        const more = WordGenerator.getFlow(n);
+        more.forEach(word => {
+            const idx = this.words.length;
+            this.words.push(word);
+            const wordEl = document.createElement('span');
+            wordEl.className = 'word';
+            wordEl.dataset.word = idx;
+            word.split('').forEach((letter, li) => {
+                const le = document.createElement('span');
+                le.className = 'letter';
+                le.dataset.word = idx;
+                le.dataset.letter = li;
+                le.textContent = letter;
+                wordEl.appendChild(le);
+            });
+            container.appendChild(wordEl);
+        });
     }
 
     renderWords() {
@@ -822,9 +923,13 @@ class TypeFlux {
         this.currentWordIndex++;
         this.currentLetterIndex = 0;
         this.input = '';
-        
-        // Check if test is complete (for word mode)
-        if (this.currentWordIndex >= this.words.length) {
+
+        if (this.mode === 'zen') {
+            // Endless — never conclude; keep the buffer ahead of the hand.
+            if (this.words.length - this.currentWordIndex < 30) {
+                this.appendZenWords(80);
+            }
+        } else if (this.currentWordIndex >= this.words.length) {
             this.finishTest();
             return;
         }
@@ -906,6 +1011,11 @@ class TypeFlux {
         this.isActive = true;
         this.startTime = Date.now();
         this.elements.liveStats.classList.add('active');
+
+        // Zen never concludes, so it never reaches finishTest's bookkeeping.
+        // Credit the manner the moment the hand engages, else breadth seals
+        // (The Wanderer) could never count a zen trial.
+        if (this.mode === 'zen') Storage.markModeUsed('zen');
 
         // Start countdown timer for timed mode, or elapsed timer for untimed modes
         if (this.timerValue > 0) {
@@ -1047,7 +1157,8 @@ class TypeFlux {
         // gets ghosts (other modes need same-snippet matching to be meaningful).
         let ghostUpdated = false;
         if (this.mode === 'words' && this.runWordTimes.length > 0) {
-            ghostUpdated = Storage.maybeSaveGhost(this.mode, this.wordCount, this.timeLimit, {
+            const [gw, gt] = this.ghostBucket();
+            ghostUpdated = Storage.maybeSaveGhost(this.mode, gw, gt, {
                 wpm: results.wpm,
                 accuracy: results.accuracy,
                 words: this.words.slice(0, this.runWordTimes.length),
@@ -1183,7 +1294,8 @@ class TypeFlux {
 
         // Suggest a ghost race when one exists for the current format
         if (this.mode === 'words') {
-            const g = Storage.getGhost(this.mode, this.wordCount, this.timeLimit);
+            const [gw, gt] = this.ghostBucket();
+            const g = Storage.getGhost(this.mode, gw, gt);
             if (g) {
                 return `A ghost waits for this format at ${g.wpm} wpm — race it.`;
             }
@@ -1193,7 +1305,7 @@ class TypeFlux {
         const recentModes = new Set(tests.slice(-5).map(t => t.mode));
         if (recentModes.size === 1) {
             const tried = [...recentModes][0];
-            const others = ['words', 'quotes', 'code', 'zen'].filter(m => m !== tried);
+            const others = ['words', 'quotes', 'prose', 'code', 'zen'].filter(m => m !== tried);
             const nudge = others[Math.floor(Math.random() * others.length)];
             return `Thou hast set thyself only to ${tried} of late — try a turn at ${nudge}.`;
         }
@@ -1526,7 +1638,9 @@ class TypeFlux {
             maxCombo: this.maxCombo,
             mode: this.mode,
             wordCount: this.wordCount,
-            timeLimit: this.timeLimit
+            timeLimit: this.timeLimit,
+            boundBy: this.boundBy,
+            language: this.lastLanguage || null
         };
     }
 
@@ -1551,7 +1665,7 @@ class TypeFlux {
         this.elements.resultConsistency.textContent = `${results.consistency}%`;
         this.elements.resultTime.textContent = `${results.time}s`;
         this.elements.resultCombo.textContent = results.maxCombo;
-        this.elements.resultType.textContent = `${results.mode} ${results.wordCount || results.timeLimit}`;
+        this.elements.resultType.textContent = this.trialLabel(results);
         
         // Calculate grade
         const grade = this.calculateGrade(results.wpm, results.accuracy);
@@ -1787,10 +1901,11 @@ class TypeFlux {
     }
 
     updateTimer() {
-        if (this.mode === 'words' || this.mode === 'zen') {
+        if (this.mode === 'words' && this.boundBy === 'time') {
+            // The only countdown glass — words bounded by time.
             this.elements.liveTimer.textContent = this.timerValue;
         } else {
-            // Show elapsed time for quote/code modes
+            // Everything else counts up: elapsed seconds.
             const elapsed = this.startTime ? Math.floor((Date.now() - this.startTime) / 1000) : 0;
             this.elements.liveTimer.textContent = elapsed;
         }
@@ -1891,7 +2006,7 @@ class TypeFlux {
 
                 const type = document.createElement('span');
                 type.className = 'test-type';
-                type.textContent = `${test.mode} ${test.wordCount || test.timeLimit}`;
+                type.textContent = this.trialLabel(test);
 
                 info.append(wpm, acc, type);
 
@@ -1905,7 +2020,7 @@ class TypeFlux {
         } else {
             const empty = document.createElement('div');
             empty.className = 'empty-state';
-            empty.textContent = 'no tests yet \u2014 start typing!';
+            empty.textContent = '\u2014 no trials yet recorded; the desk awaits thy hand \u2014';
             this.elements.testsList.appendChild(empty);
         }
         
@@ -1933,22 +2048,34 @@ class TypeFlux {
     setTime(time) {
         this.timeLimit = time;
         this.timerValue = time;
-        
+
         document.querySelectorAll('.time-btn').forEach(btn => {
             btn.classList.toggle('active', parseInt(btn.dataset.time) === time);
         });
-        
-        this.updateTimer();
+
+        if (this.mode === 'words') {
+            // Choosing a glass binds the trial to time.
+            this.boundBy = 'time';
+            this.updateSetting('boundBy', 'time');
+            this.generateTest();
+        } else {
+            this.updateTimer();
+        }
         SoundSystem.click();
     }
 
     setWordCount(count) {
         this.wordCount = count;
-        
+
         document.querySelectorAll('.word-btn').forEach(btn => {
             btn.classList.toggle('active', parseInt(btn.dataset.words) === count);
         });
-        
+
+        if (this.mode === 'words') {
+            // Choosing a count binds the trial to a fixed number of words.
+            this.boundBy = 'count';
+            this.updateSetting('boundBy', 'count');
+        }
         this.generateTest();
         SoundSystem.click();
     }
@@ -1996,6 +2123,9 @@ class TypeFlux {
         if (this.elements.ambientIntensity)      this.elements.ambientIntensity.value = intensity;
         if (this.elements.ambientIntensityValue) this.elements.ambientIntensityValue.textContent = `${intensity}%`;
         document.documentElement.style.setProperty('--ambient-intensity', (intensity / 100).toFixed(2));
+
+        // Words-trial bound — time (countdown glass) or count (fixed words)
+        this.boundBy = (this.settings.boundBy === 'count') ? 'count' : 'time';
 
         // Sound system
         SoundSystem.enabled = this.settings.soundEffects;
@@ -2152,10 +2282,10 @@ class TypeFlux {
     // ─────────────────────────────────────────────────────────────
     
     clearStats() {
-        if (confirm('Are you sure you want to clear all your typing data? This cannot be undone.')) {
+        if (confirm('Strike every trial from the record? The ledger will be wiped clean — this cannot be undone.')) {
             Storage.clearTests();
             this.updateStatsView();
-            this.showToast('All data cleared', 'success');
+            this.showToast('the record is struck — the ledger stands empty', 'success');
         }
     }
 
@@ -2174,7 +2304,7 @@ class TypeFlux {
             '────────────────────────────────────────',
             `   ${lastTest.wpm} wpm  ·  ${lastTest.accuracy}% accuracy`,
             `   raw ${lastTest.rawWpm}  ·  consistency ${cons}%`,
-            `   mode  ${lastTest.mode} ${lastTest.wordCount || lastTest.timeLimit}`,
+            `   mode  ${this.trialLabel(lastTest)}`,
             '────────────────────────────────────────'
         ].join('\n');
 

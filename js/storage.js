@@ -30,6 +30,7 @@ const Storage = {
         affNarrow: false,
         ambientEffects: true,
         ambientIntensity: 60,
+        boundBy: 'time',
         defaultMode: 'words',
         defaultTime: 30,
         defaultWords: 25

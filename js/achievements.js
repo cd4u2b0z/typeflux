@@ -137,10 +137,10 @@ const ACHIEVEMENTS = [
     {
         id: 'wanderer', category: 'breadth',
         name: 'The Wanderer', motto: 'viator omnium',
-        rule: 'Complete a trial in every manner — words, quotes, code, zen.',
+        rule: 'Complete a trial in every manner — words, quotes, prose, code, zen.',
         glyph: '✤',
         check: (c) => {
-            const need = ['words', 'quotes', 'code', 'zen'];
+            const need = ['words', 'quotes', 'prose', 'code', 'zen'];
             return need.every(m => c.state.modesUsed.includes(m));
         }
     },
