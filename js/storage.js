@@ -10,7 +10,8 @@ const Storage = {
         STATS: 'typeflux_stats',
         ACHIEVEMENTS: 'typeflux_achievements',
         GHOSTS: 'typeflux_ghosts',
-        MISSES: 'typeflux_misses'
+        MISSES: 'typeflux_misses',
+        COMMISSIONS: 'typeflux_commissions'
     },
 
     // The rank ladder — a persistent title the typewright carries,
@@ -376,6 +377,39 @@ const Storage = {
         try { localStorage.removeItem(this.KEYS.MISSES); } catch (e) {}
     },
 
+    // ─────────────────────────────────────────────────────────────
+    // Commissions — the day's three charges. Stored with the day key
+    // they were drawn for; reading on a new day re-draws them.
+    // ─────────────────────────────────────────────────────────────
+    todayKey() {
+        const d = new Date();
+        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    },
+
+    getCommissions() {
+        const today = this.todayKey();
+        let state = null;
+        try {
+            const data = localStorage.getItem(this.KEYS.COMMISSIONS);
+            state = data ? JSON.parse(data) : null;
+        } catch (e) { state = null; }
+
+        // Fresh draw on a new day (or first ever).
+        if (!state || state.day !== today || !Array.isArray(state.items)) {
+            const ids = Commissions.pickForDay(today);
+            state = { day: today, items: ids.map(id => ({ id, progress: 0, done: false })) };
+            this.saveCommissions(state);
+        }
+        return state;
+    },
+
+    saveCommissions(state) {
+        try {
+            localStorage.setItem(this.KEYS.COMMISSIONS, JSON.stringify(state));
+            return true;
+        } catch (e) { return false; }
+    },
+
     /* Returns true if newly unlocked, false if already had it */
     unlockAchievement(id) {
         const s = this.getAchievementState();
@@ -447,6 +481,7 @@ const Storage = {
             localStorage.removeItem(this.KEYS.ACHIEVEMENTS);
             localStorage.removeItem(this.KEYS.GHOSTS);
             localStorage.removeItem(this.KEYS.MISSES);
+            localStorage.removeItem(this.KEYS.COMMISSIONS);
             this.init();
             return true;
         } catch (e) {

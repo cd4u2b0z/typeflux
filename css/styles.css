@@ -3798,3 +3798,99 @@ body.ambient-off { --ambient-intensity: 0; }
         transition: opacity 200ms linear;
     }
 }
+
+/* ════════════════════════════════════════════════════════════
+   COMMISSIONS — the day's three charges, set on the ledger
+   ════════════════════════════════════════════════════════════ */
+
+.commissions-plate {
+    margin-top: var(--space-8);
+}
+
+.commissions-count {
+    margin-left: auto;
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    color: var(--gold);
+}
+
+.commissions {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-card);
+    border: 1px solid var(--rule-faint);
+}
+
+.commission {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--rule-faint);
+    transition: background 220ms var(--ease-engraved);
+}
+.commission:last-child { border-bottom: none; }
+
+/* discharged — a quiet lift and a gold edge engraved down the left */
+.commission.done {
+    background: var(--bg-elevated);
+    box-shadow: inset 2px 0 0 var(--gold);
+}
+
+.commission-mark {
+    flex: 0 0 1em;
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    color: var(--ink-dim);
+    text-align: center;
+}
+.commission.done .commission-mark { color: var(--gold); }
+
+.commission-label {
+    flex: 1;
+    font-family: var(--font-body);
+    font-size: 0.98rem;
+    color: var(--ink);
+}
+.commission.done .commission-label { color: var(--gold); }
+
+.commission-prog {
+    font-family: var(--font-display);
+    font-size: 0.62rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    white-space: nowrap;
+}
+.commission.done .commission-prog { color: var(--gold); }
+
+.commissions-note {
+    margin-top: var(--space-3);
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 0.8rem;
+    color: var(--ink-dim);
+    text-align: center;
+}
+
+/* ── The sitting — this visit's shape, on the certificate ────── */
+.cert-sitting {
+    margin-top: 0;
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+    color: var(--gold);
+    opacity: 0;
+    transition: opacity 440ms var(--ease-engraved) 1480ms,
+                margin-top 300ms var(--ease-engraved);
+}
+.cert-sitting.visible {
+    margin-top: var(--space-5);
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cert-sitting { transition: opacity 200ms linear; }
+}

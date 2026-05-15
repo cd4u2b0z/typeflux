@@ -22,6 +22,9 @@ class TypeFlux {
         this.sessionBlazes = 0;
         this._blazeArmed = true;
 
+        // The sitting — this visit's shape, held only in memory.
+        this.sitting = { trials: 0, wpmSum: 0 };
+
         // Medals — per-trial dopamine, like arcade callouts
         this.perfectStreak = 0;
         this.wordErrorsThisWord = 0;
@@ -90,9 +93,12 @@ class TypeFlux {
         this.applySettings();
         this.generateTest();
         this.updateStatsView();
-        
+
         // Focus input on load
         setTimeout(() => this.elements.hiddenInput.focus(), 100);
+
+        // Greet the returning typewright once the desk has settled.
+        setTimeout(() => this.showToast(this.returningGreeting(), 'info'), 700);
     }
 
     cacheElements() {
@@ -215,6 +221,12 @@ class TypeFlux {
             rankNext:      document.getElementById('rank-next'),
             rankSeal:        document.getElementById('rank-seal'),
             rankSealNumeral: document.getElementById('rank-seal-numeral'),
+
+            // Commissions — the day's goals
+            commissionsList:  document.getElementById('commissions-list'),
+            commissionsCount: document.getElementById('commissions-count'),
+            certSitting:      document.getElementById('cert-sitting'),
+
             nemesisPlate:  document.getElementById('nemesis-plate'),
             nemesisWord:   document.getElementById('nemesis-word'),
             nemesisCount:  document.getElementById('nemesis-count'),
@@ -1344,9 +1356,14 @@ class TypeFlux {
         const previousBest = prevStats.bestWpm || 0;
         const hadPriorTests = (prevStats.testsCompleted || 0) > 0;
         const rankBefore = Storage.getRank(prevStats);
+        const prevStreak = Storage.getStreak();
 
         const results = this.calculateResults();
         Storage.addTest(results);
+
+        // The sitting — this visit's running shape.
+        this.sitting.trials++;
+        this.sitting.wpmSum += results.wpm;
 
         // Lifetime miss tally — feeds the nemesis. Code "words" are whole
         // lines, not real words, so they are kept out of the reckoning.
@@ -1444,6 +1461,171 @@ class TypeFlux {
 
         // Refresh the persistent identity — frontispiece chip + ledger.
         this.updateIdentity();
+
+        // Milestones — visible progression so the climb never stalls.
+        this.checkMilestones(prevStats, prevStreak);
+
+        // Commissions — measure this trial against the day's charges.
+        this.evaluateCommissions(results);
+        this.renderCommissions();
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Milestones — trial-count and streak crossings, marked as a
+    // moment so a long account never feels like a flat number.
+    // ─────────────────────────────────────────────────────────────
+    checkMilestones(prevStats, prevStreak) {
+        const stats  = Storage.getStats() || Storage.getDefaultStats();
+        const streak = Storage.getStreak();
+
+        const trialMarks = {
+            10:  'thy tenth trial', 25: 'thy twenty-fifth trial',
+            50:  'thy fiftieth trial', 100: 'thy hundredth trial',
+            250: 'thy two-hundred-and-fiftieth trial', 500: 'thy five-hundredth trial'
+        };
+        const tc = stats.testsCompleted || 0;
+        if (trialMarks[tc] && (prevStats.testsCompleted || 0) < tc) {
+            setTimeout(() => {
+                this.showToast(`${trialMarks[tc]} — set down at this desk`, 'success');
+                SoundSystem.newRecord && SoundSystem.newRecord();
+                if (tc >= 100) this.spawnConfetti(40);
+            }, 2400);
+        }
+
+        const streakMarks = {
+            3:  'three days unbroken', 7: 'a week unbroken',
+            14: 'a fortnight unbroken', 30: 'a month unbroken',
+            100: 'a hundred days unbroken'
+        };
+        if (streakMarks[streak] && prevStreak < streak) {
+            setTimeout(() => {
+                this.showToast(`${streakMarks[streak]} — the streak holds`, 'success');
+                SoundSystem.newRecord && SoundSystem.newRecord();
+                if (streak >= 30) this.spawnConfetti(40);
+            }, 2800);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Commissions — measure a finished trial against the day's
+    // three charges; mark progress, celebrate those discharged.
+    // ─────────────────────────────────────────────────────────────
+    evaluateCommissions(results) {
+        const state = Storage.getCommissions();
+        if (!state || !Array.isArray(state.items)) return;
+
+        const stats = Storage.getStats() || Storage.getDefaultStats();
+        const ctx = { test: results, stats, session: { trials: this.sitting.trials } };
+
+        const wereAllDone = state.items.every(it => it.done);
+        const newlyDone = [];
+
+        for (const it of state.items) {
+            if (it.done) continue;
+            const def = Commissions.byId(it.id);
+            if (!def) continue;
+            let advanced = false;
+            try { advanced = !!def.check(ctx); } catch (e) { advanced = false; }
+            if (advanced) {
+                it.progress = Math.min(def.target, (it.progress || 0) + 1);
+                if (it.progress >= def.target) { it.done = true; newlyDone.push(def); }
+            }
+        }
+        Storage.saveCommissions(state);
+
+        // Announce each discharge, staggered so they read in turn.
+        newlyDone.forEach((def, i) => {
+            setTimeout(() => {
+                this.showToast(`commission discharged — ${def.label}`, 'success');
+                SoundSystem.combo && SoundSystem.combo(3);
+            }, 2000 + i * 850);
+        });
+
+        // All three in a day — a small fanfare.
+        const allDoneNow = state.items.every(it => it.done);
+        if (allDoneNow && !wereAllDone) {
+            setTimeout(() => {
+                this.showToast('the day’s commissions — all discharged', 'success');
+                SoundSystem.newRecord && SoundSystem.newRecord();
+                this.spawnConfetti(32);
+            }, 2000 + newlyDone.length * 850 + 500);
+        }
+    }
+
+    // Render the day's commissions onto the ledger.
+    renderCommissions() {
+        const wrap = this.elements.commissionsList;
+        if (!wrap) return;
+        const state = Storage.getCommissions();
+        wrap.textContent = '';
+
+        let doneCount = 0;
+        for (const it of state.items) {
+            const def = Commissions.byId(it.id);
+            if (!def) continue;
+            if (it.done) doneCount++;
+
+            const row = document.createElement('div');
+            row.className = 'commission' + (it.done ? ' done' : '');
+
+            const mark = document.createElement('span');
+            mark.className = 'commission-mark';
+            mark.textContent = it.done ? '✓' : '·';
+
+            const label = document.createElement('span');
+            label.className = 'commission-label';
+            label.textContent = def.label;
+
+            const prog = document.createElement('span');
+            prog.className = 'commission-prog';
+            if (def.target > 1 && !it.done) {
+                prog.textContent = `${Math.min(it.progress || 0, def.target)} / ${def.target}`;
+            } else {
+                prog.textContent = it.done ? 'discharged' : 'open';
+            }
+
+            row.append(mark, label, prog);
+            wrap.appendChild(row);
+        }
+
+        if (this.elements.commissionsCount) {
+            this.elements.commissionsCount.textContent = `${doneCount} of ${state.items.length}`;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // The returning typewright — a greeting drawn from the record,
+    // so a fresh visit is met, not opened cold.
+    // ─────────────────────────────────────────────────────────────
+    returningGreeting() {
+        const tests = Storage.getTests() || [];
+        if (tests.length === 0) {
+            return 'welcome to the desk — thy first trial awaits the pen';
+        }
+        const last     = tests[tests.length - 1];
+        const rank     = Storage.getRank();
+        const streak   = Storage.getStreak();
+        const daysAway = Math.floor((Date.now() - (last.timestamp || Date.now())) / 86400000);
+
+        let when;
+        if (daysAway <= 0)      when = 'welcome back';
+        else if (daysAway === 1) when = 'the desk has waited a day';
+        else                     when = `the desk has waited ${daysAway} days`;
+
+        const parts = [when, rank.name];
+        if (streak > 1) parts.push(`${streak} days unbroken`);
+        parts.push(`thy last hand — ${last.wpm} wpm`);
+        return parts.join('  ·  ');
+    }
+
+    // Reflect the restored mode/glass/count onto the manifest buttons.
+    syncManifestButtons() {
+        document.querySelectorAll('.mode-btn').forEach(b =>
+            b.classList.toggle('active', b.dataset.mode === this.mode));
+        document.querySelectorAll('.time-btn').forEach(b =>
+            b.classList.toggle('active', parseInt(b.dataset.time) === this.timeLimit));
+        document.querySelectorAll('.word-btn').forEach(b =>
+            b.classList.toggle('active', parseInt(b.dataset.words) === this.wordCount));
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -1859,7 +2041,8 @@ class TypeFlux {
             wordCount: this.wordCount,
             timeLimit: this.timeLimit,
             boundBy: this.boundBy,
-            language: this.lastLanguage || null
+            language: this.lastLanguage || null,
+            grade: this.calculateGrade(wpm, accuracy)
         };
     }
 
@@ -1884,6 +2067,18 @@ class TypeFlux {
         // The restart button carries the reason to press it again.
         if (this.elements.restartLabel) {
             this.elements.restartLabel.textContent = this._restartTease || 'a fresh trial';
+        }
+
+        // The sitting — surface this visit's shape once it has one.
+        if (this.elements.certSitting) {
+            if (this.sitting.trials >= 2) {
+                const mean = Math.round(this.sitting.wpmSum / this.sitting.trials);
+                this.elements.certSitting.textContent =
+                    `this sitting — ${this.sitting.trials} trials · ${mean} mean pace`;
+                this.elements.certSitting.classList.add('visible');
+            } else {
+                this.elements.certSitting.classList.remove('visible');
+            }
         }
 
         this.elements.resultRaw.textContent = results.rawWpm;
@@ -2211,6 +2406,7 @@ class TypeFlux {
 
         this.renderChronicles();
         this.updateIdentity();
+        this.renderCommissions();
 
         // Render test history
         this.elements.testsList.textContent = '';
@@ -2263,11 +2459,12 @@ class TypeFlux {
     
     setMode(mode) {
         this.mode = mode;
-        
+        this.updateSetting('defaultMode', mode);
+
         document.querySelectorAll('.mode-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.mode === mode);
         });
-        
+
         this.generateTest();
         SoundSystem.click();
     }
@@ -2275,6 +2472,7 @@ class TypeFlux {
     setTime(time) {
         this.timeLimit = time;
         this.timerValue = time;
+        this.updateSetting('defaultTime', time);
 
         document.querySelectorAll('.time-btn').forEach(btn => {
             btn.classList.toggle('active', parseInt(btn.dataset.time) === time);
@@ -2293,6 +2491,7 @@ class TypeFlux {
 
     setWordCount(count) {
         this.wordCount = count;
+        this.updateSetting('defaultWords', count);
 
         document.querySelectorAll('.word-btn').forEach(btn => {
             btn.classList.toggle('active', parseInt(btn.dataset.words) === count);
@@ -2353,6 +2552,16 @@ class TypeFlux {
 
         // Words-trial bound — time (countdown glass) or count (fixed words)
         this.boundBy = (this.settings.boundBy === 'count') ? 'count' : 'time';
+
+        // Restore the desk — the mode, glass, and count last set, so a
+        // returning typewright opens exactly where they left off.
+        const sm = this.settings.defaultMode;
+        if (['words', 'quotes', 'prose', 'code', 'zen'].includes(sm)) {
+            this.mode = sm;
+        }
+        if (typeof this.settings.defaultTime === 'number')  this.timeLimit = this.settings.defaultTime;
+        if (typeof this.settings.defaultWords === 'number') this.wordCount = this.settings.defaultWords;
+        this.syncManifestButtons();
 
         // Sound system
         SoundSystem.enabled = this.settings.soundEffects;

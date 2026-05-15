@@ -94,6 +94,17 @@ The ledger opens with a persistent identity carried across every session:
 - **Rank** — a title raised by trials weathered and the crest of pace reached, from *Apprentice of the Desk* through *Scrivener*, *Copyist*, *Cartographer*, *Master Typewright*, to *Grand Archivist*. A pressed wax seal sits beside it, its tier engraved in Roman and its detail — tick ring, outer halo — *growing as you rise*. The current rank also rides as a small chip on the frontispiece. Raising it draws a quiet honour, distinct from the seals.
 - **Nemesis** — the single word that has felled your hand most across all trials past, named on a writ pinned askew to the desk with crimson ink bled behind it. **Settle the score** opens a trial laced with that very word.
 
+### The day's commissions — three charges, renewed each dawn
+
+Below the typewright sits the daily loop: **three commissions**, drawn from a fixed pool by a date-seeded hand — the same set all day, a fresh draw tomorrow. They reward *deeds*, not raw speed: *finish a trial with a flawless hand*, *reach a fervor of forty*, *complete a prose passage*, *better thy mean pace in a single hand*. Each is measured against every trial you conclude; discharging one is announced, and discharging all three draws a fanfare. A reason to take up the pen on a day the personal best feels far off.
+
+### Continuity — the desk remembers you
+
+- **The desk is restored** — mode, glass, count, theme, and every setting are as you left them when you return.
+- **A returning greeting** meets you at the door — *the desk has waited two days · Scrivener · 5 days unbroken · thy last hand — 71 wpm*.
+- **Milestones** are marked as moments — thy tenth, fiftieth, hundredth trial; a week, a month unbroken — so a long account never reads as a flat number.
+- **The sitting** — once a visit holds two trials or more, the certificate notes its shape: *this sitting — 4 trials · 68 mean pace*.
+
 Each trial is recorded. Five accountings are kept:
 
 | key | what |
@@ -210,10 +221,11 @@ typeflux/
 │   ├── sentences.js    everyday-English prose passages
 │   ├── code.js         15-language snippet corpus + tips
 │   ├── achievements.js 22 seals across four orders
+│   ├── commissions.js  daily commission pool + date-seeded draw
 │   ├── sounds.js       Web Audio synthesised keystrokes
 │   ├── chart.js        canvas pace charts
 │   └── storage.js      localStorage settings, history, streak,
-│                       achievements, themes/languages/modes used
+│                       achievements, ghosts, misses, commissions
 ```
 
 ## Pace, by the formula
