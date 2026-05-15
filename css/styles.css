@@ -3116,3 +3116,73 @@ body.aff-narrow .typing-area {
     line-height: 1.55;
 }
 .stumble-counsel::before { content: "¶ "; color: var(--gold); margin-right: 4px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   CODE MODE — fixed-width grid, line-aware, every char typeable
+   ─────────────────────────────────────────────────────────────
+   The typing-area gets .mode-code; lines render as block "words"
+   that preserve indentation. Spaces show as faint middle-dots so
+   the user can see indent depth without ambiguity.
+   ═══════════════════════════════════════════════════════════════ */
+.typing-area.mode-code .words-display {
+    text-align: left;
+    white-space: pre;
+    line-height: 1.55;
+    /* Slightly tighter than prose mode so a snippet sits clean */
+    font-size: calc(var(--typing-font-size) * 0.92);
+}
+
+.typing-area.mode-code .word {
+    display: block;
+    margin-right: 0;
+    white-space: pre;
+}
+
+/* Empty source lines still need vertical space */
+.typing-area.mode-code .word.word-empty {
+    min-height: 1.55em;
+}
+
+/* The newline marker is unused in code mode — lines are blocks. */
+.typing-area.mode-code .word-linebreak { display: none; }
+
+/* Visible space markers — faint middle-dot for indentation legibility.
+   The dot is rendered in place of the space character; matching still
+   uses the original ' ' from this.words. */
+.typing-area.mode-code .letter-space {
+    color: rgba(127, 127, 127, 0.28);
+}
+.typing-area.mode-code .letter-space.correct {
+    color: rgba(127, 127, 127, 0.45);
+}
+.typing-area.mode-code .letter-space.incorrect {
+    color: var(--error);
+    background: rgba(228, 126, 128, 0.14);
+}
+
+/* Active line gets a left rule — the cartouche of the cursor */
+.typing-area.mode-code .word.active {
+    position: relative;
+    padding-left: 14px;
+    margin-left: -14px;
+}
+.typing-area.mode-code .word.active::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 6%; bottom: 6%;
+    width: 2px;
+    background: var(--gold);
+    box-shadow: 0 0 8px var(--gold-glow);
+    opacity: 0.85;
+}
+.typing-area.mode-code .word.active::after { display: none; }
+
+/* Dim past lines so the eye snaps to the active row */
+.typing-area.mode-code .word.correct,
+.typing-area.mode-code .word.has-error {
+    opacity: 0.45;
+    transition: opacity 360ms var(--ease-engraved);
+}
+.typing-area.mode-code .word.correct .letter { color: var(--ink-dim); }
+
+/* Future lines stay neutral — their default .letter color is dim already. */

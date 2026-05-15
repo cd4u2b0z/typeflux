@@ -470,22 +470,28 @@ class TypeFlux {
                 this.timerValue = 0; // No timer for quotes
                 break;
                 
-            case 'code':
+            case 'code': {
                 const snippet = CodeGenerator.getAny();
                 this.lastLanguage = snippet.language;
                 this.words = [];
                 this.lineBreaks = new Set();
-                snippet.code.split('\n').forEach(line => {
-                    const trimmed = line.trim();
-                    if (trimmed.length === 0) return;
-                    if (this.words.length > 0) {
-                        this.lineBreaks.add(this.words.length);
-                    }
-                    const lineWords = trimmed.split(/\s+/).filter(w => w.length > 0);
-                    this.words.push(...lineWords);
+                // Each line is a "word" that may contain spaces — every
+                // character (including indentation) is a required keystroke.
+                // Tabs render as four spaces; trailing whitespace is trimmed
+                // off each line so a stray trailing space doesn't trip the
+                // user; empty lines remain typeable as a bare Enter.
+                const expanded = snippet.code.replace(/\t/g, '    ').replace(/\r\n?/g, '\n');
+                const lines = expanded.split('\n').map(l => l.replace(/\s+$/, ''));
+                // Drop a single trailing empty line if present (most snippets
+                // don't end in a blank line, but be safe)
+                while (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
+                lines.forEach((line, idx) => {
+                    if (idx > 0) this.lineBreaks.add(this.words.length);
+                    this.words.push(line);
                 });
                 this.timerValue = 0;
                 break;
+            }
                 
             case 'zen':
                 this.words = WordGenerator.getFlow(100);
@@ -506,6 +512,13 @@ class TypeFlux {
         const container = this.elements.wordsDisplay;
         container.textContent = '';
 
+        // Toggle a code-mode class on the typing area so CSS can switch
+        // to a fixed-width line grid + visible-space conventions.
+        const isCode = this.mode === 'code';
+        if (this.elements.typingArea) {
+            this.elements.typingArea.classList.toggle('mode-code', isCode);
+        }
+
         this.words.forEach((word, wordIndex) => {
             if (this.lineBreaks.has(wordIndex)) {
                 const br = document.createElement('span');
@@ -516,13 +529,25 @@ class TypeFlux {
             const wordEl = document.createElement('span');
             wordEl.className = 'word';
             wordEl.dataset.word = wordIndex;
+            // Empty line marker — render a placeholder span so the row has
+            // height in the grid even with no letters.
+            if (isCode && word.length === 0) {
+                wordEl.classList.add('word-empty');
+            }
 
             word.split('').forEach((letter, letterIndex) => {
                 const letterEl = document.createElement('span');
                 letterEl.className = 'letter';
                 letterEl.dataset.word = wordIndex;
                 letterEl.dataset.letter = letterIndex;
-                letterEl.textContent = letter;
+                if (letter === ' ') {
+                    // Visible space marker only in code mode (·); the match
+                    // logic still uses the original char from this.words.
+                    letterEl.classList.add('letter-space');
+                    letterEl.textContent = isCode ? '·' : ' ';
+                } else {
+                    letterEl.textContent = letter;
+                }
                 wordEl.appendChild(letterEl);
             });
 
@@ -558,18 +583,27 @@ class TypeFlux {
             this.startTest();
         }
         
-        // Handle space (word completion)
-        if (inputChar === ' ') {
+        // In code mode, spaces and tabs are real characters within a line;
+        // a line is completed by Enter (handled in handleKeydown). Everywhere
+        // else, space ends the current word.
+        if (this.mode !== 'code' && inputChar === ' ') {
             this.completeWord();
             e.target.value = '';
             return;
         }
-        
+
         // Handle character input
         this.processInput(inputValue);
     }
 
     handleKeydown(e) {
+        // Code-mode line completion — Enter ends the current line.
+        if (e.key === 'Enter' && this.mode === 'code' && this.isActive && !this.isFinished) {
+            e.preventDefault();
+            this.completeWord();
+            return;
+        }
+
         // Backspace handling
         if (e.key === 'Backspace') {
             if (this.settings.confidenceMode) {
@@ -686,7 +720,11 @@ class TypeFlux {
 
     completeWord() {
         const currentWord = this.words[this.currentWordIndex];
-        const input = this.elements.hiddenInput.value.trim();
+        // In code mode, indentation matters — never strip whitespace from
+        // the typed input. Everywhere else, trim is fine (and matches the
+        // legacy behaviour where space ends the word).
+        const raw = this.elements.hiddenInput.value;
+        const input = (this.mode === 'code') ? raw : raw.trim();
         
         // Check if word is correct
         const isCorrect = input === currentWord;
@@ -744,9 +782,16 @@ class TypeFlux {
             this.scrollToWord(nextWordElement);
         }
         
-        // Space counts as correct character
+        // Word-boundary keystroke counts as one correct char — for code mode
+        // that boundary is Enter, for everything else it's space. Either way
+        // it's a single keystroke worth tallying. (Each in-line char in code
+        // was already counted during processInput.)
         this.correctChars++;
-        SoundSystem.space();
+        if (this.mode === 'code') {
+            SoundSystem.bell && SoundSystem.bell();
+        } else {
+            SoundSystem.space();
+        }
         
         this.updateCursorPosition();
         this.updateLiveStats();
