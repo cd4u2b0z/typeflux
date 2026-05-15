@@ -9,7 +9,7 @@ const SoundSystem = {
     sfxGain: null,           // keystrokes / UI / drone — the effects bus
     musicBus: null,          // the music layer — its own bus
     volume: 0.3,             // effects volume (0..1)
-    musicVolume: 0.5,        // music volume (0..1) — independent
+    musicVolume: 0.6,        // music volume (0..1) — independent
     enabled: true,
 
     // Initialize and resume audio context (handles both creation and browser autoplay policy)
@@ -316,7 +316,7 @@ const SoundSystem = {
     // Fully synthesised — no sampled or copyrighted material.
     // ─────────────────────────────────────────────────────────────
     MUSIC_BPM: 86,
-    MUSIC_LEVEL: 0.15,         // the music sub-mix; the music slider scales it
+    MUSIC_LEVEL: 0.2,          // the music sub-mix; the music slider scales it
     MUSIC_SWING: 0.58,         // swung 8ths — the lofi / hip-hop lilt
     music: null,
 

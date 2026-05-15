@@ -1457,12 +1457,15 @@ class TypeFlux {
         // (The Wanderer) could never count a zen trial.
         if (this.mode === 'zen') Storage.markModeUsed('zen');
 
-        // The room begins to breathe — a low drone that rises with fervor.
-        SoundSystem.startDrone && SoundSystem.startDrone();
-
-        // The desk's music — a soft procedural lounge beneath the trial.
-        if (this.settings.music !== false) {
-            SoundSystem.startMusic && SoundSystem.startMusic();
+        // The room begins to breathe — a low drone, and the desk's music.
+        // Guarded so a stray audio fault can never abort the trial itself.
+        try {
+            SoundSystem.startDrone && SoundSystem.startDrone();
+            if (this.settings.music !== false) {
+                SoundSystem.startMusic && SoundSystem.startMusic();
+            }
+        } catch (e) {
+            console.warn('typeflux: audio start failed —', e);
         }
 
         // Start countdown timer for timed mode, or elapsed timer for untimed modes
@@ -2825,7 +2828,7 @@ class TypeFlux {
         this.elements.soundVolume.value = this.settings.soundVolume;
         this.elements.soundVolumeValue.textContent = `${this.settings.soundVolume}%`;
         if (this.elements.musicVolume) {
-            const mv = (typeof this.settings.musicVolume === 'number') ? this.settings.musicVolume : 50;
+            const mv = (typeof this.settings.musicVolume === 'number') ? this.settings.musicVolume : 60;
             this.elements.musicVolume.value = mv;
             if (this.elements.musicVolumeValue) this.elements.musicVolumeValue.textContent = `${mv}%`;
         }
@@ -2889,7 +2892,7 @@ class TypeFlux {
         SoundSystem.enabled = this.settings.soundEffects;
         SoundSystem.setVolume(this.settings.soundVolume / 100);
         SoundSystem.setMusicVolume(
-            ((typeof this.settings.musicVolume === 'number') ? this.settings.musicVolume : 50) / 100);
+            ((typeof this.settings.musicVolume === 'number') ? this.settings.musicVolume : 60) / 100);
         this.elements.soundToggle.classList.toggle('active', this.settings.soundEffects);
     }
 

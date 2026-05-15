@@ -36,7 +36,7 @@ const Storage = {
         soundEffects: true,
         soundVolume: 30,
         music: true,
-        musicVolume: 50,
+        musicVolume: 60,
         stopOnError: false,
         confidenceMode: false,
         blindMode: false,
