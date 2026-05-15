@@ -70,7 +70,6 @@ The **glass is optional** across words, quotes, prose, and code. A **words** tri
 - **The letterpress.** The caret has mass — it stretches in the direction of travel on a word advance, taller on a line drop, then settles. Each struck letter presses into the vellum; a wrong one blots with a soft crimson ink-stain.
 - **The room breathes.** A low drone underlies the trial, swelling with your fervor and receding as it cools — felt more than heard.
 - **Ghost-warmth.** When you pace ahead of your ghost, the field takes on a faint gold warmth — the bright counterpart to the crimson of urgency.
-- **The field adapts.** Words-mode trials lean harder or gentler from your recent accuracy, keeping you near the edge of flow. Toggleable at the desk.
 
 ### Medals — fleeting honours of the trial
 

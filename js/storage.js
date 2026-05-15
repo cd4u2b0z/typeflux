@@ -50,7 +50,6 @@ const Storage = {
         ghostTracer: true,
         ambientEffects: true,
         ambientIntensity: 60,
-        adaptiveField: true,
         boundBy: 'time',
         passageBound: 'passage',
         defaultMode: 'words',

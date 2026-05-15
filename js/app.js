@@ -188,7 +188,6 @@ class TypeFlux {
             confidenceMode: document.getElementById('confidence-mode'),
             blindMode: document.getElementById('blind-mode'),
             readyCountdown: document.getElementById('ready-countdown'),
-            adaptiveField: document.getElementById('adaptive-field'),
             affMist: document.getElementById('aff-mist'),
             affFade: document.getElementById('aff-fade'),
             affLantern: document.getElementById('aff-lantern'),
@@ -379,13 +378,6 @@ class TypeFlux {
         if (this.elements.readyCountdown) {
             this.elements.readyCountdown.addEventListener('change', (e) => {
                 this.updateSetting('readyCountdown', e.target.checked);
-            });
-        }
-
-        if (this.elements.adaptiveField) {
-            this.elements.adaptiveField.addEventListener('change', (e) => {
-                this.updateSetting('adaptiveField', e.target.checked);
-                this.generateTest();
             });
         }
 
@@ -585,19 +577,16 @@ class TypeFlux {
 
         switch (this.mode) {
             case 'words': {
-                // Adaptive field — the words lean to thy recent hand.
-                const diff = (this.settings.adaptiveField !== false)
-                    ? this.adaptiveDifficulty() : 'normal';
-                this._adaptiveDiff = diff;
+                // A consistent mixed lexicon — the word difficulty never
+                // shifts with the chosen glass or recent pace.
                 if (this.boundBy === 'count') {
                     // Count-bound: exactly this many words, glass counts up.
-                    this.words = WordGenerator.generateSequence(this.wordCount, diff);
+                    this.words = WordGenerator.generateSequence(this.wordCount);
                     this.timerValue = 0;
                 } else {
-                    // Time-bound: a deep well of words so even a very fast
-                    // hand cannot drain the field before the glass empties
-                    // (sized well past any sustainable pace).
-                    this.words = WordGenerator.generateSequence(this.timeLimit * 6, diff);
+                    // Time-bound: a deep well of words, sized well past any
+                    // sustainable pace so the glass always empties first.
+                    this.words = WordGenerator.generateSequence(this.timeLimit * 6);
                     this.timerValue = this.timeLimit;
                 }
                 break;
@@ -1925,25 +1914,7 @@ class TypeFlux {
             return `Thy pace hath plateaued near ${Math.round(mean)} wpm — try a longer glass to test endurance.`;
         }
 
-        // The adaptive field, when it has shifted, explains itself.
-        if (this.settings.adaptiveField !== false && this.mode === 'words') {
-            if (this._adaptiveDiff === 'hard') return 'the field has hardened to thy hand — meet it well.';
-            if (this._adaptiveDiff === 'easy') return 'the field is gentled a while — find thy footing again.';
-        }
-
         return null;
-    }
-
-    /* Adaptive difficulty — the words lean harder or gentler from the
-       mean accuracy and pace of recent words trials. */
-    adaptiveDifficulty() {
-        const tests = (Storage.getTests() || []).filter(t => t.mode === 'words').slice(-6);
-        if (tests.length < 3) return 'normal';
-        const meanAcc = tests.reduce((s, t) => s + (t.accuracy || 0), 0) / tests.length;
-        const meanWpm = tests.reduce((s, t) => s + (t.wpm || 0), 0) / tests.length;
-        if (meanAcc >= 97 && meanWpm >= 55) return 'hard';
-        if (meanAcc < 90) return 'easy';
-        return 'normal';
     }
 
     /* Look at the most-missed words and offer one specific observation:
@@ -2785,9 +2756,6 @@ class TypeFlux {
         this.elements.blindMode.checked = this.settings.blindMode;
         if (this.elements.readyCountdown) {
             this.elements.readyCountdown.checked = this.settings.readyCountdown !== false;
-        }
-        if (this.elements.adaptiveField) {
-            this.elements.adaptiveField.checked = this.settings.adaptiveField !== false;
         }
         if (this.elements.ghostTracer) {
             this.elements.ghostTracer.checked = this.settings.ghostTracer !== false;
