@@ -1599,7 +1599,9 @@ class TypeFlux {
         if (this.elapsedInterval) clearInterval(this.elapsedInterval);
         this.stopGhostReplay();
         SoundSystem.stopDrone && SoundSystem.stopDrone();
-        SoundSystem.stopMusic && SoundSystem.stopMusic();
+        // The music doesn't stop — it turns to a calm, resolved coda
+        // for the post-summary, a distinct piece from the trial.
+        SoundSystem.musicMood && SoundSystem.musicMood('results');
 
         // Drop urgency styling
         if (this.elements.vellumFrame) {
@@ -2432,7 +2434,9 @@ class TypeFlux {
         if (this.elapsedInterval) clearInterval(this.elapsedInterval);
         this.stopGhostReplay();
         SoundSystem.stopDrone && SoundSystem.stopDrone();
-        SoundSystem.stopMusic && SoundSystem.stopMusic();
+        // Music plays on continuously across trials — it is re-seeded
+        // (a fresh key/tempo/piece) when the next trial begins, not
+        // stopped here. Only a sound/music toggle truly stops it.
 
         // Reset state
         this.isActive = false;

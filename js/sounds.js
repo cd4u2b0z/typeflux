@@ -316,38 +316,97 @@ const SoundSystem = {
     // Scheduled against audioContext.currentTime so it never drifts.
     // Fully synthesised — no sampled or copyrighted material.
     // ─────────────────────────────────────────────────────────────
-    MUSIC_BPM: 88,
     MUSIC_LEVEL: 0.2,          // the music sub-mix; the music slider scales it
     MUSIC_SECTION: 6,          // bars per phase
     music: null,
+    _lastTranspose: 0,
 
-    /* A 16-bar progression of soft extended chords — `bass` + upper
-       voices as MIDI numbers. */
-    MUSIC_PROGRESSION: [
-        { bass: 38, notes: [57, 60, 64, 65] },
-        { bass: 43, notes: [53, 59, 62, 64] },
-        { bass: 36, notes: [55, 59, 62, 64] },
-        { bass: 45, notes: [55, 59, 62, 67] },
-        { bass: 46, notes: [53, 57, 62, 65] },
-        { bass: 40, notes: [55, 59, 62, 66] },
-        { bass: 45, notes: [55, 59, 60, 64] },
-        { bass: 38, notes: [57, 60, 64, 67] },
-        { bass: 41, notes: [57, 60, 64, 67] },
-        { bass: 36, notes: [55, 59, 64, 67] },
-        { bass: 43, notes: [53, 58, 62, 65] },
-        { bass: 45, notes: [57, 60, 64, 65] },
-        { bass: 41, notes: [55, 60, 63, 65] },
-        { bass: 46, notes: [53, 58, 62, 65] },
-        { bass: 40, notes: [54, 58, 62, 65] },
-        { bass: 45, notes: [56, 59, 62, 65] }
+    /* Several progressions of soft extended chords (`bass` + upper
+       voices, MIDI). One is chosen per trial and transposed to a
+       random key, at a random tempo, in a random timbre — so no two
+       trials are ever the same piece. */
+    MUSIC_PROGRESSIONS: [
+        // 0 — wistful, jazzy minor 9ths (a long 16-bar journey)
+        [
+            { bass: 38, notes: [57, 60, 64, 65] }, { bass: 43, notes: [53, 59, 62, 64] },
+            { bass: 36, notes: [55, 59, 62, 64] }, { bass: 45, notes: [55, 59, 62, 67] },
+            { bass: 46, notes: [53, 57, 62, 65] }, { bass: 40, notes: [55, 59, 62, 66] },
+            { bass: 45, notes: [55, 59, 60, 64] }, { bass: 38, notes: [57, 60, 64, 67] },
+            { bass: 41, notes: [57, 60, 64, 67] }, { bass: 36, notes: [55, 59, 64, 67] },
+            { bass: 43, notes: [53, 58, 62, 65] }, { bass: 45, notes: [57, 60, 64, 65] },
+            { bass: 41, notes: [55, 60, 63, 65] }, { bass: 46, notes: [53, 58, 62, 65] },
+            { bass: 40, notes: [54, 58, 62, 65] }, { bass: 45, notes: [56, 59, 62, 65] }
+        ],
+        // 1 — brighter, lifting (major 7 / 9 colour)
+        [
+            { bass: 36, notes: [55, 60, 64, 67] }, { bass: 41, notes: [57, 60, 65, 69] },
+            { bass: 43, notes: [55, 59, 62, 67] }, { bass: 40, notes: [55, 59, 64, 67] },
+            { bass: 45, notes: [55, 60, 64, 67] }, { bass: 41, notes: [57, 60, 65, 69] },
+            { bass: 36, notes: [55, 59, 62, 67] }, { bass: 43, notes: [53, 59, 62, 67] }
+        ],
+        // 2 — deep, suspended, moody (Berlin)
+        [
+            { bass: 33, notes: [57, 62, 64, 69] }, { bass: 33, notes: [57, 60, 64, 67] },
+            { bass: 36, notes: [55, 60, 62, 67] }, { bass: 31, notes: [55, 58, 62, 65] },
+            { bass: 38, notes: [57, 62, 64, 69] }, { bass: 38, notes: [57, 60, 65, 69] },
+            { bass: 34, notes: [53, 58, 62, 65] }, { bass: 33, notes: [56, 60, 64, 67] }
+        ]
+    ],
+
+    /* A short, resolved progression for the results coda — peaceful. */
+    MUSIC_CODA: [
+        { bass: 36, notes: [55, 60, 64, 67] },
+        { bass: 41, notes: [57, 60, 65, 69] },
+        { bass: 43, notes: [55, 59, 62, 67] },
+        { bass: 36, notes: [55, 60, 64, 72] }
     ],
 
     _midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); },
 
+    /* A fresh seed — every trial a different key, tempo, progression
+       and timbre; the results coda resolves in the trial's key. */
+    _makeSeed(mood) {
+        if (mood === 'results') {
+            return {
+                mood: 'results',
+                transpose: this._lastTranspose,
+                prog: this.MUSIC_CODA,
+                bpm: 64 + Math.floor(Math.random() * 12),     // slow, reflective
+                bright: 1.05, padWave: 'triangle',
+                phaseOffset: 0
+            };
+        }
+        const tr = Math.floor(Math.random() * 11) - 5;        // -5..+5 semitones
+        this._lastTranspose = tr;
+        const pal = [
+            { bright: 1.0,  padWave: 'sawtooth' },
+            { bright: 1.32, padWave: 'triangle' },
+            { bright: 0.78, padWave: 'sawtooth' }
+        ][Math.floor(Math.random() * 3)];
+        return {
+            mood: 'trial',
+            transpose: tr,
+            prog: this.MUSIC_PROGRESSIONS[Math.floor(Math.random() * this.MUSIC_PROGRESSIONS.length)],
+            bpm: 82 + Math.floor(Math.random() * 20),          // 82..101
+            bright: pal.bright, padWave: pal.padWave,
+            phaseOffset: Math.floor(Math.random() * 4)
+        };
+    },
+
+    _transposeChord(chord, tr) {
+        return { bass: chord.bass + tr, notes: chord.notes.map(n => n + tr) };
+    },
+
+    /* Begin (or, if already playing, turn to) a fresh trial piece. The
+       engine plays continuously across trials and the results screen —
+       only the mood / seed change, so it never loops the same song. */
     startMusic() {
         if (!this.enabled) return;
         if (!this.ensureContext()) return;
-        if (this.music && this.music.active) return;   // never layer loops
+        if (this.music && this.music.active) {     // already running — re-seed
+            this._setMood('trial');
+            return;
+        }
         const ctx = this.audioContext;
         const master = ctx.createGain();
         master.gain.setValueAtTime(0.0001, ctx.currentTime);
@@ -364,10 +423,33 @@ const SoundSystem = {
             intensity: 0.5,      // app-driven — climbs with fervor
             urgency: 0,          // app-driven — climbs as the glass empties
             barIndex: 0, barCount: 0,
-            phaseOffset: Math.floor(Math.random() * 4),   // a different opening each trial
+            mood: 'trial', seed: this._makeSeed('trial'),
             nextBarTime: ctx.currentTime + 0.3
         };
         this._musicScheduler();
+    },
+
+    /* Turn the running music to a different mood — 'trial' or
+       'results' — re-seeded, so each event opens its own piece. */
+    musicMood(mood) {
+        if (this.music && this.music.active) this._setMood(mood);
+    },
+
+    _setMood(mood) {
+        const M = this.music;
+        if (!M) return;
+        M.mood = mood;
+        M.seed = this._makeSeed(mood);
+        M.barCount = 0;          // a fresh piece — phases from the top
+        M.barIndex = 0;
+        M.urgency = 0;
+        // a brief dip smooths the turn into the new key / tempo
+        if (M.gain && this.audioContext) {
+            const now = this.audioContext.currentTime;
+            M.gain.gain.cancelScheduledValues(now);
+            M.gain.gain.setTargetAtTime(this.MUSIC_LEVEL * 0.22, now, 0.18);
+            M.gain.gain.setTargetAtTime(this.MUSIC_LEVEL, now + 0.55, 0.5);
+        }
     },
 
     /* Fervor → the music pushes: fuller, brighter, more driving. */
@@ -408,10 +490,11 @@ const SoundSystem = {
         const M = this.music;
         if (!M || !M.active || !this.audioContext) return;
         const ctx = this.audioContext;
-        const beat = 60 / this.MUSIC_BPM;
+        const beat = 60 / M.seed.bpm;
         const barDur = beat * 4;
         while (M.nextBarTime < ctx.currentTime + 1.6) {
-            const chord = this.MUSIC_PROGRESSION[M.barIndex % this.MUSIC_PROGRESSION.length];
+            const prog = M.seed.prog;
+            const chord = this._transposeChord(prog[M.barIndex % prog.length], M.seed.transpose);
             this._scheduleBar(M.nextBarTime, chord, beat, M.barCount);
             M.nextBarTime += barDur;
             M.barIndex++;
@@ -429,13 +512,16 @@ const SoundSystem = {
        fervor) and `urgency` (the glass) shape every layer on top. */
     _scheduleBar(t0, chord, beat, barCount) {
         const M = this.music;
+        // the results coda is its own calm piece
+        if (M.mood === 'results') { this._scheduleCodaBar(t0, chord, beat, barCount); return; }
+
         const energy = this._musicEnergy(barCount);
         const intensity = M.intensity, urgency = M.urgency;
         // overall push — the build, lifted by fervor and by urgency
         const drive = Math.min(1, energy * (0.5 + 0.5 * intensity) + urgency * 0.4);
         // section: 0 drift (dreamy) · 1 pulse (deep house) · 2 lift
         // (progressive) · 3 ebb (breakdown) — each MUSIC_SECTION bars
-        const phase = (Math.floor(barCount / this.MUSIC_SECTION) + M.phaseOffset) % 4;
+        const phase = (Math.floor(barCount / this.MUSIC_SECTION) + M.seed.phaseOffset) % 4;
 
         const eighth = (i) => t0 + i * 0.5 * beat;          // straight 8ths
         const six = (i) => t0 + i * 0.25 * beat;            // straight 16ths
@@ -534,15 +620,35 @@ const SoundSystem = {
         for (let i = 0; i < pops; i++) this._vinylPop(t0 + Math.random() * beat * 4);
     },
 
+    /* The results coda — a calm, resolved piece for the post-summary.
+       No beat to speak of: lush pads, a soft sub, sparse bell glints —
+       a breath, distinct from the trial's drive. */
+    _scheduleCodaBar(t0, chord, beat, barCount) {
+        this._musicPad(t0 + Math.random() * 0.05, chord, beat * 4, 0.95);
+        this._subBass(t0, chord.bass, beat * 4 * (0.95 + Math.random() * 0.3));
+        const arp = this._arpNotes(chord);
+        const glints = 1 + Math.floor(Math.random() * 3);
+        for (let k = 0; k < glints; k++) {
+            this._musicBell(t0 + Math.random() * beat * 4,
+                            arp[Math.floor(Math.random() * arp.length)] + 12,
+                            0.5 + Math.random() * 0.3);
+        }
+        // a faint heartbeat once the coda settles
+        if (barCount > 1 && Math.random() < 0.5) this._drumKick(t0, 0.3);
+        if (Math.random() < 0.55) this._vinylPop(t0 + Math.random() * beat * 4);
+    },
+
     /* A lush detuned-saw pad — slow swell, slowly-opening filter.
        Routes through the sidechain bus so it breathes with the kick. */
     _musicPad(t, chord, dur, vel) {
         const ctx = this.audioContext, M = this.music;
         if (!M) return;
+        const bright = (M.seed && M.seed.bright) || 1;        // per-trial timbre
+        const wave = (M.seed && M.seed.padWave) || 'sawtooth';
         const lp = ctx.createBiquadFilter();
         lp.type = 'lowpass';
-        lp.frequency.setValueAtTime(540 + vel * 800, t);
-        lp.frequency.linearRampToValueAtTime(700 + vel * 1300, t + dur * 0.6);
+        lp.frequency.setValueAtTime((540 + vel * 800) * bright, t);
+        lp.frequency.linearRampToValueAtTime((700 + vel * 1300) * bright, t + dur * 0.6);
         lp.Q.value = 0.4;
         lp.connect(M.pump);
         for (const midi of chord.notes) {
@@ -556,7 +662,7 @@ const SoundSystem = {
             env.connect(lp);
             for (let d = -1; d <= 1; d++) {
                 const o = ctx.createOscillator();
-                o.type = 'sawtooth';
+                o.type = wave;
                 o.frequency.value = f;
                 o.detune.value = d * (8 + Math.random() * 7);
                 o.connect(env);
