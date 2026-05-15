@@ -31,6 +31,9 @@ class TypeFlux {
         this.medalsEarnedThisTest = [];
         this.sealsEarnedThisTest = [];
 
+        // Stumble tracking — per-word miss tally for the cert defect panel
+        this.wordMisses = {};
+
         // Test data
         this.words = [];
         this.currentWordIndex = 0;
@@ -172,6 +175,11 @@ class TypeFlux {
             // Honours of the trial
             certHonours: document.getElementById('cert-honours'),
             honoursGrid: document.getElementById('honours-grid'),
+
+            // Stumble panel
+            certStumble:    document.getElementById('cert-stumble'),
+            stumbleList:    document.getElementById('stumble-list'),
+            stumbleCounsel: document.getElementById('stumble-counsel'),
 
             // Toast
             toastContainer: document.getElementById('toast-container')
@@ -661,6 +669,10 @@ class TypeFlux {
                 this.wordErrorsThisWord++;
                 this.combo = 0;
                 this.updateCombo();
+                // Stumble: tally misses against the current word
+                if (currentWord) {
+                    this.wordMisses[currentWord] = (this.wordMisses[currentWord] || 0) + 1;
+                }
             }
             
             this.totalKeystrokes++;
@@ -688,6 +700,10 @@ class TypeFlux {
         
         if (isCorrect) {
             SoundSystem.wordComplete();
+            // Carriage bell at line ends in code mode — adds typewriter feel.
+            if (this.mode === 'code' && this.lineBreaks.has(this.currentWordIndex + 1)) {
+                SoundSystem.bell && SoundSystem.bell();
+            }
             // Word-pop kinesthetic — quick scale + glow, removed automatically.
             if (wordElement) {
                 wordElement.classList.add('word-pop');
@@ -907,6 +923,94 @@ class TypeFlux {
 
         // Render the post-trial honours panel — medals + seals together.
         this.renderHonours();
+
+        // Render the stumble panel — top-3 missed words + a counsel line.
+        this.renderStumble();
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Stumble panel — surface the most-missed words this trial,
+    // plus a one-line counsel naming any pattern we can identify
+    // (digraphs, double letters, capitalised words, etc.)
+    // ─────────────────────────────────────────────────────────────
+    renderStumble() {
+        const panel   = this.elements.certStumble;
+        const list    = this.elements.stumbleList;
+        const counsel = this.elements.stumbleCounsel;
+        if (!panel || !list || !counsel) return;
+
+        list.textContent = '';
+        const entries = Object.entries(this.wordMisses)
+            .filter(([w, n]) => n > 0 && w && w.length > 0)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 6);
+
+        if (entries.length === 0) {
+            panel.classList.remove('has-data');
+            counsel.textContent = '';
+            return;
+        }
+
+        panel.classList.add('has-data');
+        for (const [word, count] of entries) {
+            const li = document.createElement('li');
+            li.className = 'stumble-row';
+            const w = document.createElement('span');
+            w.className = 'stumble-word';
+            w.textContent = word;
+            const c = document.createElement('span');
+            c.className = 'stumble-count';
+            c.textContent = String(count);
+            li.append(w, c);
+            list.appendChild(li);
+        }
+
+        counsel.textContent = this._stumbleCounsel(entries);
+    }
+
+    /* Look at the most-missed words and offer one specific observation:
+       repeated digraphs, double-letter words, capitals, punctuation,
+       short common-word slips. Returns a single italic counsel line. */
+    _stumbleCounsel(entries) {
+        const words = entries.map(([w]) => w);
+
+        // Bigram frequency across stumbled words
+        const bigrams = {};
+        for (const w of words) {
+            const lower = w.toLowerCase();
+            for (let i = 0; i < lower.length - 1; i++) {
+                const bg = lower.slice(i, i + 2);
+                if (/^[a-z]{2}$/.test(bg)) {
+                    bigrams[bg] = (bigrams[bg] || 0) + 1;
+                }
+            }
+        }
+        const topBg = Object.entries(bigrams).sort((a, b) => b[1] - a[1])[0];
+        if (topBg && topBg[1] >= 2) {
+            return `Thy hand stumbles often on “${topBg[0]}” — set thy practice there.`;
+        }
+
+        const doubles = words.filter(w => /(.)\1/.test(w.toLowerCase()));
+        if (doubles.length >= 2) {
+            return 'Double letters trip the hand — slow the second strike.';
+        }
+
+        const caps = words.filter(w => /[A-Z]/.test(w));
+        if (caps.length >= 2) {
+            return 'Capitals are costing thee — the shift hand needs drilling.';
+        }
+
+        const punct = words.filter(w => /[^a-zA-Z0-9]/.test(w));
+        if (punct.length >= 2) {
+            return 'Punctuation, not letters, is thy chief defect.';
+        }
+
+        const short = words.filter(w => w.length <= 3);
+        if (short.length >= 3) {
+            return 'Short common words are slipping past thee — slow the easy strikes.';
+        }
+
+        return `Mind “${words[0]}” in particular — it hath claimed thee oft.`;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -1309,6 +1413,7 @@ class TypeFlux {
         this.zenithFired = false;
         this.medalsEarnedThisTest = [];
         this.sealsEarnedThisTest = [];
+        this.wordMisses = {};
         if (this.elements.medalStack) this.elements.medalStack.textContent = '';
         document.body.classList.remove('is-urgent');
 

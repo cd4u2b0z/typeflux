@@ -68,28 +68,64 @@ const SoundSystem = {
         oscillator.stop(this.audioContext.currentTime + duration);
     },
 
-    // Keystroke sound - satisfying click
+    /* Pink-noise burst — the percussive shoulder of a real key strike.
+       Filtered, fast-decay envelope. This is the body of every key. */
+    noiseBurst(duration = 0.025, peak = 0.18, lowpass = 2400, highpass = 600) {
+        if (!this.enabled) return;
+        if (!this.ensureContext()) return;
+        const ctx = this.audioContext;
+        const sr = ctx.sampleRate;
+        const len = Math.max(1, Math.floor(sr * duration));
+        const buffer = ctx.createBuffer(1, len, sr);
+        const data = buffer.getChannelData(0);
+        // pink-ish noise via running average — cheap but warm
+        let prev = 0;
+        for (let i = 0; i < len; i++) {
+            const white = Math.random() * 2 - 1;
+            prev = 0.85 * prev + 0.15 * white;
+            data[i] = prev;
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = buffer;
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass';  lp.frequency.value = lowpass;
+        const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = highpass;
+        const g  = ctx.createGain();
+        g.gain.setValueAtTime(0, ctx.currentTime);
+        g.gain.linearRampToValueAtTime(peak, ctx.currentTime + 0.003);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        src.connect(hp); hp.connect(lp); lp.connect(g); g.connect(this.masterGain);
+        src.start();
+        src.stop(ctx.currentTime + duration);
+    },
+
+    /* Keystroke — pink-noise body + tonal "click" pip stacked on top.
+       Slight per-key randomization so a stream of keys sounds alive. */
     keystroke() {
         if (!this.enabled) return;
         this.ensureContext();
-
-        // Mechanical keyboard-like sound
-        const baseFreq = 800 + Math.random() * 200;
-        this.playTone(baseFreq, 0.03, 'square', 0.15);
-        
-        // Add subtle high-frequency click
-        setTimeout(() => {
-            this.playTone(2000 + Math.random() * 500, 0.015, 'sine', 0.08);
-        }, 5);
+        // Body: filtered noise burst — the "thock"
+        this.noiseBurst(0.022, 0.14, 2200 + Math.random() * 600, 700);
+        // Pip: short tonal click on top — the "key" of the keystroke
+        const f = 1400 + Math.random() * 700;
+        this.playTone(f, 0.012, 'triangle', 0.08);
     },
 
-    // Space bar - deeper thud
+    /* Space — fatter, lower thock; the slab key */
     space() {
         if (!this.enabled) return;
         this.ensureContext();
+        this.noiseBurst(0.045, 0.22, 900, 120);
+        this.playTone(180 + Math.random() * 30, 0.05, 'sine', 0.16);
+    },
 
-        this.playTone(300, 0.04, 'sine', 0.2);
-        this.playTone(150, 0.05, 'triangle', 0.15);
+    /* Carriage bell — line-end / word-pop, soft brass ding.
+       Decoupled high partial creates the "ting" overtone. */
+    bell() {
+        if (!this.enabled) return;
+        this.ensureContext();
+        this.playTone(1760, 0.35, 'sine', 0.10);
+        this.playTone(2640, 0.28, 'sine', 0.05);
+        this.playTone(880,  0.45, 'sine', 0.06);
     },
 
     // Backspace - reverse sound

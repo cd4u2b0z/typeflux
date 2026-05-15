@@ -79,6 +79,27 @@ const ACHIEVEMENTS = [
         }
     },
     {
+        id: 'first-canter', category: 'skill',
+        name: 'First Canter', motto: 'cursus primus',
+        rule: 'Break forty words per minute.',
+        glyph: '✧',
+        check: (c) => c.test.wpm >= 40
+    },
+    {
+        id: 'easy-stride', category: 'skill',
+        name: 'The Easy Stride', motto: 'gradus facilis',
+        rule: 'Break sixty words per minute.',
+        glyph: '❂',
+        check: (c) => c.test.wpm >= 60
+    },
+    {
+        id: 'long-rein', category: 'skill',
+        name: 'A Long Rein', motto: 'habena longa',
+        rule: 'Break eighty words per minute.',
+        glyph: '☄',
+        check: (c) => c.test.wpm >= 80
+    },
+    {
         id: 'lightning', category: 'skill',
         name: 'Lightning', motto: 'fulmen',
         rule: 'Break one hundred words per minute.',

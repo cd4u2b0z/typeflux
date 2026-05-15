@@ -75,6 +75,21 @@
             <div class="scanlines"></div>
             <canvas id="matrix-rain" class="matrix-rain"></canvas>
             <div class="motes"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+
+            <!-- Per-theme ambient layers — each turns on only under its data-theme.
+                 forest: drifting leaves; ocean: slow tidal ripple; lavender: drifting incense smoke;
+                 aurora: shimmering bands overhead; midnight: a constellation of paper-grain stars. -->
+            <div class="ambient ambient-leaves"   aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="ambient ambient-tide"     aria-hidden="true"></div>
+            <div class="ambient ambient-incense"  aria-hidden="true">
+                <span></span><span></span><span></span>
+            </div>
+            <div class="ambient ambient-aurora"   aria-hidden="true"></div>
+            <div class="ambient ambient-stars"    aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
         </div>
 
         <!-- Ready-state countdown — III · II · I · GO -->
@@ -293,6 +308,17 @@
                             <canvas id="wpm-chart"></canvas>
                         </div>
                     </div>
+
+                    <!-- Stumble panel — words you faltered on this trial. -->
+                    <section class="cert-stumble" id="cert-stumble" aria-label="where you faltered">
+                        <div class="stumble-heading">
+                            <span class="plate-numeral">DEFECT</span>
+                            <span class="stumble-title">where the hand faltered</span>
+                            <span class="stumble-rule" aria-hidden="true"></span>
+                        </div>
+                        <ul class="stumble-list" id="stumble-list"></ul>
+                        <p class="stumble-counsel" id="stumble-counsel"></p>
+                    </section>
 
                     <!-- Honours of the trial — medals + seals earned this trial. -->
                     <aside class="cert-honours" id="cert-honours" aria-label="honours of the trial">
