@@ -294,6 +294,17 @@
                         </div>
                     </div>
 
+                    <!-- Honours of the trial — medals + seals earned this trial. -->
+                    <aside class="cert-honours" id="cert-honours" aria-label="honours of the trial">
+                        <div class="honours-heading">
+                            <span class="plate-numeral">HONOURS</span>
+                            <span class="honours-title">of this trial</span>
+                            <span class="honours-rule" aria-hidden="true"></span>
+                        </div>
+                        <div class="honours-grid" id="honours-grid"></div>
+                        <p class="honours-empty" id="honours-empty">— no honours this trial; the next, perhaps —</p>
+                    </aside>
+
                     <!-- Marginalia tip — language-tied for code trials,
                          a general typing tip for words/quotes/zen. -->
                     <aside class="cert-tip" id="cert-tip" aria-label="tip">
@@ -527,6 +538,58 @@
                         </div>
                         <label class="toggle">
                             <input type="checkbox" id="ready-countdown" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <div class="group-heading">
+                        <span class="plate-numeral">iii.</span>
+                        <span class="group-title">Of Affliction</span>
+                        <span class="group-aside">— honest burdens, undertaken at thy choosing</span>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">the mist</span>
+                            <span class="setting-desc">words yet to come fade into vapour at the page's edge</span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="aff-mist">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">the fading ink</span>
+                            <span class="setting-desc">that which is past dims behind thee, as ink upon old vellum</span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="aff-fade">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">the dim lantern</span>
+                            <span class="setting-desc">the room is darker; the page lit only by a guttering wick</span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="aff-lantern">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">the narrow eye</span>
+                            <span class="setting-desc">the field is veiled at its edges — only the centre remains plain</span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="aff-narrow">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>

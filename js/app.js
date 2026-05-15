@@ -27,6 +27,10 @@ class TypeFlux {
         this.crescendoFired = false;
         this.zenithFired = false;
 
+        // Honours of the trial — collected per-trial for the post-summary
+        this.medalsEarnedThisTest = [];
+        this.sealsEarnedThisTest = [];
+
         // Test data
         this.words = [];
         this.currentWordIndex = 0;
@@ -155,6 +159,14 @@ class TypeFlux {
             confidenceMode: document.getElementById('confidence-mode'),
             blindMode: document.getElementById('blind-mode'),
             readyCountdown: document.getElementById('ready-countdown'),
+            affMist: document.getElementById('aff-mist'),
+            affFade: document.getElementById('aff-fade'),
+            affLantern: document.getElementById('aff-lantern'),
+            affNarrow: document.getElementById('aff-narrow'),
+
+            // Honours of the trial
+            certHonours: document.getElementById('cert-honours'),
+            honoursGrid: document.getElementById('honours-grid'),
 
             // Toast
             toastContainer: document.getElementById('toast-container')
@@ -282,6 +294,19 @@ class TypeFlux {
                 this.updateSetting('readyCountdown', e.target.checked);
             });
         }
+
+        // Afflictions — visual-only burdens, body-class driven
+        const bindAffliction = (el, settingKey, bodyClass) => {
+            if (!el) return;
+            el.addEventListener('change', (e) => {
+                this.updateSetting(settingKey, e.target.checked);
+                document.body.classList.toggle(bodyClass, e.target.checked);
+            });
+        };
+        bindAffliction(this.elements.affMist,    'affMist',    'aff-mist');
+        bindAffliction(this.elements.affFade,    'affFade',    'aff-fade');
+        bindAffliction(this.elements.affLantern, 'affLantern', 'aff-lantern');
+        bindAffliction(this.elements.affNarrow,  'affNarrow',  'aff-narrow');
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -698,12 +723,15 @@ class TypeFlux {
             this.timerValue--;
             this.updateTimer();
 
-            // Last-5-second urgency: crimson rim on the vellum frame.
+            // Last-5-second urgency: crimson rim on the vellum frame +
+            // a gentle warm-to-crimson tint of the ambient atmosphere
+            // (halo, motes, matrix rain). Body class drives the wider shift.
             if (this.timerValue <= 5 && this.timerValue > 0) {
                 SoundSystem.timerWarning();
                 if (this.elements.vellumFrame) {
                     this.elements.vellumFrame.classList.add('urgent');
                 }
+                document.body.classList.add('is-urgent');
             }
 
             if (this.timerValue <= 0) {
@@ -728,6 +756,7 @@ class TypeFlux {
         if (this.elements.vellumFrame) {
             this.elements.vellumFrame.classList.remove('urgent');
         }
+        document.body.classList.remove('is-urgent');
 
         // Capture previous best BEFORE addTest mutates stats.
         const prevStats = Storage.getStats() || { bestWpm: 0, testsCompleted: 0 };
@@ -775,15 +804,74 @@ class TypeFlux {
         };
 
         const newly = Achievements.evaluate(ctx);
+        this.sealsEarnedThisTest = [];
         if (newly.length > 0) {
             // Persist + queue stamps. Stagger so multiple unlocks read clearly.
             newly.forEach((id, i) => {
                 Storage.unlockAchievement(id);
                 const ach = Achievements.byId(id);
-                if (ach) setTimeout(() => this.spawnStamp(ach), 900 + i * 700);
+                if (ach) {
+                    this.sealsEarnedThisTest.push(ach);
+                    setTimeout(() => this.spawnStamp(ach), 900 + i * 700);
+                }
             });
             // Refresh chronicles silently in case the user opens the ledger
             this.renderChronicles();
+        }
+
+        // Render the post-trial honours panel — medals + seals together.
+        this.renderHonours();
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Honours panel — post-trial register of medals + seals earned
+    // ─────────────────────────────────────────────────────────────
+    renderHonours() {
+        const panel = this.elements.certHonours;
+        const grid  = this.elements.honoursGrid;
+        if (!panel || !grid) return;
+
+        grid.textContent = '';
+
+        // De-duplicate medals by name; show count if earned multiple times
+        const medalCounts = new Map();
+        for (const m of this.medalsEarnedThisTest) {
+            const prev = medalCounts.get(m.name);
+            if (prev) { prev.count++; }
+            else { medalCounts.set(m.name, { ...m, count: 1 }); }
+        }
+
+        const items = [];
+        for (const m of medalCounts.values()) {
+            items.push({
+                cls: `tier-${m.tier || 'common'}`,
+                glyph: m.glyph,
+                name: m.count > 1 ? `${m.name} ×${m.count}` : m.name,
+                kind: 'medal'
+            });
+        }
+        for (const s of this.sealsEarnedThisTest) {
+            items.push({
+                cls: `cat-${s.category}`,
+                glyph: s.glyph,
+                name: s.name,
+                kind: 'a seal earned'
+            });
+        }
+
+        const has = items.length > 0;
+        panel.classList.toggle('has-honours', has);
+        if (!has) return;
+
+        for (const it of items) {
+            const card = document.createElement('div');
+            card.className = `honour ${it.cls}`;
+            card.innerHTML = `
+                <span class="honour-glyph" aria-hidden="true">${it.glyph}</span>
+                <span class="honour-name">${it.name}</span>
+                <span class="honour-kind">${it.kind}</span>
+            `;
+            grid.appendChild(card);
         }
     }
 
@@ -878,6 +966,8 @@ class TypeFlux {
        (crimson). All fade and remove themselves. */
     spawnMedal(name, glyph, tier = 'common') {
         const stack = this.elements.medalStack;
+        // Always log the honour, even if the visual stack isn't present.
+        this.medalsEarnedThisTest.push({ name, glyph, tier });
         if (!stack) return;
 
         const card = document.createElement('div');
@@ -1131,7 +1221,10 @@ class TypeFlux {
         this.medalsSeenInTest = new Set();
         this.crescendoFired = false;
         this.zenithFired = false;
+        this.medalsEarnedThisTest = [];
+        this.sealsEarnedThisTest = [];
         if (this.elements.medalStack) this.elements.medalStack.textContent = '';
+        document.body.classList.remove('is-urgent');
 
         // Reset UI
         this.elements.hiddenInput.value = '';
@@ -1156,7 +1249,8 @@ class TypeFlux {
         if (this.elements.certificate) this.elements.certificate.classList.remove('is-pb');
         if (this.elements.confettiLayer) this.elements.confettiLayer.textContent = '';
         if (this.elements.vellumFrame) this.elements.vellumFrame.classList.remove('urgent');
-        
+        document.body.classList.remove('is-urgent');
+
         // Make sure we're on test view
         this.switchView('test');
         
@@ -1441,6 +1535,17 @@ class TypeFlux {
             this.elements.readyCountdown.checked = this.settings.readyCountdown !== false;
         }
 
+        // Apply afflictions on load — checkbox + body class
+        const setAfflict = (el, key, cls) => {
+            const on = !!this.settings[key];
+            if (el) el.checked = on;
+            document.body.classList.toggle(cls, on);
+        };
+        setAfflict(this.elements.affMist,    'affMist',    'aff-mist');
+        setAfflict(this.elements.affFade,    'affFade',    'aff-fade');
+        setAfflict(this.elements.affLantern, 'affLantern', 'aff-lantern');
+        setAfflict(this.elements.affNarrow,  'affNarrow',  'aff-narrow');
+
         // Sound system
         SoundSystem.enabled = this.settings.soundEffects;
         SoundSystem.setVolume(this.settings.soundVolume / 100);
@@ -1505,16 +1610,21 @@ class TypeFlux {
         window.addEventListener('resize', resize);
 
         const draw = () => {
-            // Trail fade — translucent fill creates the falling-trail look
-            ctx.fillStyle = 'rgba(5, 10, 5, 0.08)';
+            // Urgency tints the trail toward warm crimson — gentle, not loud.
+            const urgent = document.body.classList.contains('is-urgent');
+            ctx.fillStyle = urgent ? 'rgba(18, 6, 6, 0.10)' : 'rgba(5, 10, 5, 0.08)';
             ctx.fillRect(0, 0, w, h);
             ctx.font = `${fontPx}px "JetBrains Mono", monospace`;
             for (let i = 0; i < cols; i++) {
                 const ch = glyphs[Math.floor(Math.random() * glyphs.length)];
                 const x = i * fontPx;
                 const y = drops[i] * fontPx;
-                // head bright, body dim
-                ctx.fillStyle = Math.random() < 0.06 ? '#d4ffa8' : '#4ade80';
+                // head bright, body dim — both warm to amber/crimson on urgency
+                if (urgent) {
+                    ctx.fillStyle = Math.random() < 0.06 ? '#ffd49a' : '#e47e80';
+                } else {
+                    ctx.fillStyle = Math.random() < 0.06 ? '#d4ffa8' : '#4ade80';
+                }
                 ctx.fillText(ch, x, y);
                 if (y > h && Math.random() > 0.975) drops[i] = 0;
                 drops[i] += 0.55;

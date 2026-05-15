@@ -23,6 +23,10 @@ const Storage = {
         confidenceMode: false,
         blindMode: false,
         readyCountdown: true,
+        affMist: false,
+        affFade: false,
+        affLantern: false,
+        affNarrow: false,
         defaultMode: 'words',
         defaultTime: 30,
         defaultWords: 25

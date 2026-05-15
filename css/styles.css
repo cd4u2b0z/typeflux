@@ -2622,3 +2622,265 @@ button:focus-visible {
     }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   URGENCY ATMOSPHERE — body.is-urgent at the dying breath
+   ─────────────────────────────────────────────────────────────
+   Subtle warm-to-crimson tint of the background atmosphere. The
+   vellum frame already pulses on its own (.vellum-frame.urgent).
+   Here we shift halo, motes, and matrix-rain to amber-crimson at
+   low intensity — a candle guttering, never a strobe.
+   ═══════════════════════════════════════════════════════════════ */
+body.is-urgent .halo {
+    background:
+        radial-gradient(ellipse 80% 60% at 50% 18%, rgba(228, 126, 128, 0.18), transparent 62%),
+        radial-gradient(ellipse 65% 55% at 50% 92%, rgba(228, 126, 128, 0.12), transparent 62%);
+    transition: background 600ms ease;
+    animation: urgentHaloBreathe 1.2s ease-in-out infinite;
+}
+
+@keyframes urgentHaloBreathe {
+    0%, 100% { opacity: 0.85; }
+    50%      { opacity: 1;    }
+}
+
+body.is-urgent .vignette {
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(40, 8, 8, 0.55) 100%);
+    transition: background 600ms ease;
+}
+
+body.is-urgent .motes span {
+    background: var(--error, #e47e80) !important;
+    box-shadow: 0 0 8px rgba(228, 126, 128, 0.55) !important;
+    transition: background 400ms ease, box-shadow 400ms ease;
+}
+
+/* Matrix rain colour shift handled in JS — see startMatrixRain.
+   The canvas opacity also lifts slightly in urgency. */
+body.is-urgent [data-theme="matrix"] .matrix-rain,
+[data-theme="matrix"] body.is-urgent .matrix-rain { opacity: 0.7; }
+
+@media (prefers-reduced-motion: reduce) {
+    body.is-urgent .halo { animation: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AFFLICTIONS — optional visual burdens (Of the Desk · iii.)
+   ─────────────────────────────────────────────────────────────
+   All four are pure visual challenge. None intercept input, none
+   delay timing, none penalize. Toggle on/off freely; combine as
+   thou dare. Every effect respects prefers-reduced-motion.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* the mist — words yet to come fade into vapour at the right edge */
+body.aff-mist .words-display {
+    -webkit-mask-image: linear-gradient(90deg,
+        #000 0%,
+        #000 45%,
+        rgba(0,0,0,0.7) 70%,
+        rgba(0,0,0,0.25) 90%,
+        transparent 100%);
+            mask-image: linear-gradient(90deg,
+        #000 0%,
+        #000 45%,
+        rgba(0,0,0,0.7) 70%,
+        rgba(0,0,0,0.25) 90%,
+        transparent 100%);
+    transition: -webkit-mask-image 400ms ease, mask-image 400ms ease;
+}
+
+/* the fading ink — past words drop to a faint impression */
+body.aff-fade .word.correct .letter,
+body.aff-fade .word.has-error .letter {
+    opacity: 0.22;
+    transition: opacity 900ms var(--ease-engraved);
+}
+
+/* the dim lantern — overall room darker, halo guttering */
+body.aff-lantern .halo {
+    opacity: 0.45;
+    animation: lanternFlicker 5.4s ease-in-out infinite;
+}
+body.aff-lantern .vignette {
+    background: radial-gradient(ellipse at center, transparent 38%, rgba(0, 0, 0, 0.78) 100%);
+}
+body.aff-lantern .grain { opacity: 0.11; }
+
+@keyframes lanternFlicker {
+    0%, 100% { opacity: 0.45; }
+    18%      { opacity: 0.32; }
+    22%      { opacity: 0.50; }
+    50%      { opacity: 0.40; }
+    72%      { opacity: 0.28; }
+    76%      { opacity: 0.46; }
+}
+
+/* the narrow eye — peripheral words veiled, centre plain */
+body.aff-narrow .typing-area {
+    -webkit-mask-image: radial-gradient(ellipse 65% 100% at 50% 50%,
+        #000 35%,
+        rgba(0,0,0,0.55) 65%,
+        rgba(0,0,0,0.12) 90%,
+        transparent 100%);
+            mask-image: radial-gradient(ellipse 65% 100% at 50% 50%,
+        #000 35%,
+        rgba(0,0,0,0.55) 65%,
+        rgba(0,0,0,0.12) 90%,
+        transparent 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.aff-lantern .halo { animation: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HONOURS PANEL — post-trial summary of medals + seals earned
+   ─────────────────────────────────────────────────────────────
+   Sits beneath the chart, above the marginalia tip. Each honour
+   is a small chip in the four medal tiers (gold/teal/plum/crimson)
+   or in seal-category colours. Empty state replaces the grid.
+   ═══════════════════════════════════════════════════════════════ */
+.cert-honours {
+    margin: var(--space-8) 0 var(--space-4);
+    padding: var(--space-5) var(--space-6) var(--space-6);
+    border-top:    1px solid var(--rule-faint);
+    border-bottom: 1px solid var(--rule-faint);
+    text-align: left;
+}
+
+.honours-heading {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.honours-heading .plate-numeral {
+    font-family: var(--font-display);
+    font-size: 0.62rem;
+    letter-spacing: 0.42em;
+    color: var(--gold);
+    text-transform: uppercase;
+}
+
+.honours-title {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--ink-dim);
+    letter-spacing: 0.04em;
+}
+
+.honours-rule {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--rule-faint), transparent);
+    align-self: center;
+    margin-left: var(--space-3);
+}
+
+.honours-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-3);
+}
+
+.honour {
+    position: relative;
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    grid-template-rows: auto auto;
+    column-gap: var(--space-3);
+    row-gap: 2px;
+    align-items: center;
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-card);
+    border: 1px solid var(--rule-faint);
+    border-left: 2px solid var(--gold);
+    transition: border-color 240ms var(--ease-engraved), background 240ms;
+}
+
+.honour:hover {
+    border-color: var(--gold);
+    background: var(--bg-elevated);
+}
+
+.honour-glyph {
+    grid-row: 1 / 3;
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    color: var(--gold);
+    text-align: center;
+    line-height: 1;
+    text-shadow: 0 0 14px var(--gold-glow);
+}
+
+.honour-name {
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink);
+    line-height: 1.1;
+}
+
+.honour-kind {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 0.78rem;
+    color: var(--ink-dim);
+    letter-spacing: 0.04em;
+}
+
+/* Tier accents on medals */
+.honour.tier-rare      { border-left-color: var(--teal); }
+.honour.tier-rare      .honour-glyph { color: var(--teal); text-shadow: 0 0 14px var(--teal-glow); }
+.honour.tier-epic      { border-left-color: var(--plum, #d699b6); }
+.honour.tier-epic      .honour-glyph { color: var(--plum, #d699b6); text-shadow: 0 0 14px rgba(214,153,182,0.45); }
+.honour.tier-legendary { border-left-color: var(--error); }
+.honour.tier-legendary .honour-glyph {
+    color: var(--error);
+    text-shadow: 0 0 18px var(--error);
+    animation: honourLegendFlare 1.6s ease-in-out infinite alternate;
+}
+
+/* Seal-category accents */
+.honour.cat-skill     { border-left-color: var(--gold); }
+.honour.cat-breadth   { border-left-color: var(--teal); }
+.honour.cat-breadth   .honour-glyph { color: var(--teal); text-shadow: 0 0 14px var(--teal-glow); }
+.honour.cat-endurance { border-left-color: var(--forest, #a7c080); }
+.honour.cat-endurance .honour-glyph { color: var(--forest, #a7c080); text-shadow: 0 0 14px rgba(167,192,128,0.4); }
+.honour.cat-secret    { border-left-color: var(--plum, #d699b6); }
+.honour.cat-secret    .honour-glyph { color: var(--plum, #d699b6); text-shadow: 0 0 14px rgba(214,153,182,0.45); }
+
+@keyframes honourLegendFlare {
+    from { filter: drop-shadow(0 0 4px var(--error)); }
+    to   { filter: drop-shadow(0 0 14px var(--error)); }
+}
+
+.honours-empty {
+    margin: 0;
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--ink-dim);
+    text-align: center;
+    letter-spacing: 0.04em;
+}
+
+.cert-honours.has-honours .honours-empty { display: none; }
+.cert-honours:not(.has-honours) .honours-grid { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    .honour.tier-legendary .honour-glyph { animation: none !important; }
+}
+
+/* Group heading aside — tucked italic note next to "Of Affliction" */
+.group-heading .group-aside {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 0.82rem;
+    color: var(--ink-dim);
+    margin-left: var(--space-2);
+    letter-spacing: 0.02em;
+}
