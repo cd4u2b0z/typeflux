@@ -2,7 +2,7 @@
 
 > *An account of the typewright — a typing trial in the manner of an engraved manuscript.*
 
-![edition](https://img.shields.io/badge/edition-prima_v1.3-c8a25c?style=flat-square&labelColor=2d353b)
+![edition](https://img.shields.io/badge/edition-prima_v1.4-c8a25c?style=flat-square&labelColor=2d353b)
 ![license](https://img.shields.io/badge/license-MIT-7fbbb3?style=flat-square&labelColor=2d353b)
 ![no build](https://img.shields.io/badge/build-none-a7c080?style=flat-square&labelColor=2d353b)
 ![no install](https://img.shields.io/badge/install-double--click-d699b6?style=flat-square&labelColor=2d353b)
@@ -131,6 +131,15 @@ Further rites at the desk:
 - voice of the quill (key sounds) + strength of voice
 - stay upon thine error · confidence of the hand (no backspace) · blind passage
 
+### Of the Vault — seal & restore the ledger
+
+All your records — settings, every trial, streak, and seal — live in your browser's `localStorage`. Two buttons at the desk let you carry them across machines or back them up:
+
+- **seal & download** — writes a `typeflux-ledger-YYYY-MM-DD.json` file containing every record. Save it where you like.
+- **select a ledger** — pick a previously-sealed JSON file. You're shown the trial count and seal date, then asked to confirm; on confirmation it **replaces** all current records. Seal your present ledger first if you don't want to lose it.
+
+The format is versioned (`format: "typeflux-ledger"`, `version: 1`) so a newer edition can refuse archives shaped wrong.
+
 ### Of Affliction — optional burdens
 
 Four visual debuffs you may take up at your choosing. None intercept input or alter timing — they only test the eye. Combine as you dare; remove them whenever. All respect `prefers-reduced-motion`.
@@ -235,4 +244,4 @@ MIT — use, modify, share.
 ---
 
 <p align="center"><em>set thy hand to the field. let the glass run.</em></p>
-<p align="center"><sub>editio prima · v1.3 · by Dr. Baklava</sub></p>
+<p align="center"><sub>editio prima · v1.4 · by Dr. Baklava</sub></p>

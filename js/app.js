@@ -164,6 +164,11 @@ class TypeFlux {
             affLantern: document.getElementById('aff-lantern'),
             affNarrow: document.getElementById('aff-narrow'),
 
+            // The vault — export / import
+            exportData: document.getElementById('export-data'),
+            importData: document.getElementById('import-data'),
+            importFile: document.getElementById('import-file'),
+
             // Honours of the trial
             certHonours: document.getElementById('cert-honours'),
             honoursGrid: document.getElementById('honours-grid'),
@@ -307,6 +312,87 @@ class TypeFlux {
         bindAffliction(this.elements.affFade,    'affFade',    'aff-fade');
         bindAffliction(this.elements.affLantern, 'affLantern', 'aff-lantern');
         bindAffliction(this.elements.affNarrow,  'affNarrow',  'aff-narrow');
+
+        // The vault — seal & unseal
+        if (this.elements.exportData) {
+            this.elements.exportData.addEventListener('click', () => this.exportLedger());
+        }
+        if (this.elements.importData && this.elements.importFile) {
+            this.elements.importData.addEventListener('click', () => this.elements.importFile.click());
+            this.elements.importFile.addEventListener('change', (e) => this.importLedger(e));
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // The vault — seal the ledger to disk; unseal one from a file
+    // ─────────────────────────────────────────────────────────────
+    exportLedger() {
+        try {
+            const data = Storage.exportData();
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url  = URL.createObjectURL(blob);
+            const d = new Date();
+            const stamp = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `typeflux-ledger-${stamp}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            this.showToast('the ledger is sealed and saved', 'success');
+            SoundSystem.click && SoundSystem.click();
+        } catch (e) {
+            console.error('export failed', e);
+            this.showToast('the seal failed — the ledger is unmoved', 'error');
+        }
+    }
+
+    importLedger(event) {
+        const file = event.target.files && event.target.files[0];
+        // Reset the input so the same file can be selected again
+        event.target.value = '';
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onerror = () => this.showToast('the ledger could not be read', 'error');
+        reader.onload = () => {
+            let parsed;
+            try {
+                parsed = JSON.parse(reader.result);
+            } catch (e) {
+                this.showToast('the file is not a sealed ledger', 'error');
+                return;
+            }
+
+            const tCount = Array.isArray(parsed.tests) ? parsed.tests.length : 0;
+            const ok = confirm(
+                `Unseal this ledger?\n\n` +
+                `· ${tCount} trial${tCount === 1 ? '' : 's'} on record\n` +
+                `· sealed ${parsed.exportedAt || 'date unknown'}\n\n` +
+                `This REPLACES all current records — settings, trials, streaks, seals. ` +
+                `It cannot be undone unless thou hast sealed thy current ledger first.`
+            );
+            if (!ok) {
+                this.showToast('the ledger was set aside, untouched', 'info');
+                return;
+            }
+
+            const result = Storage.importData(parsed);
+            if (!result.ok) {
+                this.showToast(`the unsealing failed — ${result.error}`, 'error');
+                return;
+            }
+
+            // Re-load settings into the live app and refresh views
+            this.settings = Storage.getSettings();
+            this.applySettings();
+            this.updateStatsView();
+            this.showToast('the ledger is unsealed — all records restored', 'success');
+            SoundSystem.newRecord && SoundSystem.newRecord();
+        };
+        reader.readAsText(file);
     }
 
     // ─────────────────────────────────────────────────────────────

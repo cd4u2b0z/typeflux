@@ -346,24 +346,44 @@ const Storage = {
         this.saveStats(this.getDefaultStats());
     },
 
+    /* The vault — full snapshot of everything localStorage holds for
+       typeflux. Versioned so the importer can refuse archives shaped
+       like a future schema. */
     exportData() {
         return {
+            format: 'typeflux-ledger',
+            version: 1,
+            exportedAt: new Date().toISOString(),
             settings: this.getSettings(),
-            tests: this.getTests(),
-            stats: this.getStats(),
-            exportedAt: new Date().toISOString()
+            tests: this.getTests() || [],
+            stats: this.getStats() || this.getDefaultStats(),
+            achievements: this.getAchievementState()
         };
     },
 
+    /* Replace mode — wipes current state, writes the archive's state
+       in. Returns { ok, error } so the UI can report cleanly. */
     importData(data) {
         try {
-            if (data.settings) this.saveSettings(data.settings);
-            if (data.tests) this.saveTests(data.tests);
-            if (data.stats) this.saveStats(data.stats);
-            return true;
+            if (!data || typeof data !== 'object') {
+                return { ok: false, error: 'not a ledger' };
+            }
+            if (data.format && data.format !== 'typeflux-ledger') {
+                return { ok: false, error: 'wrong format' };
+            }
+            if (data.version && data.version > 1) {
+                return { ok: false, error: 'newer ledger than this edition reads' };
+            }
+            if (data.settings) this.saveSettings({ ...this.defaultSettings, ...data.settings });
+            if (Array.isArray(data.tests)) this.saveTests(data.tests);
+            if (data.stats && typeof data.stats === 'object') this.saveStats(data.stats);
+            if (data.achievements && typeof data.achievements === 'object') {
+                this.saveAchievementState({ ...this.defaultAchievementState(), ...data.achievements });
+            }
+            return { ok: true };
         } catch (e) {
             console.error('Error importing data:', e);
-            return false;
+            return { ok: false, error: 'the ledger was unreadable' };
         }
     },
 
