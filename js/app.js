@@ -640,6 +640,7 @@ class TypeFlux {
     generateTest() {
         this.reset();
         this.lastLanguage = null;
+        this._refill = null;     // set by timed modes that top up the field
 
         switch (this.mode) {
             case 'words': {
@@ -650,20 +651,23 @@ class TypeFlux {
                     this.words = WordGenerator.generateSequence(this.wordCount);
                     this.timerValue = 0;
                 } else {
-                    // Time-bound: a deep well of words, sized well past any
-                    // sustainable pace so the glass always empties first.
-                    this.words = WordGenerator.generateSequence(this.timeLimit * 6);
+                    // Time-bound: a modest field that is topped up as the
+                    // hand advances — never a wall, never runs dry.
+                    this.words = WordGenerator.generateSequence(60);
+                    this._refill = () => WordGenerator.generateSequence(36);
                     this.timerValue = this.timeLimit;
                 }
                 break;
             }
 
             case 'quotes': {
-                // Optionally timed — under a glass, quotes feed endlessly
-                // until it empties; otherwise a single quote to complete.
+                // Optionally timed — under a glass, quotes feed in as the
+                // hand advances; otherwise a single quote to complete.
                 if (this.boundBy === 'time') {
                     this.words = this.buildTimedWords(
-                        () => QuoteGenerator.getAny().text, this.timeLimit * 4);
+                        () => QuoteGenerator.getAny().text, 45);
+                    this._refill = () =>
+                        QuoteGenerator.getAny().text.split(/\s+/).filter(Boolean);
                     this.timerValue = this.timeLimit;
                 } else {
                     this.words = QuoteGenerator.getAny().text.split(' ');
@@ -674,12 +678,13 @@ class TypeFlux {
 
             case 'prose': {
                 // Real, everyday English — coherent passages of working
-                // prose. Optionally timed, like quotes; otherwise a single
-                // passage sized by the Count knob.
+                // prose. Optionally timed (fed in as the hand advances);
+                // otherwise a single passage sized by the Count knob.
                 if (this.boundBy === 'time') {
                     this.words = this.buildTimedWords(
-                        () => SentenceGenerator.getPassage(this.wordCount).text,
-                        this.timeLimit * 4);
+                        () => SentenceGenerator.getPassage(this.wordCount).text, 45);
+                    this._refill = () =>
+                        SentenceGenerator.getPassage(this.wordCount).text.split(/\s+/).filter(Boolean);
                     this.timerValue = this.timeLimit;
                 } else {
                     this.words = SentenceGenerator.getPassage(this.wordCount).text.split(' ');
@@ -704,10 +709,11 @@ class TypeFlux {
                     });
                 };
                 if (this.boundBy === 'time') {
-                    // Timed — snippets from one language until the glass empties.
+                    // Timed — snippets from one language; sized to a realistic
+                    // reach (code is slow to type) so it is not a wall.
                     const langs = CodeGenerator.getLanguages();
                     const lang = langs[Math.floor(Math.random() * langs.length)];
-                    const target = Math.max(40, this.timeLimit);
+                    const target = Math.max(20, Math.ceil(this.timeLimit * 1.1));
                     let guard = 0;
                     while (this.words.length < target && guard++ < 200) {
                         const s = CodeGenerator.getRandom(lang);
@@ -889,13 +895,13 @@ class TypeFlux {
         this.updateCursorPosition();
     }
 
-    /* Zen is endless — quietly extend the word buffer as the hand
-       nears its end so the field never runs dry. */
-    appendZenWords(n = 80) {
+    /* Append plain words to the live field (DOM + this.words). Used to
+       top up both zen and timed trials so the field never runs dry —
+       and never has to render a huge untyped wall up front. */
+    appendWords(list) {
         const container = this.elements.wordsDisplay;
-        if (!container) return;
-        const more = WordGenerator.getFlow(n);
-        more.forEach(word => {
+        if (!container || !list) return;
+        list.forEach(word => {
             const idx = this.words.length;
             this.words.push(word);
             const wordEl = document.createElement('span');
@@ -911,6 +917,11 @@ class TypeFlux {
             });
             container.appendChild(wordEl);
         });
+    }
+
+    /* Zen is endless — extend the buffer with flow words. */
+    appendZenWords(n = 80) {
+        this.appendWords(WordGenerator.getFlow(n));
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -1356,9 +1367,16 @@ class TypeFlux {
             } else if (this.words.length - this.currentWordIndex < 30) {
                 this.appendZenWords(80);
             }
-        } else if (this.currentWordIndex >= this.words.length) {
-            this.finishTest();
-            return;
+        } else {
+            // Timed words/quotes/prose top up the field as the hand nears
+            // its end — the glass, not an exhausted field, ends the trial.
+            if (this._refill && this.words.length - this.currentWordIndex < 24) {
+                this.appendWords(this._refill());
+            }
+            if (this.currentWordIndex >= this.words.length) {
+                this.finishTest();
+                return;
+            }
         }
         
         // Mark next word as active
@@ -1503,46 +1521,59 @@ class TypeFlux {
             if (!this.isActive) { this.ghostRaf = null; return; }
             const elapsed = Date.now() - this.startTime;
             const times = this.ghost.wordTimes;
+            const n = times.length;
+            const lastTime = times[n - 1] || 1;
+            const avg = lastTime / n;          // the ghost's mean ms per word
 
-            // Advance ghost word index while elapsed time has surpassed the
-            // ghost's completion time for that word.
-            while (this.ghostWordIndex < times.length && elapsed >= times[this.ghostWordIndex]) {
-                this.ghostWordIndex++;
+            // The ghost's word position now — replayed from its recorded
+            // timings, then EXTRAPOLATED at its average pace once the
+            // recording runs out, so it stays a rival to the very end
+            // rather than freezing in the last seconds.
+            let gIdx;
+            if (elapsed <= lastTime) {
+                gIdx = 0;
+                while (gIdx < n && elapsed >= times[gIdx]) gIdx++;
+            } else {
+                gIdx = n + Math.floor((elapsed - lastTime) / avg);
             }
+            this.ghostWordIndex = gIdx;
 
-            // Position the ghost at the start of the word it's "currently typing"
-            const idx = Math.min(this.ghostWordIndex, this.words.length - 1);
+            // Position the ghost at the word it's "currently typing"
+            const idx = Math.min(gIdx, this.words.length - 1);
             const wordEl = this.elements.wordsDisplay.querySelector(`.word[data-word="${idx}"]`);
             const containerRect = this.elements.typingArea.getBoundingClientRect();
             if (wordEl) {
-                // Interpolate within the word for smoother motion
-                const prevTime = idx === 0 ? 0 : (times[idx - 1] || 0);
-                const nextTime = times[idx] || (prevTime + 600);
+                // within-word interpolation — recorded times where it has
+                // them, the average pace once extrapolating
+                let prevTime, nextTime;
+                if (idx < n) {
+                    prevTime = idx === 0 ? 0 : (times[idx - 1] || 0);
+                    nextTime = times[idx] || (prevTime + avg);
+                } else {
+                    prevTime = lastTime + (idx - n) * avg;
+                    nextTime = prevTime + avg;
+                }
                 const span = Math.max(1, nextTime - prevTime);
                 const within = Math.max(0, Math.min(1, (elapsed - prevTime) / span));
                 const letters = wordEl.querySelectorAll('.letter:not(.extra)');
                 const wordRect = wordEl.getBoundingClientRect();
                 const letterIdx = Math.floor(within * letters.length);
-                const letterEl = letters[Math.min(letterIdx, letters.length - 1)];
+                const letterEl = letters[Math.min(letterIdx, Math.max(0, letters.length - 1))];
                 const lr = letterEl ? letterEl.getBoundingClientRect() : wordRect;
                 cur.style.left = `${lr.left - containerRect.left}px`;
                 cur.style.top  = `${lr.top  - containerRect.top}px`;
             }
 
             // Lead/behind tinting: compare live word index vs ghost
-            const behind = this.currentWordIndex < this.ghostWordIndex;
-            cur.classList.toggle('behind', behind);
+            cur.classList.toggle('behind', this.currentWordIndex < this.ghostWordIndex);
 
             // Pacing ahead of the ghost — a faint gold warmth on the field,
             // the bright counterpart to the crimson of urgency.
             document.body.classList.toggle('ahead-of-ghost',
                 this.currentWordIndex > this.ghostWordIndex);
 
-            // Stop when ghost finishes its run
-            if (this.ghostWordIndex >= times.length) {
-                this.ghostRaf = null;
-                return;
-            }
+            // The ghost runs for the whole trial — the !isActive guard
+            // at the top is what ends it.
             this.ghostRaf = requestAnimationFrame(tick);
         };
         this.ghostRaf = requestAnimationFrame(tick);
