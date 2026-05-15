@@ -2141,7 +2141,14 @@ button:focus-visible {
 [data-theme="ocean"] .motes,
 [data-theme="lavender"] .motes,
 [data-theme="aurora"] .motes,
-[data-theme="midnight"] .motes { opacity: 0.7; }
+[data-theme="midnight"] .motes { opacity: calc(0.85 * var(--ambient-intensity)); }
+
+/* Ambient toggle off — kill matrix rain, scanlines, motes wholesale.
+   The .matrix-rain element is JS-driven; its opacity is set in CSS so
+   we can override it here without touching JS state. */
+body.ambient-off .matrix-rain,
+body.ambient-off .scanlines,
+body.ambient-off .motes { opacity: 0 !important; }
 
 .motes span {
     position: absolute;
@@ -2890,6 +2897,12 @@ body.aff-narrow .typing-area {
    not a colour swap. Off by default; opacity 0 unless its theme
    is active. All respect prefers-reduced-motion at the bottom.
    ═══════════════════════════════════════════════════════════════ */
+/* Per-effect opacity is multiplied by --ambient-intensity (0..1).
+   Default 0.6; the desk slider sets it. body.ambient-off forces 0
+   regardless of theme, killing every ambient layer in one switch. */
+:root { --ambient-intensity: 0.6; }
+body.ambient-off { --ambient-intensity: 0; }
+
 .ambient {
     position: absolute;
     inset: 0;
@@ -2900,7 +2913,7 @@ body.aff-narrow .typing-area {
 
 /* ── Forest: drifting leaves, faintly tumbling. Not particles —
       stylised diamond glyphs in deep moss. ───────────────────── */
-[data-theme="forest"] .ambient-leaves { opacity: 0.7; }
+[data-theme="forest"] .ambient-leaves { opacity: calc(0.85 * var(--ambient-intensity)); }
 .ambient-leaves span {
     position: absolute;
     top: -40px;
@@ -2912,13 +2925,24 @@ body.aff-narrow .typing-area {
     animation: leafFall 18s linear infinite;
     filter: drop-shadow(0 0 4px rgba(167, 192, 128, 0.35));
 }
-.ambient-leaves span:nth-child(1) { left:  8%; animation-duration: 22s; animation-delay:  -3s; transform: rotate(15deg); }
-.ambient-leaves span:nth-child(2) { left: 21%; animation-duration: 26s; animation-delay:  -9s; opacity: 0.28; transform: rotate(-30deg); }
-.ambient-leaves span:nth-child(3) { left: 34%; animation-duration: 19s; animation-delay: -14s; }
-.ambient-leaves span:nth-child(4) { left: 52%; animation-duration: 24s; animation-delay:  -2s; opacity: 0.4; }
-.ambient-leaves span:nth-child(5) { left: 67%; animation-duration: 28s; animation-delay: -11s; }
-.ambient-leaves span:nth-child(6) { left: 79%; animation-duration: 21s; animation-delay:  -6s; opacity: 0.3;  transform: rotate(45deg); }
-.ambient-leaves span:nth-child(7) { left: 92%; animation-duration: 25s; animation-delay: -16s; }
+.ambient-leaves span:nth-child(1)  { left:  4%; animation-duration: 22s; animation-delay:  -3s; transform: rotate(15deg); }
+.ambient-leaves span:nth-child(2)  { left: 11%; animation-duration: 26s; animation-delay:  -9s; opacity: 0.28; transform: rotate(-30deg); }
+.ambient-leaves span:nth-child(3)  { left: 19%; animation-duration: 19s; animation-delay: -14s; }
+.ambient-leaves span:nth-child(4)  { left: 26%; animation-duration: 24s; animation-delay:  -2s; opacity: 0.4; }
+.ambient-leaves span:nth-child(5)  { left: 33%; animation-duration: 28s; animation-delay: -11s; }
+.ambient-leaves span:nth-child(6)  { left: 41%; animation-duration: 21s; animation-delay:  -6s; opacity: 0.3;  transform: rotate(45deg); }
+.ambient-leaves span:nth-child(7)  { left: 48%; animation-duration: 25s; animation-delay: -16s; }
+.ambient-leaves span:nth-child(8)  { left: 55%; animation-duration: 23s; animation-delay:  -8s; opacity: 0.32; }
+.ambient-leaves span:nth-child(9)  { left: 62%; animation-duration: 27s; animation-delay: -12s; transform: rotate(-15deg); }
+.ambient-leaves span:nth-child(10) { left: 69%; animation-duration: 20s; animation-delay:  -1s; opacity: 0.36; }
+.ambient-leaves span:nth-child(11) { left: 75%; animation-duration: 24s; animation-delay: -17s; }
+.ambient-leaves span:nth-child(12) { left: 82%; animation-duration: 26s; animation-delay:  -4s; transform: rotate(60deg); opacity: 0.3; }
+.ambient-leaves span:nth-child(13) { left: 88%; animation-duration: 22s; animation-delay: -10s; }
+.ambient-leaves span:nth-child(14) { left: 94%; animation-duration: 28s; animation-delay: -15s; opacity: 0.42; }
+.ambient-leaves span:nth-child(15) { left: 14%; animation-duration: 30s; animation-delay:  -7s; opacity: 0.32; transform: rotate(-45deg); }
+.ambient-leaves span:nth-child(16) { left: 38%; animation-duration: 31s; animation-delay: -13s; opacity: 0.28; }
+.ambient-leaves span:nth-child(17) { left: 60%; animation-duration: 29s; animation-delay:  -5s; opacity: 0.34; transform: rotate(30deg); }
+.ambient-leaves span:nth-child(18) { left: 86%; animation-duration: 23s; animation-delay: -18s; opacity: 0.3; }
 @keyframes leafFall {
     0%   { transform: translateY(-5vh) translateX(0)    rotate(0deg);    opacity: 0; }
     10%  { opacity: 0.35; }
@@ -2928,27 +2952,44 @@ body.aff-narrow .typing-area {
 
 /* ── Ocean: slow tidal ripple — repeating concentric bands that
       breathe across the screen. ─────────────────────────────── */
-[data-theme="ocean"] .ambient-tide { opacity: 0.45; }
+/* Ocean tide — slow horizontal bands drifting sideways across the
+   field. No radial bullseye, no centre target. Two layered gradients
+   moving at different speeds give a soft parallax shimmer that reads
+   as a calm sea, not a target reticle. */
+[data-theme="ocean"] .ambient-tide { opacity: calc(0.7 * var(--ambient-intensity)); }
 .ambient-tide {
     background:
-        repeating-radial-gradient(
-            ellipse 60% 80% at 50% 60%,
-            transparent 0px,
-            transparent 60px,
-            rgba(127, 187, 179, 0.08) 62px,
-            transparent 80px
-        );
-    animation: tideBreathe 10s ease-in-out infinite;
+        linear-gradient(180deg,
+            transparent 0%,
+            rgba(127, 187, 179, 0.06) 18%,
+            transparent 22%,
+            transparent 38%,
+            rgba(127, 187, 179, 0.05) 52%,
+            transparent 56%,
+            transparent 72%,
+            rgba(127, 187, 179, 0.06) 86%,
+            transparent 90%),
+        linear-gradient(180deg,
+            transparent 8%,
+            rgba(127, 187, 179, 0.04) 28%,
+            transparent 32%,
+            transparent 60%,
+            rgba(127, 187, 179, 0.04) 76%,
+            transparent 80%);
+    background-size: 100% 220%, 100% 280%;
+    background-position: 0% 0%, 0% 100%;
+    animation: tideDrift 38s linear infinite;
     mix-blend-mode: screen;
+    filter: blur(0.5px);
 }
-@keyframes tideBreathe {
-    0%, 100% { transform: scale(1)     translateY(0);   opacity: 0.45; }
-    50%      { transform: scale(1.04)  translateY(-8px); opacity: 0.6;  }
+@keyframes tideDrift {
+    0%   { background-position: 0% 0%,    0% 100%; }
+    100% { background-position: 0% 100%,  0% 0%;   }
 }
 
 /* ── Lavender: drifting incense smoke — broad, slow vertical
       plumes shaded plum, blurred and rising. ────────────────── */
-[data-theme="lavender"] .ambient-incense { opacity: 0.6; }
+[data-theme="lavender"] .ambient-incense { opacity: calc(0.85 * var(--ambient-intensity)); }
 .ambient-incense span {
     position: absolute;
     bottom: -10vh;
@@ -2958,9 +2999,12 @@ body.aff-narrow .typing-area {
     animation: incenseRise 22s ease-in-out infinite;
     mix-blend-mode: screen;
 }
-.ambient-incense span:nth-child(1) { left:  8%; animation-duration: 24s; animation-delay:  -2s; }
-.ambient-incense span:nth-child(2) { left: 38%; animation-duration: 30s; animation-delay: -11s; }
-.ambient-incense span:nth-child(3) { left: 68%; animation-duration: 26s; animation-delay:  -7s; }
+.ambient-incense span:nth-child(1) { left:  4%; animation-duration: 24s; animation-delay:  -2s; }
+.ambient-incense span:nth-child(2) { left: 22%; animation-duration: 30s; animation-delay: -11s; }
+.ambient-incense span:nth-child(3) { left: 40%; animation-duration: 26s; animation-delay:  -7s; }
+.ambient-incense span:nth-child(4) { left: 58%; animation-duration: 28s; animation-delay: -16s; }
+.ambient-incense span:nth-child(5) { left: 74%; animation-duration: 22s; animation-delay:  -4s; }
+.ambient-incense span:nth-child(6) { left: 88%; animation-duration: 32s; animation-delay: -13s; }
 @keyframes incenseRise {
     0%   { transform: translateY(0)      translateX(0);   opacity: 0; }
     20%  { opacity: 0.5; }
@@ -2969,7 +3013,7 @@ body.aff-narrow .typing-area {
 
 /* ── Aurora: shimmering bands — three slow-drifting gradient
       ribbons stacked across the upper half of the field. ───── */
-[data-theme="aurora"] .ambient-aurora { opacity: 0.55; }
+[data-theme="aurora"] .ambient-aurora { opacity: calc(0.7 * var(--ambient-intensity)); }
 .ambient-aurora {
     background:
         linear-gradient(180deg,
@@ -2996,7 +3040,7 @@ body.aff-narrow .typing-area {
 /* ── Midnight: actual constellations — pinpoint stars with the
       occasional twinkle. Replaces the generic motes for this
       theme; midnight motes still drift, but stars persist. ── */
-[data-theme="midnight"] .ambient-stars { opacity: 0.85; }
+[data-theme="midnight"] .ambient-stars { opacity: calc(1.05 * var(--ambient-intensity)); }
 .ambient-stars span {
     position: absolute;
     width: 2px; height: 2px;
@@ -3022,6 +3066,84 @@ body.aff-narrow .typing-area {
 .ambient-stars span:nth-child(14) { top: 58%; left: 64%; animation-delay:  -4.5s; opacity: 0.6; }
 .ambient-stars span:nth-child(15) { top: 71%; left: 79%; animation-delay:  -2.0s; }
 .ambient-stars span:nth-child(16) { top: 76%; left: 26%; animation-delay:  -3.4s; width: 2px; height: 2px; }
+.ambient-stars span:nth-child(17) { top: 81%; left: 47%; animation-delay:  -1.5s; }
+.ambient-stars span:nth-child(18) { top: 87%; left: 73%; animation-delay:  -3.9s; opacity: 0.7; }
+.ambient-stars span:nth-child(19) { top: 92%; left: 12%; animation-delay:  -2.6s; width: 3px; height: 3px; }
+.ambient-stars span:nth-child(20) { top: 95%; left: 88%; animation-delay:  -0.8s; }
+.ambient-stars span:nth-child(21) { top:  3%; left: 53%; animation-delay:  -4.1s; }
+.ambient-stars span:nth-child(22) { top:  7%; left: 65%; animation-delay:  -1.0s; opacity: 0.45; }
+.ambient-stars span:nth-child(23) { top: 14%; left: 95%; animation-delay:  -3.7s; }
+.ambient-stars span:nth-child(24) { top: 16%; left: 17%; animation-delay:  -2.2s; }
+.ambient-stars span:nth-child(25) { top: 19%; left: 47%; animation-delay:  -0.5s; opacity: 0.6; }
+.ambient-stars span:nth-child(26) { top: 23%; left: 78%; animation-delay:  -3.2s; width: 2px; height: 2px; }
+.ambient-stars span:nth-child(27) { top: 25%; left:  9%; animation-delay:  -1.8s; opacity: 0.5; }
+.ambient-stars span:nth-child(28) { top: 28%; left: 60%; animation-delay:  -4.4s; }
+.ambient-stars span:nth-child(29) { top: 30%; left: 20%; animation-delay:  -0.7s; width: 3px; height: 3px; opacity: 0.75; }
+.ambient-stars span:nth-child(30) { top: 34%; left: 81%; animation-delay:  -2.9s; }
+.ambient-stars span:nth-child(31) { top: 36%; left: 43%; animation-delay:  -1.6s; }
+.ambient-stars span:nth-child(32) { top: 40%; left: 11%; animation-delay:  -3.6s; opacity: 0.5; }
+.ambient-stars span:nth-child(33) { top: 41%; left: 24%; animation-delay:  -0.4s; }
+.ambient-stars span:nth-child(34) { top: 43%; left: 56%; animation-delay:  -4.0s; opacity: 0.65; }
+.ambient-stars span:nth-child(35) { top: 46%; left: 84%; animation-delay:  -2.5s; }
+.ambient-stars span:nth-child(36) { top: 48%; left:  6%; animation-delay:  -1.1s; opacity: 0.4; }
+.ambient-stars span:nth-child(37) { top: 49%; left: 39%; animation-delay:  -3.3s; width: 2px; height: 2px; }
+.ambient-stars span:nth-child(38) { top: 53%; left: 70%; animation-delay:  -0.9s; }
+.ambient-stars span:nth-child(39) { top: 55%; left: 30%; animation-delay:  -2.7s; opacity: 0.55; }
+.ambient-stars span:nth-child(40) { top: 56%; left: 96%; animation-delay:  -4.3s; width: 3px; height: 3px; }
+.ambient-stars span:nth-child(41) { top: 60%; left: 50%; animation-delay:  -1.4s; }
+.ambient-stars span:nth-child(42) { top: 63%; left: 19%; animation-delay:  -3.0s; opacity: 0.5; }
+.ambient-stars span:nth-child(43) { top: 64%; left: 76%; animation-delay:  -0.2s; }
+.ambient-stars span:nth-child(44) { top: 66%; left: 90%; animation-delay:  -2.3s; opacity: 0.6; }
+.ambient-stars span:nth-child(45) { top: 68%; left: 36%; animation-delay:  -3.8s; }
+.ambient-stars span:nth-child(46) { top: 70%; left:  3%; animation-delay:  -1.7s; }
+.ambient-stars span:nth-child(47) { top: 73%; left: 56%; animation-delay:  -0.6s; width: 2px; height: 2px; opacity: 0.45; }
+.ambient-stars span:nth-child(48) { top: 75%; left: 85%; animation-delay:  -4.6s; }
+.ambient-stars span:nth-child(49) { top: 79%; left: 41%; animation-delay:  -2.8s; opacity: 0.7; width: 3px; height: 3px; }
+.ambient-stars span:nth-child(50) { top: 83%; left: 17%; animation-delay:  -1.3s; }
+.ambient-stars span:nth-child(51) { top: 86%; left: 60%; animation-delay:  -3.5s; opacity: 0.55; }
+.ambient-stars span:nth-child(52) { top: 89%; left: 33%; animation-delay:  -0.1s; }
+.ambient-stars span:nth-child(53) { top: 90%; left: 51%; animation-delay:  -2.4s; }
+.ambient-stars span:nth-child(54) { top: 93%; left: 78%; animation-delay:  -4.7s; opacity: 0.5; }
+.ambient-stars span:nth-child(55) { top: 96%; left: 23%; animation-delay:  -1.9s; }
+.ambient-stars span:nth-child(56) { top: 98%; left: 65%; animation-delay:  -3.1s; opacity: 0.65; }
+.ambient-stars span:nth-child(57) { top:  2%; left: 30%; animation-delay:  -0.3s; }
+.ambient-stars span:nth-child(58) { top:  5%; left: 80%; animation-delay:  -4.5s; opacity: 0.5; }
+.ambient-stars span:nth-child(59) { top: 11%; left: 11%; animation-delay:  -2.0s; width: 2px; height: 2px; }
+.ambient-stars span:nth-child(60) { top: 15%; left: 50%; animation-delay:  -3.8s; opacity: 0.6; }
+.ambient-stars span:nth-child(61) { top: 17%; left: 28%; animation-delay:  -0.7s; }
+.ambient-stars span:nth-child(62) { top: 22%; left: 38%; animation-delay:  -4.2s; opacity: 0.5; }
+.ambient-stars span:nth-child(63) { top: 26%; left: 64%; animation-delay:  -1.4s; width: 2px; height: 2px; }
+.ambient-stars span:nth-child(64) { top: 32%; left: 12%; animation-delay:  -3.1s; opacity: 0.55; }
+.ambient-stars span:nth-child(65) { top: 35%; left: 88%; animation-delay:  -0.8s; }
+.ambient-stars span:nth-child(66) { top: 39%; left: 28%; animation-delay:  -2.6s; opacity: 0.45; }
+.ambient-stars span:nth-child(67) { top: 42%; left: 75%; animation-delay:  -4.4s; }
+.ambient-stars span:nth-child(68) { top: 45%; left: 44%; animation-delay:  -1.0s; opacity: 0.6; width: 2px; height: 2px; }
+.ambient-stars span:nth-child(69) { top: 50%; left: 62%; animation-delay:  -3.4s; }
+.ambient-stars span:nth-child(70) { top: 54%; left: 25%; animation-delay:  -0.5s; opacity: 0.5; }
+.ambient-stars span:nth-child(71) { top: 57%; left: 92%; animation-delay:  -2.7s; }
+.ambient-stars span:nth-child(72) { top: 62%; left: 47%; animation-delay:  -4.6s; opacity: 0.55; }
+.ambient-stars span:nth-child(73) { top: 65%; left:  8%; animation-delay:  -1.2s; }
+.ambient-stars span:nth-child(74) { top: 67%; left: 33%; animation-delay:  -3.7s; opacity: 0.45; }
+.ambient-stars span:nth-child(75) { top: 72%; left: 67%; animation-delay:  -0.9s; }
+.ambient-stars span:nth-child(76) { top: 74%; left: 18%; animation-delay:  -2.1s; opacity: 0.5; }
+.ambient-stars span:nth-child(77) { top: 78%; left: 54%; animation-delay:  -4.3s; width: 2px; height: 2px; }
+.ambient-stars span:nth-child(78) { top: 82%; left: 95%; animation-delay:  -1.6s; }
+.ambient-stars span:nth-child(79) { top: 84%; left: 38%; animation-delay:  -3.5s; opacity: 0.55; }
+.ambient-stars span:nth-child(80) { top: 88%; left: 70%; animation-delay:  -0.4s; }
+.ambient-stars span:nth-child(81) { top: 91%; left: 45%; animation-delay:  -2.8s; opacity: 0.5; }
+.ambient-stars span:nth-child(82) { top: 94%; left: 14%; animation-delay:  -4.1s; width: 2px; height: 2px; }
+.ambient-stars span:nth-child(83) { top: 97%; left: 58%; animation-delay:  -1.5s; opacity: 0.6; }
+.ambient-stars span:nth-child(84) { top:  1%; left: 78%; animation-delay:  -3.9s; }
+.ambient-stars span:nth-child(85) { top: 13%; left: 31%; animation-delay:  -0.2s; opacity: 0.45; }
+.ambient-stars span:nth-child(86) { top: 24%; left: 86%; animation-delay:  -2.5s; }
+.ambient-stars span:nth-child(87) { top: 37%; left: 14%; animation-delay:  -4.0s; opacity: 0.6; }
+.ambient-stars span:nth-child(88) { top: 47%; left: 64%; animation-delay:  -1.3s; width: 2px; height: 2px; }
+.ambient-stars span:nth-child(89) { top: 59%; left:  4%; animation-delay:  -3.2s; }
+.ambient-stars span:nth-child(90) { top: 69%; left: 53%; animation-delay:  -0.6s; opacity: 0.55; }
+.ambient-stars span:nth-child(91) { top: 77%; left: 88%; animation-delay:  -2.9s; }
+.ambient-stars span:nth-child(92) { top: 85%; left: 30%; animation-delay:  -4.5s; opacity: 0.5; }
+.ambient-stars span:nth-child(93) { top: 92%; left: 68%; animation-delay:  -1.1s; }
+.ambient-stars span:nth-child(94) { top:  6%; left: 21%; animation-delay:  -3.6s; opacity: 0.65; }
 @keyframes starTwinkle {
     0%, 100% { opacity: 0.55; transform: scale(1); }
     50%      { opacity: 0.95; transform: scale(1.5); filter: drop-shadow(0 0 6px var(--gold)); }

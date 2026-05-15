@@ -121,7 +121,7 @@ Eight palettes of the page — each a complete atmosphere, not a colour swap. Se
 | aurora   | Astrolabe        | deep indigo, silvered moon      | **shimmering aurora bands drift overhead** + silver/cyan motes |
 | sunset   | Sanguine Codex   | oxblood and cream               | **halo warms with your combo** |
 | forest   | Verdant Folio    | deep moss, bone, sage           | **stylised leaves tumble down the page** + forest motes |
-| ocean    | Tidal Atlas      | teal-black and gold             | **slow concentric tidal ripple breathes across the field** + teal motes |
+| ocean    | Tidal Atlas      | teal-black and gold             | **slow horizontal tide bands drift sideways across the field** + teal motes |
 | lavender | Mauve Apocrypha  | aubergine and rose-gold         | **broad incense plumes rise from the lower edge** + plum motes |
 | paper    | Vellum Manuscript| light parchment, ink, vermillion| **ink-bleed on errors** |
 | matrix   | Phosphor Tube    | terminal green on near-black    | **Canvas2D digital rain · CRT scanlines · chromatic-aberration cursor** |
@@ -132,6 +132,7 @@ Further rites at the desk:
 - gliding caret · live pace declaration · *at the ready* (countdown)
 - voice of the quill (key sounds) + strength of voice
 - stay upon thine error · confidence of the hand (no backspace) · blind passage
+- **ambient atmosphere** (master toggle) and **depth of atmosphere** (intensity 0–100%) — shut off all per-theme effects with one switch, or scale them softer/louder
 
 ### Of the Vault — seal & restore the ledger
 

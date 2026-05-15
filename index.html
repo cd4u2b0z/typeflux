@@ -80,15 +80,15 @@
                  forest: drifting leaves; ocean: slow tidal ripple; lavender: drifting incense smoke;
                  aurora: shimmering bands overhead; midnight: a constellation of paper-grain stars. -->
             <div class="ambient ambient-leaves"   aria-hidden="true">
-                <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
             </div>
             <div class="ambient ambient-tide"     aria-hidden="true"></div>
             <div class="ambient ambient-incense"  aria-hidden="true">
-                <span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span><span></span>
             </div>
             <div class="ambient ambient-aurora"   aria-hidden="true"></div>
             <div class="ambient ambient-stars"    aria-hidden="true">
-                <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
             </div>
         </div>
 
@@ -580,6 +580,28 @@
                             <input type="checkbox" id="ready-countdown" checked>
                             <span class="toggle-slider"></span>
                         </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">ambient atmosphere</span>
+                            <span class="setting-desc">stars, leaves, tides, incense, aurora — the per-palette mood</span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="ambient-effects" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">depth of atmosphere</span>
+                            <span class="setting-desc">how loudly the room speaks — set softer or louder to thy taste</span>
+                        </div>
+                        <div class="setting-control">
+                            <input type="range" id="ambient-intensity" min="0" max="100" value="60" class="slider">
+                            <span class="slider-value" id="ambient-intensity-value">60%</span>
+                        </div>
                     </div>
                 </div>
 

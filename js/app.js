@@ -176,6 +176,10 @@ class TypeFlux {
             affLantern: document.getElementById('aff-lantern'),
             affNarrow: document.getElementById('aff-narrow'),
 
+            ambientEffects: document.getElementById('ambient-effects'),
+            ambientIntensity: document.getElementById('ambient-intensity'),
+            ambientIntensityValue: document.getElementById('ambient-intensity-value'),
+
             // The vault — export / import
             exportData: document.getElementById('export-data'),
             importData: document.getElementById('import-data'),
@@ -335,6 +339,22 @@ class TypeFlux {
         bindAffliction(this.elements.affFade,    'affFade',    'aff-fade');
         bindAffliction(this.elements.affLantern, 'affLantern', 'aff-lantern');
         bindAffliction(this.elements.affNarrow,  'affNarrow',  'aff-narrow');
+
+        // Ambient effects toggle + intensity knob
+        if (this.elements.ambientEffects) {
+            this.elements.ambientEffects.addEventListener('change', (e) => {
+                this.updateSetting('ambientEffects', e.target.checked);
+                document.body.classList.toggle('ambient-off', !e.target.checked);
+            });
+        }
+        if (this.elements.ambientIntensity) {
+            this.elements.ambientIntensity.addEventListener('input', (e) => {
+                const v = parseInt(e.target.value);
+                this.updateSetting('ambientIntensity', v);
+                this.elements.ambientIntensityValue.textContent = `${v}%`;
+                document.documentElement.style.setProperty('--ambient-intensity', (v / 100).toFixed(2));
+            });
+        }
 
         // The vault — seal & unseal
         if (this.elements.exportData) {
@@ -1967,6 +1987,16 @@ class TypeFlux {
         setAfflict(this.elements.affLantern, 'affLantern', 'aff-lantern');
         setAfflict(this.elements.affNarrow,  'affNarrow',  'aff-narrow');
 
+        // Ambient settings — toggle + intensity
+        const ambientOn = this.settings.ambientEffects !== false;
+        if (this.elements.ambientEffects) this.elements.ambientEffects.checked = ambientOn;
+        document.body.classList.toggle('ambient-off', !ambientOn);
+
+        const intensity = (typeof this.settings.ambientIntensity === 'number') ? this.settings.ambientIntensity : 60;
+        if (this.elements.ambientIntensity)      this.elements.ambientIntensity.value = intensity;
+        if (this.elements.ambientIntensityValue) this.elements.ambientIntensityValue.textContent = `${intensity}%`;
+        document.documentElement.style.setProperty('--ambient-intensity', (intensity / 100).toFixed(2));
+
         // Sound system
         SoundSystem.enabled = this.settings.soundEffects;
         SoundSystem.setVolume(this.settings.soundVolume / 100);
@@ -2022,7 +2052,8 @@ class TypeFlux {
             h = canvas.height = window.innerHeight * window.devicePixelRatio;
             canvas.style.width  = window.innerWidth + 'px';
             canvas.style.height = window.innerHeight + 'px';
-            fontPx = 16 * window.devicePixelRatio;
+            // Smaller glyphs → denser columns → a thicker rain.
+            fontPx = 12 * window.devicePixelRatio;
             cols = Math.ceil(w / fontPx);
             drops = new Array(cols).fill(0).map(() => Math.random() * -50);
         };
@@ -2031,6 +2062,12 @@ class TypeFlux {
         window.addEventListener('resize', resize);
 
         const draw = () => {
+            // Pause the draw loop entirely when ambient is muted.
+            if (document.body.classList.contains('ambient-off')) {
+                ctx.clearRect(0, 0, w, h);
+                this._rainRaf = requestAnimationFrame(draw);
+                return;
+            }
             // Urgency tints the trail toward warm crimson — gentle, not loud.
             const urgent = document.body.classList.contains('is-urgent');
             ctx.fillStyle = urgent ? 'rgba(18, 6, 6, 0.10)' : 'rgba(5, 10, 5, 0.08)';

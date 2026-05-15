@@ -28,6 +28,8 @@ const Storage = {
         affFade: false,
         affLantern: false,
         affNarrow: false,
+        ambientEffects: true,
+        ambientIntensity: 60,
         defaultMode: 'words',
         defaultTime: 30,
         defaultWords: 25
