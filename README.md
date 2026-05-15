@@ -2,7 +2,7 @@
 
 > *An account of the typewright — a typing trial in the manner of an engraved manuscript.*
 
-![edition](https://img.shields.io/badge/edition-prima_v1.4-c8a25c?style=flat-square&labelColor=2d353b)
+![edition](https://img.shields.io/badge/edition-prima_v1.5-c8a25c?style=flat-square&labelColor=2d353b)
 ![license](https://img.shields.io/badge/license-MIT-7fbbb3?style=flat-square&labelColor=2d353b)
 ![no build](https://img.shields.io/badge/build-none-a7c080?style=flat-square&labelColor=2d353b)
 ![no install](https://img.shields.io/badge/install-double--click-d699b6?style=flat-square&labelColor=2d353b)
@@ -52,7 +52,7 @@ Four manners of trial, set upon a vellum field with gold corner brackets:
 
 - **words** — random words drawn from a curated lexicon
 - **quotes** — passages from authors, programmers, and thinkers
-- **code** — real snippets across fifteen languages: JavaScript, TypeScript, Python, Rust, Go, C, C++, Zig, Ruby, Lua, Bash, SQL, Haskell, HTML, CSS
+- **code** — real snippets across fifteen languages: JavaScript, TypeScript, Python, Rust, Go, C, C++, Zig, Ruby, Lua, Bash, SQL, Haskell, HTML, CSS. **Indentation is real** — every space, tab, and line break is a required keystroke. Lines are completed with `Enter`; indent depth shows as faint middle-dots so the eye reads it without ambiguity. The active line gets a gold rule down its left edge.
 - **zen** — an endless stream, for the practice of pure flow
 
 The glass (timer) may be set to 15, 30, 60, or 120 seconds. Count to x, xxv, l, or c.
@@ -63,6 +63,8 @@ The glass (timer) may be set to 15, 30, 60, or 120 seconds. Count to x, xxv, l, 
 - **Word-pop.** Each correctly-completed word scales briefly and breathes a gold halo — the page acknowledges you.
 - **Ready countdown.** Before each trial, an engraved ring rises and counts *III · II · I · GO*. Toggleable at the desk.
 - **Last-5-second urgency.** When the glass falls under five, the vellum rim flares crimson, corners flicker, the timer numeral thumps — and the wider room responds: the lantern halo warms to crimson and breathes; drifting motes shift colour; matrix rain (if active) turns its heads to amber. Gentle, not strobing.
+- **Ghost runs — race thy past best.** When you complete a `words` trial faster than your prior best for that exact format (e.g. `words 25 @ 30s`), the run is sealed as a **ghost**: a translucent teal cursor that, on every subsequent trial of the same format, replays its pace word-by-word. A small flag floats above it: *your best · N wpm*. When you fall behind it goes gold. Set new ghosts; race them; break them.
+- **A counsel above the field.** A quiet one-line italic above the vellum, drawn from your recent trials — *"a ghost waits for this format at 67 wpm — race it"*, *"thy accuracy hath slipped of late — slow thy pace"*, *"thy pace hath plateaued near 54 wpm — try a longer glass."* Hidden when there's nothing useful to say.
 - **Fervor seal.** A circular medallion that breathes gold at five hits, ignites amber **fire** at ten, and burns crimson **blaze** at twenty-five.
 
 ### Medals — fleeting honours of the trial
@@ -115,12 +117,12 @@ Eight palettes of the page — each a complete atmosphere, not a colour swap. Se
 
 | key | name | character | quirk |
 |---|---|---|---|
-| midnight | Everforest Night | warm green-grey, gilt (default) | drifting gold motes |
-| aurora   | Astrolabe        | deep indigo, silvered moon      | drifting silver/cyan motes |
+| midnight | Everforest Night | warm green-grey, gilt (default) | **a constellation of twinkling stars** + drifting gold motes |
+| aurora   | Astrolabe        | deep indigo, silvered moon      | **shimmering aurora bands drift overhead** + silver/cyan motes |
 | sunset   | Sanguine Codex   | oxblood and cream               | **halo warms with your combo** |
-| forest   | Verdant Folio    | deep moss, bone, sage           | drifting forest motes |
-| ocean    | Tidal Atlas      | teal-black and gold             | drifting teal motes |
-| lavender | Mauve Apocrypha  | aubergine and rose-gold         | drifting plum motes |
+| forest   | Verdant Folio    | deep moss, bone, sage           | **stylised leaves tumble down the page** + forest motes |
+| ocean    | Tidal Atlas      | teal-black and gold             | **slow concentric tidal ripple breathes across the field** + teal motes |
+| lavender | Mauve Apocrypha  | aubergine and rose-gold         | **broad incense plumes rise from the lower edge** + plum motes |
 | paper    | Vellum Manuscript| light parchment, ink, vermillion| **ink-bleed on errors** |
 | matrix   | Phosphor Tube    | terminal green on near-black    | **Canvas2D digital rain · CRT scanlines · chromatic-aberration cursor** |
 
@@ -156,6 +158,8 @@ Four visual debuffs you may take up at your choosing. None intercept input or al
 Upon conclusion, the trial is sealed: a ringed grade medallion with compass ticks, the grand pace and accuracy in Cinzel caps, a six-row ledger of details, a chart of pace through the glass, and a seal line — *signed this day, by your own hand*.
 
 A **marginalia tip** sits beneath, in italic Garamond — a one-line counsel drawn from the language you typed (eight per language, twenty for prose) so the certificate teaches as well as scores.
+
+A **defect ledger** records the words you faltered on most this trial, in monospace, with a one-line counsel that names the actual pattern — *"thy hand stumbles often on `qu` — set thy practice there"*, *"capitals are costing thee — the shift hand needs drilling"*, *"double letters trip the hand — slow the second strike."* Hidden when nothing was missed.
 
 **Personal best.** If your net WPM exceeds every previous trial, a wax-stamped gold sash slams in above the certificate reading **NEW PERSONAL BEST**, the grade letter shimmers, and forty-eight confetti drift fullscreen.
 

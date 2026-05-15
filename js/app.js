@@ -34,6 +34,15 @@ class TypeFlux {
         // Stumble tracking — per-word miss tally for the cert defect panel
         this.wordMisses = {};
 
+        // Ghost-run state — pace of thy past best for this format,
+        // replayed during the live trial as a translucent rival.
+        this.ghost = null;          // { wpm, words[], wordTimes[] } from Storage
+        this.ghostWordIndex = 0;    // which ghost-word the ghost is "currently typing"
+        this.ghostRaf = null;
+        // Per-word completion timestamps for the LIVE run, captured to save
+        // as the new ghost if this run beats the bucket's best.
+        this.runWordTimes = [];
+
         // Test data
         this.words = [];
         this.currentWordIndex = 0;
@@ -180,6 +189,12 @@ class TypeFlux {
             certStumble:    document.getElementById('cert-stumble'),
             stumbleList:    document.getElementById('stumble-list'),
             stumbleCounsel: document.getElementById('stumble-counsel'),
+
+            // Ghost cursor + type-next hint
+            ghostCursor: document.getElementById('ghost-cursor'),
+            ghostWpm:    document.getElementById('ghost-wpm'),
+            typeNext:    document.getElementById('type-next'),
+            typeNextBody: document.getElementById('type-next-body'),
 
             // Toast
             toastContainer: document.getElementById('toast-container')
@@ -506,6 +521,23 @@ class TypeFlux {
         this.renderWords();
         this.updateTimer();
         this.updateCursorPosition();
+
+        // Load the ghost for this format bucket — only meaningful for words
+        // mode, which is the only mode where the same seed-bucket has
+        // comparable runs. Quote/code/zen would need same-snippet matching
+        // which is a richer feature; leave them ghost-less for now.
+        this.ghost = null;
+        this.ghostWordIndex = 0;
+        if (this.elements.ghostCursor) this.elements.ghostCursor.classList.remove('active', 'behind');
+        if (this.mode === 'words') {
+            const g = Storage.getGhost(this.mode, this.wordCount, this.timeLimit);
+            if (g && Array.isArray(g.wordTimes) && g.wordTimes.length > 0) {
+                this.ghost = g;
+                if (this.elements.ghostWpm) this.elements.ghostWpm.textContent = g.wpm;
+            }
+        }
+
+        this.renderTypeNext();
     }
 
     renderWords() {
@@ -754,6 +786,10 @@ class TypeFlux {
 
         // ── Medals on word completion ─────────────────────────
         const now = Date.now();
+        // Capture per-word elapsed-ms for ghost storage
+        if (this.startTime) {
+            this.runWordTimes.push(now - this.startTime);
+        }
         const duration = this.lastWordCompletedAt ? (now - this.lastWordCompletedAt) : Infinity;
         const perfect = isCorrect && this.wordErrorsThisWord === 0;
         this.checkWordMedals(currentWord || '', perfect, duration);
@@ -863,6 +899,77 @@ class TypeFlux {
 
         // Start WPM tracking
         this.wpmInterval = setInterval(() => this.trackWpm(), 1000);
+
+        // Start ghost replay if a ghost exists for this bucket
+        this.startGhostReplay();
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Ghost replay — translucent rival cursor that moves through the
+    // same word positions at the timings of thy past best run.
+    // ─────────────────────────────────────────────────────────────
+    startGhostReplay() {
+        const cur = this.elements.ghostCursor;
+        if (!cur) return;
+        if (!this.ghost || !this.ghost.wordTimes || this.ghost.wordTimes.length === 0) {
+            cur.classList.remove('active', 'behind');
+            return;
+        }
+        cur.classList.add('active');
+        this.ghostWordIndex = 0;
+
+        const tick = () => {
+            if (!this.isActive) { this.ghostRaf = null; return; }
+            const elapsed = Date.now() - this.startTime;
+            const times = this.ghost.wordTimes;
+
+            // Advance ghost word index while elapsed time has surpassed the
+            // ghost's completion time for that word.
+            while (this.ghostWordIndex < times.length && elapsed >= times[this.ghostWordIndex]) {
+                this.ghostWordIndex++;
+            }
+
+            // Position the ghost at the start of the word it's "currently typing"
+            const idx = Math.min(this.ghostWordIndex, this.words.length - 1);
+            const wordEl = this.elements.wordsDisplay.querySelector(`.word[data-word="${idx}"]`);
+            const containerRect = this.elements.typingArea.getBoundingClientRect();
+            if (wordEl) {
+                // Interpolate within the word for smoother motion
+                const prevTime = idx === 0 ? 0 : (times[idx - 1] || 0);
+                const nextTime = times[idx] || (prevTime + 600);
+                const span = Math.max(1, nextTime - prevTime);
+                const within = Math.max(0, Math.min(1, (elapsed - prevTime) / span));
+                const letters = wordEl.querySelectorAll('.letter:not(.extra)');
+                const wordRect = wordEl.getBoundingClientRect();
+                const letterIdx = Math.floor(within * letters.length);
+                const letterEl = letters[Math.min(letterIdx, letters.length - 1)];
+                const lr = letterEl ? letterEl.getBoundingClientRect() : wordRect;
+                cur.style.left = `${lr.left - containerRect.left}px`;
+                cur.style.top  = `${lr.top  - containerRect.top}px`;
+            }
+
+            // Lead/behind tinting: compare live word index vs ghost
+            const behind = this.currentWordIndex < this.ghostWordIndex;
+            cur.classList.toggle('behind', behind);
+
+            // Stop when ghost finishes its run
+            if (this.ghostWordIndex >= times.length) {
+                this.ghostRaf = null;
+                return;
+            }
+            this.ghostRaf = requestAnimationFrame(tick);
+        };
+        this.ghostRaf = requestAnimationFrame(tick);
+    }
+
+    stopGhostReplay() {
+        if (this.ghostRaf) {
+            cancelAnimationFrame(this.ghostRaf);
+            this.ghostRaf = null;
+        }
+        if (this.elements.ghostCursor) {
+            this.elements.ghostCursor.classList.remove('active', 'behind');
+        }
     }
 
     startTimer() {
@@ -898,6 +1005,7 @@ class TypeFlux {
         if (this.timer) clearInterval(this.timer);
         if (this.wpmInterval) clearInterval(this.wpmInterval);
         if (this.elapsedInterval) clearInterval(this.elapsedInterval);
+        this.stopGhostReplay();
 
         // Drop urgency styling
         if (this.elements.vellumFrame) {
@@ -915,9 +1023,24 @@ class TypeFlux {
 
         const isPersonalBest = hadPriorTests && results.wpm > previousBest;
 
+        // Save ghost if this run is the best for its bucket — only words mode
+        // gets ghosts (other modes need same-snippet matching to be meaningful).
+        let ghostUpdated = false;
+        if (this.mode === 'words' && this.runWordTimes.length > 0) {
+            ghostUpdated = Storage.maybeSaveGhost(this.mode, this.wordCount, this.timeLimit, {
+                wpm: results.wpm,
+                accuracy: results.accuracy,
+                words: this.words.slice(0, this.runWordTimes.length),
+                wordTimes: this.runWordTimes
+            });
+        }
+
         if (isPersonalBest) {
             SoundSystem.newRecord();
             this.showToast(`new personal best — ${results.wpm} wpm`, 'success');
+        } else if (ghostUpdated) {
+            SoundSystem.newRecord();
+            this.showToast(`a new ghost is set for this format — ${results.wpm} wpm`, 'success');
         } else {
             SoundSystem.testComplete();
         }
@@ -1011,6 +1134,65 @@ class TypeFlux {
         }
 
         counsel.textContent = this._stumbleCounsel(entries);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Type-next counsel — quiet hint above the field, drawn from
+    // your recent trials. Surfaced when there's something specific
+    // worth saying; hidden otherwise.
+    // ─────────────────────────────────────────────────────────────
+    renderTypeNext() {
+        const el = this.elements.typeNext;
+        const body = this.elements.typeNextBody;
+        if (!el || !body) return;
+
+        const counsel = this._typeNextCounsel();
+        if (!counsel) {
+            el.classList.remove('visible');
+            return;
+        }
+        body.textContent = counsel;
+        el.classList.add('visible');
+    }
+
+    _typeNextCounsel() {
+        const tests = (Storage.getTests() || []).slice(-10);
+        if (tests.length === 0) {
+            return 'Begin with a short trial — the desk awaits thy first hand.';
+        }
+
+        // Suggest a ghost race when one exists for the current format
+        if (this.mode === 'words') {
+            const g = Storage.getGhost(this.mode, this.wordCount, this.timeLimit);
+            if (g) {
+                return `A ghost waits for this format at ${g.wpm} wpm — race it.`;
+            }
+        }
+
+        // If the user keeps a single mode, nudge them to vary it
+        const recentModes = new Set(tests.slice(-5).map(t => t.mode));
+        if (recentModes.size === 1) {
+            const tried = [...recentModes][0];
+            const others = ['words', 'quotes', 'code', 'zen'].filter(m => m !== tried);
+            const nudge = others[Math.floor(Math.random() * others.length)];
+            return `Thou hast set thyself only to ${tried} of late — try a turn at ${nudge}.`;
+        }
+
+        // Recent mean accuracy below 92 → drill accuracy
+        const meanAcc = tests.reduce((s, t) => s + t.accuracy, 0) / tests.length;
+        if (meanAcc < 92) {
+            return 'Thy accuracy hath slipped of late — slow thy pace, mind every letter.';
+        }
+
+        // Recent mean WPM stable (small variance) → push for a higher tier
+        const wpms = tests.map(t => t.wpm);
+        const mean = wpms.reduce((a, b) => a + b, 0) / wpms.length;
+        const sd = Math.sqrt(wpms.reduce((a, b) => a + (b - mean) ** 2, 0) / wpms.length);
+        if (sd < 4 && tests.length >= 5) {
+            return `Thy pace hath plateaued near ${Math.round(mean)} wpm — try a longer glass to test endurance.`;
+        }
+
+        return null;
     }
 
     /* Look at the most-missed words and offer one specific observation:
@@ -1424,6 +1606,7 @@ class TypeFlux {
         if (this.timer) clearInterval(this.timer);
         if (this.wpmInterval) clearInterval(this.wpmInterval);
         if (this.elapsedInterval) clearInterval(this.elapsedInterval);
+        this.stopGhostReplay();
 
         // Reset state
         this.isActive = false;
@@ -1459,6 +1642,8 @@ class TypeFlux {
         this.medalsEarnedThisTest = [];
         this.sealsEarnedThisTest = [];
         this.wordMisses = {};
+        this.runWordTimes = [];
+        this.stopGhostReplay();
         if (this.elements.medalStack) this.elements.medalStack.textContent = '';
         document.body.classList.remove('is-urgent');
 
@@ -1490,7 +1675,7 @@ class TypeFlux {
         // Make sure we're on test view
         this.switchView('test');
         
-        // Generate new test
+        // Generate new test (also re-renders type-next counsel + ghost)
         this.generateTest();
         
         // Focus input

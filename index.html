@@ -144,6 +144,16 @@
                     </div>
                 </div>
 
+                <!-- Type-next hint — quiet cartouche above the vellum.
+                     A one-line counsel of what the typewright should do next,
+                     drawn from recent trials. Hidden when nothing useful to say. -->
+                <aside class="type-next" id="type-next" aria-label="counsel">
+                    <span class="type-next-mark" aria-hidden="true">⁂</span>
+                    <span class="type-next-eyebrow">a counsel</span>
+                    <span class="type-next-rule" aria-hidden="true"></span>
+                    <span class="type-next-body" id="type-next-body">—</span>
+                </aside>
+
                 <!-- the vellum: typing surface inside engraved frame -->
                 <div class="vellum-frame">
                     <span class="corner corner-tl" aria-hidden="true"></span>
@@ -166,6 +176,10 @@
                             <div class="words-display" id="words-display"></div>
                             <div class="cursor-trail cursor-trail-2" aria-hidden="true"></div>
                             <div class="cursor-trail cursor-trail-1" aria-hidden="true"></div>
+                            <!-- Ghost cursor — translucent racer of thy past best. Shown only when a ghost exists. -->
+                            <div class="ghost-cursor" id="ghost-cursor" aria-hidden="true">
+                                <span class="ghost-flag">your best · <em id="ghost-wpm">0</em> wpm</span>
+                            </div>
                             <div class="cursor" id="cursor"></div>
                         </div>
                         <input type="text" class="hidden-input" id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">

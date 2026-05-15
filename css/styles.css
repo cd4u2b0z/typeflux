@@ -3186,3 +3186,111 @@ body.aff-narrow .typing-area {
 .typing-area.mode-code .word.correct .letter { color: var(--ink-dim); }
 
 /* Future lines stay neutral — their default .letter color is dim already. */
+
+/* ═══════════════════════════════════════════════════════════════
+   GHOST CURSOR — translucent rival from thy past best run
+   ─────────────────────────────────────────────────────────────
+   Renders inside the typing-area; positioned by JS at the same
+   coordinate system as the live cursor. A small flag floats
+   above showing "your best · N wpm" so it reads at a glance.
+   ═══════════════════════════════════════════════════════════════ */
+.ghost-cursor {
+    position: absolute;
+    width: 2px;
+    height: var(--typing-font-size);
+    background: var(--teal);
+    box-shadow: 0 0 10px var(--teal-glow);
+    opacity: 0;
+    pointer-events: none;
+    transition: left 110ms linear, top 220ms var(--ease-engraved), opacity 320ms;
+    z-index: 4;
+}
+.ghost-cursor.active { opacity: 0.55; }
+
+.ghost-cursor::before {
+    content: "";
+    position: absolute;
+    inset: -2px -1px;
+    background: linear-gradient(180deg, transparent, var(--teal-glow), transparent);
+    opacity: 0.4;
+    filter: blur(2px);
+}
+
+.ghost-flag {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-family: var(--font-display);
+    font-size: 0.58rem;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--teal);
+    background: var(--bg-card);
+    padding: 3px 8px;
+    border: 1px solid var(--teal);
+    border-left-width: 2px;
+    box-shadow: 0 0 12px rgba(127, 187, 179, 0.25);
+    opacity: 0.85;
+}
+.ghost-flag em {
+    font-style: normal;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 2px;
+}
+
+/* When the live racer is ahead, flag the lead in gold; when behind, a soft warning */
+.ghost-cursor.behind .ghost-flag { color: var(--gold); border-color: var(--gold); }
+.ghost-cursor.behind             { background: var(--gold); box-shadow: 0 0 12px var(--gold-glow); }
+
+@media (prefers-reduced-motion: reduce) {
+    .ghost-cursor { transition: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TYPE-NEXT HINT — quiet counsel above the vellum
+   ═══════════════════════════════════════════════════════════════ */
+.type-next {
+    display: none;
+    align-items: baseline;
+    gap: var(--space-3);
+    margin: 0 auto var(--space-4);
+    padding: 6px var(--space-4);
+    max-width: 760px;
+    border-top:    1px solid var(--rule-faint);
+    border-bottom: 1px solid var(--rule-faint);
+    background: linear-gradient(180deg, var(--bg-card), transparent);
+}
+.type-next.visible { display: flex; }
+
+.type-next-mark {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--gold);
+}
+
+.type-next-eyebrow {
+    font-family: var(--font-display);
+    font-size: 0.6rem;
+    letter-spacing: 0.42em;
+    color: var(--gold);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.type-next-rule {
+    flex: 0 1 28px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--rule-faint), transparent);
+}
+
+.type-next-body {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--ink-dim);
+    letter-spacing: 0.02em;
+}

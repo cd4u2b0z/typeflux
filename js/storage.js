@@ -8,7 +8,8 @@ const Storage = {
         SETTINGS: 'typeflux_settings',
         TESTS: 'typeflux_tests',
         STATS: 'typeflux_stats',
-        ACHIEVEMENTS: 'typeflux_achievements'
+        ACHIEVEMENTS: 'typeflux_achievements',
+        GHOSTS: 'typeflux_ghosts'
     },
 
     // Default settings
@@ -264,6 +265,48 @@ const Storage = {
         this.saveAchievementState(s);
     },
 
+    // ─────────────────────────────────────────────────────────────
+    // Ghosts — your best run for each (mode/count/time) bucket.
+    // Stored as { wpm, words[], wordTimes[] } where wordTimes[i] is
+    // the elapsed-ms at which word i was completed in that run.
+    // The next time you start a trial in the same bucket, the ghost
+    // replays at the same pace as a translucent cursor.
+    // ─────────────────────────────────────────────────────────────
+    ghostKey(mode, wordCount, timeLimit) {
+        if (mode === 'words')  return `words:${wordCount}@${timeLimit}`;
+        if (mode === 'quotes') return `quotes`;
+        if (mode === 'code')   return `code`;
+        if (mode === 'zen')    return `zen`;
+        return `${mode}`;
+    },
+
+    getGhost(mode, wordCount, timeLimit) {
+        try {
+            const data = localStorage.getItem(this.KEYS.GHOSTS);
+            const all = data ? JSON.parse(data) : {};
+            return all[this.ghostKey(mode, wordCount, timeLimit)] || null;
+        } catch (e) { return null; }
+    },
+
+    /* Save the run if it beats the current best for this bucket. Returns
+       true if the ghost was updated. */
+    maybeSaveGhost(mode, wordCount, timeLimit, run) {
+        try {
+            const data = localStorage.getItem(this.KEYS.GHOSTS);
+            const all = data ? JSON.parse(data) : {};
+            const key = this.ghostKey(mode, wordCount, timeLimit);
+            const cur = all[key];
+            if (cur && cur.wpm >= run.wpm) return false;
+            all[key] = run;
+            localStorage.setItem(this.KEYS.GHOSTS, JSON.stringify(all));
+            return true;
+        } catch (e) { return false; }
+    },
+
+    clearGhosts() {
+        try { localStorage.removeItem(this.KEYS.GHOSTS); } catch (e) {}
+    },
+
     /* Returns true if newly unlocked, false if already had it */
     unlockAchievement(id) {
         const s = this.getAchievementState();
@@ -333,6 +376,7 @@ const Storage = {
             localStorage.removeItem(this.KEYS.TESTS);
             localStorage.removeItem(this.KEYS.STATS);
             localStorage.removeItem(this.KEYS.ACHIEVEMENTS);
+            localStorage.removeItem(this.KEYS.GHOSTS);
             this.init();
             return true;
         } catch (e) {
@@ -350,6 +394,8 @@ const Storage = {
        typeflux. Versioned so the importer can refuse archives shaped
        like a future schema. */
     exportData() {
+        let ghosts = {};
+        try { ghosts = JSON.parse(localStorage.getItem(this.KEYS.GHOSTS) || '{}'); } catch (e) {}
         return {
             format: 'typeflux-ledger',
             version: 1,
@@ -357,7 +403,8 @@ const Storage = {
             settings: this.getSettings(),
             tests: this.getTests() || [],
             stats: this.getStats() || this.getDefaultStats(),
-            achievements: this.getAchievementState()
+            achievements: this.getAchievementState(),
+            ghosts
         };
     },
 
@@ -379,6 +426,9 @@ const Storage = {
             if (data.stats && typeof data.stats === 'object') this.saveStats(data.stats);
             if (data.achievements && typeof data.achievements === 'object') {
                 this.saveAchievementState({ ...this.defaultAchievementState(), ...data.achievements });
+            }
+            if (data.ghosts && typeof data.ghosts === 'object') {
+                try { localStorage.setItem(this.KEYS.GHOSTS, JSON.stringify(data.ghosts)); } catch (e) {}
             }
             return { ok: true };
         } catch (e) {
