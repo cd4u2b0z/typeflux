@@ -2,7 +2,7 @@
 
 > *An account of the typewright — a typing trial in the manner of an engraved manuscript.*
 
-![edition](https://img.shields.io/badge/edition-prima_v1.1-c8a25c?style=flat-square&labelColor=2d353b)
+![edition](https://img.shields.io/badge/edition-prima_v1.2-c8a25c?style=flat-square&labelColor=2d353b)
 ![license](https://img.shields.io/badge/license-MIT-7fbbb3?style=flat-square&labelColor=2d353b)
 ![no build](https://img.shields.io/badge/build-none-a7c080?style=flat-square&labelColor=2d353b)
 ![no install](https://img.shields.io/badge/install-double--click-d699b6?style=flat-square&labelColor=2d353b)
@@ -29,7 +29,7 @@ Four manners of trial, set upon a vellum field with gold corner brackets:
 
 - **words** — random words drawn from a curated lexicon
 - **quotes** — passages from authors, programmers, and thinkers
-- **code** — real snippets in JavaScript, Python, Rust, TypeScript, Go, CSS, and SQL
+- **code** — real snippets across fifteen languages: JavaScript, TypeScript, Python, Rust, Go, C, C++, Zig, Ruby, Lua, Bash, SQL, Haskell, HTML, CSS
 - **zen** — an endless stream, for the practice of pure flow
 
 The glass (timer) may be set to 15, 30, 60, or 120 seconds. Count to x, xxv, l, or c.
@@ -41,6 +41,23 @@ The glass (timer) may be set to 15, 30, 60, or 120 seconds. Count to x, xxv, l, 
 - **Ready countdown.** Before each trial, an engraved ring rises and counts *III · II · I · GO*. Toggleable at the desk.
 - **Last-5-second urgency.** When the glass falls under five, the vellum rim flares crimson, corners flicker, the timer numeral thumps.
 - **Fervor seal.** A circular medallion that breathes gold at five hits, ignites amber **fire** at ten, and burns crimson **blaze** at twenty-five.
+
+### Medals — fleeting honours of the trial
+
+Small bronze cards that flash in from the right of the field as you earn them — gone in a breath, but felt. Four tiers of finish (gold · teal · plum · crimson) and a dozen ways in:
+
+- **First Blood** — the first correct word of the trial.
+- **Double · Triple Flourish** — two and three perfect words in succession.
+- **The Spree** (✚) — five perfect words running.
+- **Consummate** — ten perfect words running.
+- **Flawless** — fifteen perfect words running.
+- **Transcendent** — twenty perfect words running (legendary, with crimson flare).
+- **Heavy Hand** (⊞) — close out a long word with no errors.
+- **Snap** (☇) — close a word in under three hundred milliseconds.
+- **Crescendo** — sustain a high pace mid-trial.
+- **Thunderclap** — exceed your average pace by a wide margin.
+- **Overture** — hit a peak pace within the trial.
+- **Last Gasp** (⧗) — finish a perfect word inside the final five seconds.
 
 ## Plate II — The Ledger
 
@@ -55,6 +72,19 @@ Each trial is recorded. Five accountings are kept:
 | **V** | **days unbroken — consecutive days with at least one trial** |
 
 A chart of pace across all trials follows, and a roll of the ten most recent. Strike from the record at your pleasure.
+
+### The Chronicles — twenty-two seals across four orders
+
+Wax-stamped seals earned through real signals — never grinding for its own sake. When unlocked, the seal slams down upon the certificate with its motto in italic Garamond. The grid lives on the ledger.
+
+| order | what it honours | seals |
+|---|---|---|
+| **skill** | what you can do at the keyboard | First Mark · The Steady Hand · Three Blades · Lightning · The Galloper · Master of the Glass · Perfect Glass |
+| **breadth** | what you've sought out | The Wanderer · The Polyglot · The Lexicographer · The Cartographer |
+| **endurance** | what you've sustained | The Apprentice · The Journeyman · Master of the Hall · The Hour at the Desk · The Day at the Desk · The Unbroken Quill · The Long Watch |
+| **secret** | unusual moments | *four hidden — earned, not announced* |
+
+Each seal carries a Latin motto, a single Unicode device, and a one-sentence rule. Locked seals show their device dimmed; secret seals show only `?` until earned.
 
 ## Plate III — The Scrivener's Desk
 
@@ -82,7 +112,11 @@ Further rites at the desk:
 
 Upon conclusion, the trial is sealed: a ringed grade medallion with compass ticks, the grand pace and accuracy in Cinzel caps, a six-row ledger of details, a chart of pace through the glass, and a seal line — *signed this day, by your own hand*.
 
-**Personal best.** If your net WPM exceeds every previous trial, a wax-stamped gold sash slams in from above the certificate reading **NEW PERSONAL BEST**, the grade letter shimmers, and forty-eight confetti drift fullscreen.
+A **marginalia tip** sits beneath, in italic Garamond — a one-line counsel drawn from the language you typed (eight per language, twenty for prose) so the certificate teaches as well as scores.
+
+**Personal best.** If your net WPM exceeds every previous trial, a wax-stamped gold sash slams in above the certificate reading **NEW PERSONAL BEST**, the grade letter shimmers, and forty-eight confetti drift fullscreen.
+
+**Newly-earned seals** stamp themselves onto the certificate in succession after the trial — gold wax, slammed in from the right, held a beat, then receded into the Chronicles.
 
 ---
 
@@ -105,13 +139,16 @@ typeflux/
 │   └── themes.css      eight palettes (midnight default)
 ├── js/
 │   ├── app.js          state machine, key handling, view routing,
-│   │                   countdown, urgency, PB, matrix rain
+│   │                   countdown, urgency, PB, matrix rain,
+│   │                   medals, stamp queue, chronicles render
 │   ├── words.js        word generator + lexicons
 │   ├── quotes.js       quote corpus
-│   ├── code.js         code snippet corpus
+│   ├── code.js         15-language snippet corpus + tips
+│   ├── achievements.js 22 seals across four orders
 │   ├── sounds.js       Web Audio synthesised keystrokes
 │   ├── chart.js        canvas pace charts
-│   └── storage.js      localStorage settings, history, streak
+│   └── storage.js      localStorage settings, history, streak,
+│                       achievements, themes/languages/modes used
 ```
 
 ## Pace, by the formula
@@ -149,7 +186,7 @@ The grade is the product of net WPM and accuracy:
 
 ## Accessibility
 
-- Respects `prefers-reduced-motion` — countdown, urgency, PB ribbon, confetti, drifting motes, and word-pop all stop animating
+- Respects `prefers-reduced-motion` — countdown, urgency, PB ribbon, confetti, drifting motes, word-pop, medal flashes, and seal-stamp slams all stop animating
 - All controls are real `<button>` and `<input>` elements; full keyboard navigation
 - Focus rings rendered in gold (`outline: 1px solid var(--gold)`)
 
@@ -160,4 +197,4 @@ MIT — use, modify, share.
 ---
 
 <p align="center"><em>set thy hand to the field. let the glass run.</em></p>
-<p align="center"><sub>editio prima · v1.1 · by Dr. Baklava</sub></p>
+<p align="center"><sub>editio prima · v1.2 · by Dr. Baklava</sub></p>
