@@ -185,6 +185,8 @@ class TypeFlux {
             soundVolume: document.getElementById('sound-volume'),
             soundVolumeValue: document.getElementById('sound-volume-value'),
             musicEffects: document.getElementById('music-effects'),
+            musicVolume: document.getElementById('music-volume'),
+            musicVolumeValue: document.getElementById('music-volume-value'),
             stopOnError: document.getElementById('stop-on-error'),
             confidenceMode: document.getElementById('confidence-mode'),
             blindMode: document.getElementById('blind-mode'),
@@ -415,7 +417,18 @@ class TypeFlux {
             this.elements.soundVolumeValue.textContent = `${volume}%`;
             SoundSystem.setVolume(volume / 100);
         });
-        
+
+        if (this.elements.musicVolume) {
+            this.elements.musicVolume.addEventListener('input', (e) => {
+                const v = parseInt(e.target.value);
+                this.updateSetting('musicVolume', v);
+                if (this.elements.musicVolumeValue) {
+                    this.elements.musicVolumeValue.textContent = `${v}%`;
+                }
+                SoundSystem.setMusicVolume(v / 100);
+            });
+        }
+
         this.elements.stopOnError.addEventListener('change', (e) => {
             this.updateSetting('stopOnError', e.target.checked);
         });
@@ -2811,6 +2824,11 @@ class TypeFlux {
         this.elements.soundEffects.checked = this.settings.soundEffects;
         this.elements.soundVolume.value = this.settings.soundVolume;
         this.elements.soundVolumeValue.textContent = `${this.settings.soundVolume}%`;
+        if (this.elements.musicVolume) {
+            const mv = (typeof this.settings.musicVolume === 'number') ? this.settings.musicVolume : 50;
+            this.elements.musicVolume.value = mv;
+            if (this.elements.musicVolumeValue) this.elements.musicVolumeValue.textContent = `${mv}%`;
+        }
         this.elements.stopOnError.checked = this.settings.stopOnError;
         this.elements.confidenceMode.checked = this.settings.confidenceMode;
         this.elements.blindMode.checked = this.settings.blindMode;
@@ -2870,6 +2888,8 @@ class TypeFlux {
         // Sound system
         SoundSystem.enabled = this.settings.soundEffects;
         SoundSystem.setVolume(this.settings.soundVolume / 100);
+        SoundSystem.setMusicVolume(
+            ((typeof this.settings.musicVolume === 'number') ? this.settings.musicVolume : 50) / 100);
         this.elements.soundToggle.classList.toggle('active', this.settings.soundEffects);
     }
 

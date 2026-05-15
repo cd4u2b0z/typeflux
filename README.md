@@ -69,7 +69,7 @@ The **glass is optional** across words, quotes, prose, and code. A **words** tri
 - **Fervor seal.** A circular medallion that breathes gold at five hits, ignites amber **fire** at ten, and burns crimson **blaze** at twenty-five.
 - **The letterpress.** The caret has mass — it stretches in the direction of travel on a word advance, taller on a line drop, then settles. Each struck letter presses into the vellum; a wrong one blots with a soft crimson ink-stain.
 - **The room breathes.** A low drone underlies the trial, swelling with your fervor and receding as it cools — felt more than heard.
-- **Music of the desk.** A soft, original "desk jazz" loop plays low beneath the trial — warm electric-piano chords over a muted bass pulse and the faintest brushed texture, an 8-bar progression scheduled against the audio clock and lightly randomized so it never repeats mechanically. Fully synthesised (Web Audio, no files), conservative in level, toggleable at the desk.
+- **Music of the desk.** An original lofi / jazz / trip-hop groove plays beneath the trial — and it *builds*: warm electric-piano chords first, then a swung beat, bass movement, hi-hats and vinyl-crackle texture layer in as the energy climbs over the opening bars, and the groove keeps breathing rather than looping flat. A 16-bar harmony, scheduled against the audio clock, lightly randomized everywhere. Fully synthesised (Web Audio, no files), with its **own volume** apart from the effects, and toggleable at the desk.
 - **A living interface.** Hovering controls, selecting, toggling, dragging a slider, changing a theme — each carries a soft, varied, procedurally-synthesised sound. Quiet and rate-limited; never a machine-gun. Silenced entirely with the sound toggle.
 - **Ghost-warmth.** When you pace ahead of your ghost, the field takes on a faint gold warmth — the bright counterpart to the crimson of urgency.
 
@@ -156,7 +156,7 @@ Further rites at the desk:
 - stature of the letter (font size)
 - gliding caret · live pace declaration · *at the ready* (countdown)
 - voice of the quill (key sounds) + strength of voice
-- **music of the desk** — a soft procedural lounge layer (see below)
+- **music of the desk** (toggle) + **level of the music** — the procedural groove and its own independent volume
 - stay upon thine error · confidence of the hand (no backspace) · blind passage
 - **ambient atmosphere** (master toggle) and **depth of atmosphere** (intensity 0–100%) — shut off all per-theme effects with one switch, or scale them softer/louder
 

@@ -5,8 +5,11 @@
 
 const SoundSystem = {
     audioContext: null,
-    masterGain: null,
-    volume: 0.3,
+    masterGain: null,        // final node → destination, fixed at 1.0
+    sfxGain: null,           // keystrokes / UI / drone — the effects bus
+    musicBus: null,          // the music layer — its own bus
+    volume: 0.3,             // effects volume (0..1)
+    musicVolume: 0.5,        // music volume (0..1) — independent
     enabled: true,
 
     // Initialize and resume audio context (handles both creation and browser autoplay policy)
@@ -14,9 +17,17 @@ const SoundSystem = {
         if (!this.audioContext) {
             try {
                 this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                // master → destination; effects and music ride separate
+                // buses so each carries its own volume slider.
                 this.masterGain = this.audioContext.createGain();
+                this.masterGain.gain.value = 1.0;
                 this.masterGain.connect(this.audioContext.destination);
+                this.sfxGain = this.audioContext.createGain();
+                this.sfxGain.connect(this.masterGain);
+                this.musicBus = this.audioContext.createGain();
+                this.musicBus.connect(this.masterGain);
                 this.setVolume(this.volume);
+                this.setMusicVolume(this.musicVolume);
             } catch (e) {
                 console.warn('Web Audio API not supported');
                 this.enabled = false;
@@ -31,11 +42,19 @@ const SoundSystem = {
         return true;
     },
 
-    // Set master volume
+    // Set the effects volume (keystrokes / UI / drone)
     setVolume(volume) {
         this.volume = Math.max(0, Math.min(1, volume));
-        if (this.masterGain) {
-            this.masterGain.gain.setValueAtTime(this.volume, this.audioContext.currentTime);
+        if (this.sfxGain) {
+            this.sfxGain.gain.setValueAtTime(this.volume, this.audioContext.currentTime);
+        }
+    },
+
+    // Set the music volume — independent of the effects volume
+    setMusicVolume(volume) {
+        this.musicVolume = Math.max(0, Math.min(1, volume));
+        if (this.musicBus) {
+            this.musicBus.gain.setValueAtTime(this.musicVolume, this.audioContext.currentTime);
         }
     },
 
@@ -54,7 +73,7 @@ const SoundSystem = {
         const gainNode = this.audioContext.createGain();
 
         oscillator.connect(gainNode);
-        gainNode.connect(this.masterGain);
+        gainNode.connect(this.sfxGain);
 
         oscillator.type = type;
         oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
@@ -93,7 +112,7 @@ const SoundSystem = {
         g.gain.setValueAtTime(0, ctx.currentTime);
         g.gain.linearRampToValueAtTime(peak, ctx.currentTime + 0.003);
         g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-        src.connect(hp); hp.connect(lp); lp.connect(g); g.connect(this.masterGain);
+        src.connect(hp); hp.connect(lp); lp.connect(g); g.connect(this.sfxGain);
         src.start();
         src.stop(ctx.currentTime + duration);
     },
@@ -255,7 +274,7 @@ const SoundSystem = {
         gain.gain.value = 0; // silent until fervor raises it
 
         osc.connect(filter); osc2.connect(filter);
-        filter.connect(gain); gain.connect(this.masterGain);
+        filter.connect(gain); gain.connect(this.sfxGain);
         osc.start(); osc2.start();
 
         this.drone = { osc, osc2, filter, gain };
@@ -289,26 +308,38 @@ const SoundSystem = {
     },
 
     // ─────────────────────────────────────────────────────────────
-    // Procedural music — a soft "desk jazz" loop beneath the trial.
-    // Original extended chords, ~84 BPM, voiced sparse and warm.
+    // Procedural music — an original lofi / jazz / trip-hop groove
+    // beneath the trial. It BUILDS: sparse chords first, then a swung
+    // beat, bass movement and texture layer in as the energy climbs,
+    // and the groove keeps breathing rather than looping flat.
     // Scheduled against audioContext.currentTime so it never drifts.
+    // Fully synthesised — no sampled or copyrighted material.
     // ─────────────────────────────────────────────────────────────
-    MUSIC_BPM: 84,
-    MUSIC_LEVEL: 0.085,        // conservative — sits well under keystrokes
+    MUSIC_BPM: 86,
+    MUSIC_LEVEL: 0.15,         // the music sub-mix; the music slider scales it
+    MUSIC_SWING: 0.58,         // swung 8ths — the lofi / hip-hop lilt
     music: null,
 
-    /* An original slow 8-bar progression of soft extended chords.
-       `bass` + upper-voice notes are MIDI numbers. Not drawn from any
-       known game theme — warm, looping, lightly jazzy. */
+    /* An original 16-bar progression of soft extended chords — long
+       enough that the harmony never feels like a 4- or 8-bar loop.
+       `bass` + upper-voice notes are MIDI numbers. */
     MUSIC_PROGRESSION: [
-        { bass: 38, notes: [57, 60, 64, 65] },   // i — minor 9 colour
-        { bass: 43, notes: [53, 59, 62, 64] },   // dominant 13 colour
-        { bass: 36, notes: [55, 59, 62, 64] },   // major 9 colour
-        { bass: 45, notes: [55, 59, 62, 67] },   // suspended, open
-        { bass: 46, notes: [53, 57, 62, 65] },   // major 7 colour
-        { bass: 40, notes: [55, 59, 62, 66] },   // minor 9 colour
-        { bass: 45, notes: [55, 59, 60, 64] },   // minor 9 colour
-        { bass: 38, notes: [57, 60, 64, 67] }    // turnaround back to i
+        { bass: 38, notes: [57, 60, 64, 65] },
+        { bass: 43, notes: [53, 59, 62, 64] },
+        { bass: 36, notes: [55, 59, 62, 64] },
+        { bass: 45, notes: [55, 59, 62, 67] },
+        { bass: 46, notes: [53, 57, 62, 65] },
+        { bass: 40, notes: [55, 59, 62, 66] },
+        { bass: 45, notes: [55, 59, 60, 64] },
+        { bass: 38, notes: [57, 60, 64, 67] },
+        { bass: 41, notes: [57, 60, 64, 67] },
+        { bass: 36, notes: [55, 59, 64, 67] },
+        { bass: 43, notes: [53, 58, 62, 65] },
+        { bass: 45, notes: [57, 60, 64, 65] },
+        { bass: 41, notes: [55, 60, 63, 65] },
+        { bass: 46, notes: [53, 58, 62, 65] },
+        { bass: 40, notes: [54, 58, 62, 65] },
+        { bass: 45, notes: [56, 59, 62, 65] }
     ],
 
     _midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); },
@@ -320,21 +351,23 @@ const SoundSystem = {
         const ctx = this.audioContext;
         const gain = ctx.createGain();
         gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-        gain.gain.setTargetAtTime(this.MUSIC_LEVEL, ctx.currentTime, 0.7);  // gentle fade-in
-        gain.connect(this.masterGain);
+        gain.gain.setTargetAtTime(this.MUSIC_LEVEL, ctx.currentTime, 1.1);  // slow fade-in
+        gain.connect(this.musicBus);
         this.music = {
             gain: gain,
             active: true,
             timer: null,
             intensity: 1,
             barIndex: 0,
-            nextBarTime: ctx.currentTime + 0.2
+            barCount: 0,
+            kickStyle: 0,
+            nextBarTime: ctx.currentTime + 0.25
         };
         this._musicScheduler();
     },
 
     setMusicIntensity(level) {
-        if (this.music) this.music.intensity = Math.max(0.35, Math.min(1, level || 0));
+        if (this.music) this.music.intensity = Math.max(0.4, Math.min(1, level || 0));
     },
 
     stopMusic() {
@@ -346,68 +379,126 @@ const SoundSystem = {
         if (M.gain && this.audioContext) {
             const ctx = this.audioContext;
             M.gain.gain.cancelScheduledValues(ctx.currentTime);
-            M.gain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.4);  // smooth fade-out
-            setTimeout(() => { try { M.gain.disconnect(); } catch (e) {} }, 1800);
+            M.gain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.5);  // smooth fade-out
+            setTimeout(() => { try { M.gain.disconnect(); } catch (e) {} }, 2000);
         }
     },
 
+    /* Energy 0..1 — sparse at first, climbs over the opening bars so
+       the groove "picks up", then breathes in a slow ebb so it keeps
+       lifting and settling instead of sitting flat. */
+    _musicEnergy(bar) {
+        const build = Math.min(1, 0.32 + bar * 0.105);
+        const ebb = 0.85 + 0.15 * Math.sin(bar * 0.2 + 1);
+        return Math.max(0.3, Math.min(1, build * ebb));
+    },
+
     /* Look-ahead scheduler — schedules whole bars a little ahead of
-       the audio clock, so a slow setTimeout never makes it drift. */
+       the audio clock so a slow setTimeout never makes it drift. */
     _musicScheduler() {
         const M = this.music;
         if (!M || !M.active || !this.audioContext) return;
         const ctx = this.audioContext;
         const beat = 60 / this.MUSIC_BPM;
         const barDur = beat * 4;
-        while (M.nextBarTime < ctx.currentTime + 1.5) {
+        while (M.nextBarTime < ctx.currentTime + 1.6) {
             const chord = this.MUSIC_PROGRESSION[M.barIndex % this.MUSIC_PROGRESSION.length];
-            this._scheduleBar(M.nextBarTime, chord, beat);
+            this._scheduleBar(M.nextBarTime, chord, beat,
+                              this._musicEnergy(M.barCount), M.barCount);
             M.nextBarTime += barDur;
             M.barIndex++;
+            M.barCount++;
+            if (M.barCount % 8 === 0) M.kickStyle = Math.floor(Math.random() * 3);
         }
-        M.timer = setTimeout(() => this._musicScheduler(), 360);
+        M.timer = setTimeout(() => this._musicScheduler(), 340);
     },
 
-    /* One bar: a sparse chord, a muted bass pulse, a little brushed
-       texture — all lightly randomized so it never sounds mechanical. */
-    _scheduleBar(t0, chord, beat) {
-        this._musicChord(t0, chord);
-        this._musicBass(t0, chord.bass, false);
-        if (Math.random() < 0.7) this._musicBass(t0 + beat * 2, chord.bass, true);
-        for (let b = 0; b < 4; b++) {
-            if (Math.random() < 0.3) this._musicBrush(t0 + (b + 0.5) * beat);
+    /* One bar of the groove. Layers enter as energy climbs; a rare bar
+       thins the drums for a breath; the timing is swung throughout. */
+    _scheduleBar(t0, chord, beat, energy, barCount) {
+        const M = this.music;
+        const sw = this.MUSIC_SWING;
+        // swung 8th → seconds within the bar (i = 0..7)
+        const eighth = (i) => t0 + (Math.floor(i / 2) + ((i % 2) ? sw : 0)) * beat;
+
+        // an occasional "breath" — the drums thin for one bar
+        const breath = energy > 0.62 && Math.random() < 0.12;
+        const drumE = breath ? energy * 0.4 : energy;
+
+        // ── chords — always; a syncopated stab once the groove is up ──
+        this._musicChord(t0 + Math.random() * 0.02, chord, energy, false);
+        if (energy > 0.6 && Math.random() < 0.42) {
+            this._musicChord(eighth(5), chord, energy, true);   // 'and' of beat 3
         }
+
+        // ── bass — fuller as the energy rises ──
+        this._musicBassLine(t0, chord.bass, beat, eighth, energy);
+
+        // ── hats — swung 8ths, offbeats accented (hip-hop feel) ──
+        if (drumE > 0.3) {
+            for (let i = 0; i < 8; i++) {
+                const onbeat = (i % 2 === 0);
+                if (drumE < 0.5 && !onbeat) continue;       // sparse when low
+                if (Math.random() < 0.12) continue;          // an occasional gap
+                const open = drumE > 0.72 && i === 7 && Math.random() < 0.4;
+                const vel = (onbeat ? 0.6 : 0.95) * (0.7 + Math.random() * 0.5) * drumE;
+                this._drumHat(eighth(i), vel, open);
+            }
+        }
+
+        // ── kick — laid-back, syncopated; style varies every 8 bars ──
+        if (drumE > 0.42) this._kickPattern(t0, beat, eighth, drumE, M.kickStyle);
+
+        // ── snare / rim — the soft backbeat on 2 and 4 ──
+        if (drumE > 0.55) {
+            this._drumSnare(t0 + beat, 0.82 * drumE);
+            this._drumSnare(t0 + beat * 3, 0.9 * drumE);
+            if (Math.random() < 0.22) this._drumSnare(eighth(6), 0.3 * drumE);  // ghost
+        }
+
+        // ── a small hat fill closing every fourth bar ──
+        if (drumE > 0.6 && barCount % 4 === 3) {
+            for (let i = 0; i < 3; i++) {
+                this._drumHat(t0 + beat * 3.5 + i * beat * 0.16, 0.5 * drumE, false);
+            }
+        }
+
+        // ── vinyl crackle — sparse pops, always (the lofi texture) ──
+        const pops = 2 + Math.floor(Math.random() * 5);
+        for (let i = 0; i < pops; i++) this._vinylPop(t0 + Math.random() * beat * 4);
     },
 
-    _musicChord(t0, chord) {
+    /* A sparse warm chord — sustained, or a short stab. Lightly
+       re-voiced each time so it never sounds mechanical. */
+    _musicChord(t0, chord, energy, stab) {
         const ctx = this.audioContext;
         const M = this.music;
         if (!M) return;
         const notes = chord.notes.slice();
-        if (Math.random() < 0.3) notes[0] += 12;                  // light inversion
-        if (notes.length > 3 && Math.random() < 0.25) {            // omit a chord tone
+        if (Math.random() < 0.3) notes[0] += 12;                   // light inversion
+        if (notes.length > 3 && Math.random() < 0.3) {              // omit a chord tone
             notes.splice(1 + Math.floor(Math.random() * (notes.length - 1)), 1);
         }
         const lp = ctx.createBiquadFilter();
         lp.type = 'lowpass';
-        lp.frequency.value = 1100 + Math.random() * 800;           // randomized cutoff
-        lp.Q.value = 0.4;
+        lp.frequency.value = 900 + energy * 850 + Math.random() * 450;   // opens as it warms
+        lp.Q.value = 0.5;
         lp.connect(M.gain);
-        const vel = (0.82 + Math.random() * 0.36) * M.intensity;   // randomized velocity
+        const vel = (0.66 + Math.random() * 0.34) * M.intensity * (stab ? 0.62 : 1);
+        const rel = stab ? (0.45 + Math.random() * 0.4) : (2.2 + Math.random() * 1.4);
         for (const m of notes) {
-            this._rhodesNote(m, t0 + Math.random() * 0.028, vel, lp);   // humanized roll
+            this._rhodesNote(m, t0 + Math.random() * 0.03, vel, rel, lp);   // humanized roll
         }
     },
 
-    /* A warm electric-piano-ish voice: two soft detuned waves under a
-       gentle attack and a long release, so chords ring into one another. */
-    _rhodesNote(midi, t, vel, dest) {
+    /* A warm electric-piano-ish voice — two soft detuned waves under a
+       gentle attack and a chosen release. */
+    _rhodesNote(midi, t, vel, rel, dest) {
         const ctx = this.audioContext;
         const f = this._midiToFreq(midi);
-        const rel = 2.4 + Math.random() * 1.1;
         const env = ctx.createGain();
         env.gain.setValueAtTime(0.0001, t);
-        env.gain.linearRampToValueAtTime(0.17 * vel, t + 0.045);
+        env.gain.linearRampToValueAtTime(0.13 * vel, t + 0.04);
         env.gain.exponentialRampToValueAtTime(0.0001, t + rel);
         env.connect(dest);
         const o1 = ctx.createOscillator();
@@ -417,60 +508,165 @@ const SoundSystem = {
         const o2 = ctx.createOscillator();
         o2.type = 'triangle';
         o2.frequency.value = f;
-        o2.detune.value = 5 + Math.random() * 5;
+        o2.detune.value = 5 + Math.random() * 6;
         const o2g = ctx.createGain();
-        o2g.gain.value = 0.35;
+        o2g.gain.value = 0.32;
         o2.connect(o2g);
         o2g.connect(env);
         o1.start(t); o2.start(t);
         o1.stop(t + rel + 0.1); o2.stop(t + rel + 0.1);
     },
 
-    /* Soft muted bass — a low sine with a short rounded envelope. */
-    _musicBass(t, midi, soft) {
+    /* The bass line — a root pulse when low, a moving / syncopated
+       line once the groove is up. */
+    _musicBassLine(t0, root, beat, eighth, energy) {
+        this._musicBassNote(t0, root, 1.0);
+        if (energy < 0.4) return;
+        if (energy < 0.68) {
+            if (Math.random() < 0.7) {
+                this._musicBassNote(eighth(5), root + (Math.random() < 0.5 ? 12 : 7), 0.7);
+            }
+            return;
+        }
+        // higher energy — a walking-ish line with a passing tone
+        this._musicBassNote(eighth(3), root + (Math.random() < 0.5 ? 12 : 7), 0.66);
+        this._musicBassNote(t0 + beat * 2, root + (Math.random() < 0.4 ? 7 : 0), 0.82);
+        if (Math.random() < 0.6) {
+            const approach = root + [2, 3, 5, -2][Math.floor(Math.random() * 4)];
+            this._musicBassNote(eighth(7), approach, 0.55);
+        }
+    },
+
+    /* Soft muted bass — a low triangle with a short rounded envelope. */
+    _musicBassNote(t, midi, vel) {
         const ctx = this.audioContext;
         const M = this.music;
         if (!M) return;
-        let m = midi;
-        if (Math.random() < 0.18) m += 7;          // occasionally the fifth
         const env = ctx.createGain();
-        const peak = (soft ? 0.085 : 0.14) * M.intensity;
         env.gain.setValueAtTime(0.0001, t);
-        env.gain.linearRampToValueAtTime(peak, t + 0.035);
-        env.gain.exponentialRampToValueAtTime(0.0001, t + 0.62);
+        env.gain.linearRampToValueAtTime(0.3 * vel * M.intensity, t + 0.03);
+        env.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
         const lp = ctx.createBiquadFilter();
         lp.type = 'lowpass';
-        lp.frequency.value = 320;
+        lp.frequency.value = 340;
         lp.connect(env);
         env.connect(M.gain);
         const o = ctx.createOscillator();
-        o.type = 'sine';
-        o.frequency.value = this._midiToFreq(m);
+        o.type = 'triangle';
+        o.frequency.value = this._midiToFreq(midi);
         o.connect(lp);
         o.start(t);
-        o.stop(t + 0.72);
+        o.stop(t + 0.55);
     },
 
-    /* A very quiet brushed tick — filtered noise, barely there. */
-    _musicBrush(t) {
+    /* The kick pattern — three laid-back styles, rotated every 8 bars. */
+    _kickPattern(t0, beat, eighth, energy, style) {
+        this._drumKick(t0, 1.0);                          // beat 1, always
+        if (style === 2 && energy > 0.72) {
+            this._drumKick(t0 + beat, 0.55);              // steadier pulse
+            this._drumKick(t0 + beat * 2, 0.7);
+            this._drumKick(t0 + beat * 3, 0.55);
+        } else if (style === 1) {
+            this._drumKick(t0 + beat * 2.5, 0.78);        // trip-hop syncopation
+        } else {
+            this._drumKick(eighth(5), 0.72);              // boom-bap — 'and' of 3
+            if (energy > 0.8 && Math.random() < 0.4) this._drumKick(eighth(7), 0.46);
+        }
+    },
+
+    /* A soft deep kick — a sine with a fast downward pitch sweep. */
+    _drumKick(t, vel) {
         const ctx = this.audioContext;
         const M = this.music;
         if (!M) return;
-        const dur = 0.05 + Math.random() * 0.05;
+        const o = ctx.createOscillator();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(118, t);
+        o.frequency.exponentialRampToValueAtTime(40, t + 0.08);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.55 * vel * M.intensity, t + 0.006);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+        o.connect(g);
+        g.connect(M.gain);
+        o.start(t);
+        o.stop(t + 0.34);
+    },
+
+    /* A soft brushed snare / rim — band-passed noise, lofi-gentle. */
+    _drumSnare(t, vel) {
+        const ctx = this.audioContext;
+        const M = this.music;
+        if (!M) return;
+        const dur = 0.16;
+        const len = Math.max(1, Math.floor(ctx.sampleRate * dur));
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = 1850 + Math.random() * 450;
+        bp.Q.value = 0.7;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.3 * vel * M.intensity, t + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        src.connect(bp);
+        bp.connect(g);
+        g.connect(M.gain);
+        src.start(t);
+        src.stop(t + dur + 0.02);
+    },
+
+    /* A hi-hat — short filtered noise; longer when 'open'. */
+    _drumHat(t, vel, open) {
+        const ctx = this.audioContext;
+        const M = this.music;
+        if (!M) return;
+        const dur = open ? 0.14 : 0.035;
+        const len = Math.max(1, Math.floor(ctx.sampleRate * dur));
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const hp = ctx.createBiquadFilter();
+        hp.type = 'highpass';
+        hp.frequency.value = 7200 + Math.random() * 2600;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.085 * vel * M.intensity, t + 0.004);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        src.connect(hp);
+        hp.connect(g);
+        g.connect(M.gain);
+        src.start(t);
+        src.stop(t + dur + 0.02);
+    },
+
+    /* A tiny vinyl crackle pop — the lofi texture. */
+    _vinylPop(t) {
+        const ctx = this.audioContext;
+        const M = this.music;
+        if (!M) return;
+        const dur = 0.006 + Math.random() * 0.01;
         const len = Math.max(1, Math.floor(ctx.sampleRate * dur));
         const buf = ctx.createBuffer(1, len, ctx.sampleRate);
         const d = buf.getChannelData(0);
         for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
         const src = ctx.createBufferSource();
         src.buffer = buf;
-        const hp = ctx.createBiquadFilter();
-        hp.type = 'highpass';
-        hp.frequency.value = 5500 + Math.random() * 2200;
-        const env = ctx.createGain();
-        env.gain.setValueAtTime(0.0001, t);
-        env.gain.linearRampToValueAtTime(0.016 * M.intensity, t + 0.012);
-        env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-        src.connect(hp); hp.connect(env); env.connect(M.gain);
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = 1400 + Math.random() * 3200;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.04 * (0.4 + Math.random() * 0.6) * M.intensity, t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        src.connect(bp);
+        bp.connect(g);
+        g.connect(M.gain);
         src.start(t);
         src.stop(t + dur + 0.02);
     },
