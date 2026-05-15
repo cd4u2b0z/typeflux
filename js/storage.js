@@ -11,6 +11,7 @@ const Storage = {
         ACHIEVEMENTS: 'typeflux_achievements',
         GHOSTS: 'typeflux_ghosts',
         MISSES: 'typeflux_misses',
+        NEMHITS: 'typeflux_nemhits',
         COMMISSIONS: 'typeflux_commissions'
     },
 
@@ -44,6 +45,7 @@ const Storage = {
         affNarrow: false,
         ambientEffects: true,
         ambientIntensity: 60,
+        adaptiveField: true,
         boundBy: 'time',
         defaultMode: 'words',
         defaultTime: 30,
@@ -374,7 +376,58 @@ const Storage = {
     },
 
     clearMisses() {
-        try { localStorage.removeItem(this.KEYS.MISSES); } catch (e) {}
+        try {
+            localStorage.removeItem(this.KEYS.MISSES);
+            localStorage.removeItem(this.KEYS.NEMHITS);
+        } catch (e) {}
+    },
+
+    // ─────────────────────────────────────────────────────────────
+    // The nemesis arc — clean strikes against the reigning foe.
+    // Land enough and the word is vanquished: struck from the misses
+    // entirely, so the next-worst word rises to take its place.
+    // ─────────────────────────────────────────────────────────────
+    VANQUISH_AT: 5,
+
+    getNemHits() {
+        try {
+            const data = localStorage.getItem(this.KEYS.NEMHITS);
+            return data ? JSON.parse(data) : {};
+        } catch (e) { return {}; }
+    },
+
+    /* Credit clean completions of `word`; vanquish it at the threshold.
+       Returns { vanquished, word, hits, threshold }. */
+    recordNemesisProgress(word, cleanHits) {
+        if (!word || !cleanHits || cleanHits <= 0) return { vanquished: false };
+        const hits = this.getNemHits();
+        hits[word] = (hits[word] || 0) + cleanHits;
+
+        if (hits[word] >= this.VANQUISH_AT) {
+            const misses = this.getMisses();
+            delete misses[word];
+            delete hits[word];
+            try {
+                localStorage.setItem(this.KEYS.MISSES, JSON.stringify(misses));
+                localStorage.setItem(this.KEYS.NEMHITS, JSON.stringify(hits));
+            } catch (e) {}
+            return { vanquished: true, word };
+        }
+        try { localStorage.setItem(this.KEYS.NEMHITS, JSON.stringify(hits)); } catch (e) {}
+        return { vanquished: false, word, hits: hits[word], threshold: this.VANQUISH_AT };
+    },
+
+    /* The reigning nemesis plus the clean strikes landed against it. */
+    getNemesisState() {
+        const nem = this.getNemesis();
+        if (!nem) return null;
+        const hits = this.getNemHits();
+        return {
+            word: nem.word,
+            count: nem.count,
+            hits: hits[nem.word] || 0,
+            threshold: this.VANQUISH_AT
+        };
     },
 
     // ─────────────────────────────────────────────────────────────
@@ -481,6 +534,7 @@ const Storage = {
             localStorage.removeItem(this.KEYS.ACHIEVEMENTS);
             localStorage.removeItem(this.KEYS.GHOSTS);
             localStorage.removeItem(this.KEYS.MISSES);
+            localStorage.removeItem(this.KEYS.NEMHITS);
             localStorage.removeItem(this.KEYS.COMMISSIONS);
             this.init();
             return true;
@@ -511,7 +565,8 @@ const Storage = {
             stats: this.getStats() || this.getDefaultStats(),
             achievements: this.getAchievementState(),
             ghosts,
-            misses: this.getMisses()
+            misses: this.getMisses(),
+            nemhits: this.getNemHits()
         };
     },
 
@@ -541,6 +596,9 @@ const Storage = {
                 try { localStorage.setItem(this.KEYS.MISSES, JSON.stringify(data.misses)); } catch (e) {}
             } else {
                 this.clearMisses();
+            }
+            if (data.nemhits && typeof data.nemhits === 'object') {
+                try { localStorage.setItem(this.KEYS.NEMHITS, JSON.stringify(data.nemhits)); } catch (e) {}
             }
             return { ok: true };
         } catch (e) {

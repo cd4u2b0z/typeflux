@@ -40,6 +40,8 @@ class TypeFlux {
 
         // Stumble tracking — per-word miss tally for the cert defect panel
         this.wordMisses = {};
+        // Per-word clean completions — feeds the nemesis arc
+        this.wordCleans = {};
 
         // Ghost-run state — pace of thy past best for this format,
         // replayed during the live trial as a translucent rival.
@@ -88,6 +90,11 @@ class TypeFlux {
     // ─────────────────────────────────────────────────────────────
     
     init() {
+        // View Transitions, where supported, replace the pageTurn fallback.
+        if (document.startViewTransition) {
+            document.documentElement.classList.add('has-vt');
+        }
+
         this.cacheElements();
         this.bindEvents();
         this.applySettings();
@@ -181,6 +188,7 @@ class TypeFlux {
             confidenceMode: document.getElementById('confidence-mode'),
             blindMode: document.getElementById('blind-mode'),
             readyCountdown: document.getElementById('ready-countdown'),
+            adaptiveField: document.getElementById('adaptive-field'),
             affMist: document.getElementById('aff-mist'),
             affFade: document.getElementById('aff-fade'),
             affLantern: document.getElementById('aff-lantern'),
@@ -227,10 +235,14 @@ class TypeFlux {
             commissionsCount: document.getElementById('commissions-count'),
             certSitting:      document.getElementById('cert-sitting'),
 
-            nemesisPlate:  document.getElementById('nemesis-plate'),
-            nemesisWord:   document.getElementById('nemesis-word'),
-            nemesisCount:  document.getElementById('nemesis-count'),
-            nemesisSettle: document.getElementById('nemesis-settle'),
+            // Skill signature radar
+            signatureChart: document.getElementById('signature-chart'),
+
+            nemesisPlate:    document.getElementById('nemesis-plate'),
+            nemesisWord:     document.getElementById('nemesis-word'),
+            nemesisCount:    document.getElementById('nemesis-count'),
+            nemesisProgress: document.getElementById('nemesis-progress'),
+            nemesisSettle:   document.getElementById('nemesis-settle'),
 
             // Toast
             toastContainer: document.getElementById('toast-container')
@@ -336,6 +348,7 @@ class TypeFlux {
         this.elements.soundEffects.addEventListener('change', (e) => {
             this.updateSetting('soundEffects', e.target.checked);
             SoundSystem.enabled = e.target.checked;
+            if (!e.target.checked) SoundSystem.stopDrone();
             this.elements.soundToggle.classList.toggle('active', e.target.checked);
         });
         
@@ -361,6 +374,13 @@ class TypeFlux {
         if (this.elements.readyCountdown) {
             this.elements.readyCountdown.addEventListener('change', (e) => {
                 this.updateSetting('readyCountdown', e.target.checked);
+            });
+        }
+
+        if (this.elements.adaptiveField) {
+            this.elements.adaptiveField.addEventListener('change', (e) => {
+                this.updateSetting('adaptiveField', e.target.checked);
+                this.generateTest();
             });
         }
 
@@ -447,30 +467,31 @@ class TypeFlux {
             }
 
             const tCount = Array.isArray(parsed.tests) ? parsed.tests.length : 0;
-            const ok = confirm(
-                `Unseal this ledger?\n\n` +
-                `· ${tCount} trial${tCount === 1 ? '' : 's'} on record\n` +
-                `· sealed ${parsed.exportedAt || 'date unknown'}\n\n` +
-                `This REPLACES all current records — settings, trials, streaks, seals. ` +
-                `It cannot be undone unless thou hast sealed thy current ledger first.`
-            );
-            if (!ok) {
-                this.showToast('the ledger was set aside, untouched', 'info');
-                return;
-            }
+            this.confirmModal(
+                'Unseal This Ledger',
+                `${tCount} trial${tCount === 1 ? '' : 's'} on record, sealed ${parsed.exportedAt || 'on a date unknown'}. ` +
+                `Unsealing REPLACES every present record — settings, trials, streaks, seals. ` +
+                `Seal thy current ledger first if thou wouldst keep it.`,
+                'unseal & replace'
+            ).then(ok => {
+                if (!ok) {
+                    this.showToast('the ledger was set aside, untouched', 'info');
+                    return;
+                }
 
-            const result = Storage.importData(parsed);
-            if (!result.ok) {
-                this.showToast(`the unsealing failed — ${result.error}`, 'error');
-                return;
-            }
+                const result = Storage.importData(parsed);
+                if (!result.ok) {
+                    this.showToast(`the unsealing failed — ${result.error}`, 'error');
+                    return;
+                }
 
-            // Re-load settings into the live app and refresh views
-            this.settings = Storage.getSettings();
-            this.applySettings();
-            this.updateStatsView();
-            this.showToast('the ledger is unsealed — all records restored', 'success');
-            SoundSystem.newRecord && SoundSystem.newRecord();
+                // Re-load settings into the live app and refresh views
+                this.settings = Storage.getSettings();
+                this.applySettings();
+                this.updateStatsView();
+                this.showToast('the ledger is unsealed — all records restored', 'success');
+                SoundSystem.newRecord && SoundSystem.newRecord();
+            });
         };
         reader.readAsText(file);
     }
@@ -479,32 +500,36 @@ class TypeFlux {
     // View Management
     // ─────────────────────────────────────────────────────────────
     
+    /* Run a DOM mutation inside a View Transition where supported, for a
+       clean cross-fade between views; a plain call otherwise. */
+    _swapView(fn) {
+        if (document.startViewTransition) {
+            document.startViewTransition(fn);
+        } else {
+            fn();
+        }
+    }
+
     switchView(view) {
-        // Update nav buttons
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.view === view);
-        });
-        
-        // Update views
-        document.querySelectorAll('.view').forEach(v => {
-            v.classList.remove('active');
-        });
-        
         const viewMap = {
             'test': this.elements.viewTest,
             'stats': this.elements.viewStats,
             'settings': this.elements.viewSettings
         };
-        
-        if (viewMap[view]) {
-            viewMap[view].classList.add('active');
-        }
-        
+
+        this._swapView(() => {
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.view === view);
+            });
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            if (viewMap[view]) viewMap[view].classList.add('active');
+        });
+
         // Update stats if switching to stats view
         if (view === 'stats') {
             this.updateStatsView();
         }
-        
+
         SoundSystem.click();
     }
 
@@ -540,19 +565,24 @@ class TypeFlux {
         this.lastLanguage = null;
 
         switch (this.mode) {
-            case 'words':
+            case 'words': {
+                // Adaptive field — the words lean to thy recent hand.
+                const diff = (this.settings.adaptiveField !== false)
+                    ? this.adaptiveDifficulty() : 'normal';
+                this._adaptiveDiff = diff;
                 if (this.boundBy === 'count') {
                     // Count-bound: exactly this many words, glass counts up.
-                    this.words = WordGenerator.generateSequence(this.wordCount);
+                    this.words = WordGenerator.generateSequence(this.wordCount, diff);
                     this.timerValue = 0;
                 } else {
                     // Time-bound: a deep well of words so even a very fast
                     // hand cannot drain the field before the glass empties
                     // (sized well past any sustainable pace).
-                    this.words = WordGenerator.generateSequence(this.timeLimit * 6);
+                    this.words = WordGenerator.generateSequence(this.timeLimit * 6, diff);
                     this.timerValue = this.timeLimit;
                 }
                 break;
+            }
 
             case 'quotes':
                 const quote = QuoteGenerator.getAny();
@@ -694,6 +724,22 @@ class TypeFlux {
         return m;
     }
 
+    /* Zen — turn to a fresh leaf. Keep only the words ahead of the
+       hand, regrow the buffer, rebuild the field. Bounds the DOM on a
+       marathon session without ever ending the trial. */
+    repaginateZen() {
+        this.words = this.words.slice(this.currentWordIndex);
+        this.currentWordIndex = 0;
+        this.currentLetterIndex = 0;
+        this.scrollOffset = 0;
+        if (this.elements.wordsDisplay) this.elements.wordsDisplay.style.transform = '';
+        while (this.words.length < 120) {
+            this.words = this.words.concat(WordGenerator.getFlow(80));
+        }
+        this.renderWords();
+        this.updateCursorPosition();
+    }
+
     /* Zen is endless — quietly extend the word buffer as the hand
        nears its end so the field never runs dry. */
     appendZenWords(n = 80) {
@@ -830,20 +876,26 @@ class TypeFlux {
             }
         }
 
-        // Nemesis
-        const nem = Storage.getNemesis();
+        // Nemesis — the reigning foe and the arc toward vanquishing it.
+        const nemState = Storage.getNemesisState();
         if (this.elements.nemesisPlate) {
-            if (nem && nem.count > 0) {
+            if (nemState && nemState.count > 0) {
                 this.elements.nemesisPlate.classList.add('has-nemesis');
-                if (this.elements.nemesisWord)  this.elements.nemesisWord.textContent = nem.word;
+                if (this.elements.nemesisWord)  this.elements.nemesisWord.textContent = nemState.word;
                 if (this.elements.nemesisCount) {
                     this.elements.nemesisCount.textContent =
-                        `it hath felled thy hand ${nem.count} time${nem.count === 1 ? '' : 's'}`;
+                        `it hath felled thy hand ${nemState.count} time${nemState.count === 1 ? '' : 's'}`;
+                }
+                if (this.elements.nemesisProgress) {
+                    this.elements.nemesisProgress.textContent = nemState.hits > 0
+                        ? `${nemState.hits} of ${nemState.threshold} clean strikes to vanquish it`
+                        : `${nemState.threshold} clean strikes will vanquish it`;
                 }
             } else {
                 this.elements.nemesisPlate.classList.remove('has-nemesis');
                 if (this.elements.nemesisWord)  this.elements.nemesisWord.textContent = '—';
                 if (this.elements.nemesisCount) this.elements.nemesisCount.textContent = 'no foe yet named';
+                if (this.elements.nemesisProgress) this.elements.nemesisProgress.textContent = '';
             }
         }
     }
@@ -1050,6 +1102,15 @@ class TypeFlux {
         
         // Play keystroke sound
         if (input.length > this.input.length) {
+            // Letterpress — the just-struck letter presses into the vellum
+            const struckIdx = input.length - 1;
+            if (struckIdx >= 0 && struckIdx < baseLetters.length) {
+                const le = baseLetters[struckIdx];
+                le.classList.remove('struck');
+                void le.offsetWidth;
+                le.classList.add('struck');
+            }
+
             const lastChar = input.slice(-1);
             const expectedChar = currentWord[input.length - 1];
             
@@ -1121,6 +1182,9 @@ class TypeFlux {
         }
         const duration = this.lastWordCompletedAt ? (now - this.lastWordCompletedAt) : Infinity;
         const perfect = isCorrect && this.wordErrorsThisWord === 0;
+        if (perfect && currentWord) {
+            this.wordCleans[currentWord] = (this.wordCleans[currentWord] || 0) + 1;
+        }
         this.checkWordMedals(currentWord || '', perfect, duration);
         if (perfect) this.perfectStreak++;
         else this.perfectStreak = 0;
@@ -1133,8 +1197,12 @@ class TypeFlux {
         this.input = '';
 
         if (this.mode === 'zen') {
-            // Endless — never conclude; keep the buffer ahead of the hand.
-            if (this.words.length - this.currentWordIndex < 30) {
+            // Endless — never conclude. Past a depth, turn to a fresh leaf
+            // so a marathon session never piles up an unbounded DOM;
+            // otherwise just keep the buffer ahead of the hand.
+            if (this.currentWordIndex > 500) {
+                this.repaginateZen();
+            } else if (this.words.length - this.currentWordIndex < 30) {
                 this.appendZenWords(80);
             }
         } else if (this.currentWordIndex >= this.words.length) {
@@ -1161,7 +1229,8 @@ class TypeFlux {
         } else {
             SoundSystem.space();
         }
-        
+
+        this.flourishCaret('leap');
         this.updateCursorPosition();
         this.updateLiveStats();
     }
@@ -1208,7 +1277,19 @@ class TypeFlux {
             const lineHeight = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--line-height'));
             this.scrollOffset += fontSize * lineHeight;
             container.style.transform = `translateY(-${this.scrollOffset}px)`;
+            this.flourishCaret('drop');
         }
+    }
+
+    /* Caret weight — a brief stretch in the direction of travel. `leap`
+       on a word advance, `drop` on a line scroll. The class is cleared
+       and re-applied so it re-fires every time. */
+    flourishCaret(kind) {
+        const c = this.elements.cursor;
+        if (!c) return;
+        c.classList.remove('leap', 'drop');
+        void c.offsetWidth;
+        c.classList.add(kind);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -1224,6 +1305,9 @@ class TypeFlux {
         // Credit the manner the moment the hand engages, else breadth seals
         // (The Wanderer) could never count a zen trial.
         if (this.mode === 'zen') Storage.markModeUsed('zen');
+
+        // The room begins to breathe — a low drone that rises with fervor.
+        SoundSystem.startDrone && SoundSystem.startDrone();
 
         // Start countdown timer for timed mode, or elapsed timer for untimed modes
         if (this.timerValue > 0) {
@@ -1290,6 +1374,11 @@ class TypeFlux {
             const behind = this.currentWordIndex < this.ghostWordIndex;
             cur.classList.toggle('behind', behind);
 
+            // Pacing ahead of the ghost — a faint gold warmth on the field,
+            // the bright counterpart to the crimson of urgency.
+            document.body.classList.toggle('ahead-of-ghost',
+                this.currentWordIndex > this.ghostWordIndex);
+
             // Stop when ghost finishes its run
             if (this.ghostWordIndex >= times.length) {
                 this.ghostRaf = null;
@@ -1308,6 +1397,7 @@ class TypeFlux {
         if (this.elements.ghostCursor) {
             this.elements.ghostCursor.classList.remove('active', 'behind');
         }
+        document.body.classList.remove('ahead-of-ghost');
     }
 
     startTimer() {
@@ -1344,6 +1434,7 @@ class TypeFlux {
         if (this.wpmInterval) clearInterval(this.wpmInterval);
         if (this.elapsedInterval) clearInterval(this.elapsedInterval);
         this.stopGhostReplay();
+        SoundSystem.stopDrone && SoundSystem.stopDrone();
 
         // Drop urgency styling
         if (this.elements.vellumFrame) {
@@ -1367,8 +1458,18 @@ class TypeFlux {
 
         // Lifetime miss tally — feeds the nemesis. Code "words" are whole
         // lines, not real words, so they are kept out of the reckoning.
+        let nemesisOutcome = null;
         if (this.mode !== 'code') {
+            const nemBefore = Storage.getNemesis();
             Storage.recordMisses(this.wordMisses);
+            // Clean strikes against the reigning nemesis advance the arc —
+            // land enough and the foe is vanquished.
+            if (nemBefore) {
+                const cleanHits = this.wordCleans[nemBefore.word] || 0;
+                if (cleanHits > 0) {
+                    nemesisOutcome = Storage.recordNemesisProgress(nemBefore.word, cleanHits);
+                }
+            }
         }
 
         const rankAfter = Storage.getRank(Storage.getStats());
@@ -1457,6 +1558,15 @@ class TypeFlux {
                 this.showToast(`the desk raises thee — ${rankAfter.name}`, 'success');
                 SoundSystem.newRecord && SoundSystem.newRecord();
             }, 1700);
+        }
+
+        // Nemesis vanquished — a foe struck from the writ for good.
+        if (nemesisOutcome && nemesisOutcome.vanquished) {
+            setTimeout(() => {
+                this.showToast(`“${nemesisOutcome.word}” — vanquished, struck from the writ`, 'success');
+                SoundSystem.newRecord && SoundSystem.newRecord();
+                this.spawnConfetti(36);
+            }, 1900);
         }
 
         // Refresh the persistent identity — frontispiece chip + ledger.
@@ -1725,7 +1835,25 @@ class TypeFlux {
             return `Thy pace hath plateaued near ${Math.round(mean)} wpm — try a longer glass to test endurance.`;
         }
 
+        // The adaptive field, when it has shifted, explains itself.
+        if (this.settings.adaptiveField !== false && this.mode === 'words') {
+            if (this._adaptiveDiff === 'hard') return 'the field has hardened to thy hand — meet it well.';
+            if (this._adaptiveDiff === 'easy') return 'the field is gentled a while — find thy footing again.';
+        }
+
         return null;
+    }
+
+    /* Adaptive difficulty — the words lean harder or gentler from the
+       mean accuracy and pace of recent words trials. */
+    adaptiveDifficulty() {
+        const tests = (Storage.getTests() || []).filter(t => t.mode === 'words').slice(-6);
+        if (tests.length < 3) return 'normal';
+        const meanAcc = tests.reduce((s, t) => s + (t.accuracy || 0), 0) / tests.length;
+        const meanWpm = tests.reduce((s, t) => s + (t.wpm || 0), 0) / tests.length;
+        if (meanAcc >= 97 && meanWpm >= 55) return 'hard';
+        if (meanAcc < 90) return 'easy';
+        return 'normal';
     }
 
     /* Look at the most-missed words and offer one specific observation:
@@ -2162,6 +2290,7 @@ class TypeFlux {
         if (this.wpmInterval) clearInterval(this.wpmInterval);
         if (this.elapsedInterval) clearInterval(this.elapsedInterval);
         this.stopGhostReplay();
+        SoundSystem.stopDrone && SoundSystem.stopDrone();
 
         // Reset state
         this.isActive = false;
@@ -2197,6 +2326,7 @@ class TypeFlux {
         this.medalsEarnedThisTest = [];
         this.sealsEarnedThisTest = [];
         this.wordMisses = {};
+        this.wordCleans = {};
         this.runWordTimes = [];
         this.stopGhostReplay();
         if (this.elements.medalStack) this.elements.medalStack.textContent = '';
@@ -2350,8 +2480,11 @@ class TypeFlux {
         if (this.combo > this.maxCombo) {
             this.maxCombo = this.combo;
         }
-        
+
         this.elements.comboCount.textContent = this.combo;
+
+        // The room drone swells with the fervor.
+        SoundSystem.setDroneIntensity && SoundSystem.setDroneIntensity(Math.min(1, this.combo / 50));
         
         if (this.combo >= 5) {
             this.elements.comboDisplay.classList.add('active');
@@ -2447,10 +2580,45 @@ class TypeFlux {
             this.elements.testsList.appendChild(empty);
         }
         
-        // Draw history chart
+        // Draw history chart + the skill signature
         setTimeout(() => {
             ChartSystem.drawHistoryChart(this.elements.historyChart, tests);
+            if (this.elements.signatureChart) {
+                ChartSystem.drawSignature(this.elements.signatureChart, this.computeSignature());
+            }
         }, 100);
+    }
+
+    /* The signature of the hand — five axes, each 0..1, drawn from the
+       last twenty trials. A self-portrait that shifts over weeks. */
+    computeSignature() {
+        const tests = (Storage.getTests() || []).slice(-20);
+        const blank = [
+            { label: 'pace', value: 0 }, { label: 'accuracy', value: 0 },
+            { label: 'consistency', value: 0 }, { label: 'endurance', value: 0 },
+            { label: 'range', value: 0 }
+        ];
+        if (tests.length === 0) return blank;
+
+        const mean = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
+        const clamp = (v) => Math.max(0, Math.min(1, v));
+
+        const pace = mean(tests.map(t => t.wpm || 0)) / 130;
+        const accuracy = mean(tests.map(t => t.accuracy || 0)) / 100;
+        const consistency = mean(tests.map(t => t.consistency || 0)) / 100;
+        const longTrials = tests.filter(t => (t.timeLimit >= 60) || (t.words >= 50));
+        const endurance = longTrials.length
+            ? mean(longTrials.map(t => t.wpm || 0)) / 130
+            : pace * 0.8;
+        const range = new Set(tests.map(t => t.mode)).size / 5;
+
+        return [
+            { label: 'pace',        value: clamp(pace) },
+            { label: 'accuracy',    value: clamp(accuracy) },
+            { label: 'consistency', value: clamp(consistency) },
+            { label: 'endurance',   value: clamp(endurance) },
+            { label: 'range',       value: clamp(range) }
+        ];
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -2527,6 +2695,9 @@ class TypeFlux {
         this.elements.blindMode.checked = this.settings.blindMode;
         if (this.elements.readyCountdown) {
             this.elements.readyCountdown.checked = this.settings.readyCountdown !== false;
+        }
+        if (this.elements.adaptiveField) {
+            this.elements.adaptiveField.checked = this.settings.adaptiveField !== false;
         }
 
         // Apply afflictions on load — checkbox + body class
@@ -2688,6 +2859,7 @@ class TypeFlux {
         this.updateSetting('soundEffects', enabled);
         this.elements.soundEffects.checked = enabled;
         this.elements.soundToggle.classList.toggle('active', enabled);
+        if (!enabled) SoundSystem.stopDrone();
         
         if (enabled) {
             SoundSystem.click();
@@ -2718,11 +2890,64 @@ class TypeFlux {
     // ─────────────────────────────────────────────────────────────
     
     clearStats() {
-        if (confirm('Strike every trial from the record? The ledger will be wiped clean — this cannot be undone.')) {
+        this.confirmModal(
+            'Strike the Record',
+            'Every trial, every streak, the nemesis and its tally — wiped from the ledger. This cannot be undone.',
+            'strike it all'
+        ).then(ok => {
+            if (!ok) return;
             Storage.clearTests();
             this.updateStatsView();
             this.showToast('the record is struck — the ledger stands empty', 'success');
-        }
+        });
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // A styled modal — a manuscript-bound confirmation, in place of
+    // raw browser chrome. Resolves true on confirm, false otherwise.
+    // ─────────────────────────────────────────────────────────────
+    confirmModal(title, body, confirmLabel = 'proceed') {
+        return new Promise(resolve => {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.innerHTML = `
+                <div class="modal" role="dialog" aria-modal="true">
+                    <span class="corner corner-tl" aria-hidden="true"></span>
+                    <span class="corner corner-tr" aria-hidden="true"></span>
+                    <span class="corner corner-bl" aria-hidden="true"></span>
+                    <span class="corner corner-br" aria-hidden="true"></span>
+                    <p class="modal-eyebrow">— a matter for thy seal —</p>
+                    <h3 class="modal-title"></h3>
+                    <p class="modal-body"></p>
+                    <div class="modal-actions">
+                        <button class="btn btn-secondary modal-cancel">withdraw</button>
+                        <button class="btn btn-danger modal-confirm"></button>
+                    </div>
+                </div>`;
+            overlay.querySelector('.modal-title').textContent = title;
+            overlay.querySelector('.modal-body').textContent = body;
+            overlay.querySelector('.modal-confirm').textContent = confirmLabel;
+            document.body.appendChild(overlay);
+            requestAnimationFrame(() => overlay.classList.add('visible'));
+
+            let done = false;
+            const close = (result) => {
+                if (done) return;
+                done = true;
+                overlay.classList.remove('visible');
+                document.removeEventListener('keydown', onKey);
+                setTimeout(() => overlay.remove(), 260);
+                resolve(result);
+            };
+            const onKey = (e) => {
+                if (e.key === 'Escape') close(false);
+                if (e.key === 'Enter')  close(true);
+            };
+            overlay.querySelector('.modal-confirm').addEventListener('click', () => close(true));
+            overlay.querySelector('.modal-cancel').addEventListener('click', () => close(false));
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
+            document.addEventListener('keydown', onKey);
+        });
     }
 
     copyResult() {

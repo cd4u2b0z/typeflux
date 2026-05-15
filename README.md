@@ -67,6 +67,10 @@ A **words** trial is bounded one of two ways, and the manifest makes the contrac
 - **Ghost runs — race thy past best.** When you complete a `words` trial faster than your prior best for that exact format (e.g. `words 25 @ 30s`), the run is sealed as a **ghost**: a translucent teal cursor that, on every subsequent trial of the same format, replays its pace word-by-word. A small flag floats above it: *your best · N wpm*. When you fall behind it goes gold. Set new ghosts; race them; break them.
 - **A counsel above the field.** A quiet one-line italic above the vellum, drawn from your recent trials — *"a ghost waits for this format at 67 wpm — race it"*, *"thy accuracy hath slipped of late — slow thy pace"*, *"thy pace hath plateaued near 54 wpm — try a longer glass."* Hidden when there's nothing useful to say.
 - **Fervor seal.** A circular medallion that breathes gold at five hits, ignites amber **fire** at ten, and burns crimson **blaze** at twenty-five.
+- **The letterpress.** The caret has mass — it stretches in the direction of travel on a word advance, taller on a line drop, then settles. Each struck letter presses into the vellum; a wrong one blots with a soft crimson ink-stain.
+- **The room breathes.** A low drone underlies the trial, swelling with your fervor and receding as it cools — felt more than heard.
+- **Ghost-warmth.** When you pace ahead of your ghost, the field takes on a faint gold warmth — the bright counterpart to the crimson of urgency.
+- **The field adapts.** Words-mode trials lean harder or gentler from your recent accuracy, keeping you near the edge of flow. Toggleable at the desk.
 
 ### Medals — fleeting honours of the trial
 
@@ -92,7 +96,8 @@ Small bronze cards that flash in from the right of the field as you earn them �
 The ledger opens with a persistent identity carried across every session:
 
 - **Rank** — a title raised by trials weathered and the crest of pace reached, from *Apprentice of the Desk* through *Scrivener*, *Copyist*, *Cartographer*, *Master Typewright*, to *Grand Archivist*. A pressed wax seal sits beside it, its tier engraved in Roman and its detail — tick ring, outer halo — *growing as you rise*. The current rank also rides as a small chip on the frontispiece. Raising it draws a quiet honour, distinct from the seals.
-- **Nemesis** — the single word that has felled your hand most across all trials past, named on a writ pinned askew to the desk with crimson ink bled behind it. **Settle the score** opens a trial laced with that very word.
+- **Nemesis** — the single word that has felled your hand most across all trials past, named on a writ pinned askew to the desk with crimson ink bled behind it. **Settle the score** opens a trial laced with that very word — and the nemesis is *defeatable*: land five clean strikes against it and it is **vanquished**, struck from the writ for good, the next-worst word rising to take its place.
+- **The signature of thy hand** — a radar self-portrait across five axes: pace, accuracy, consistency, endurance, range. A shape that is yours, and shifts over weeks.
 
 ### The day's commissions — three charges, renewed each dawn
 
@@ -117,7 +122,7 @@ Each trial is recorded. Five accountings are kept:
 
 A chart of pace across all trials follows, and a roll of the ten most recent. Strike from the record at your pleasure.
 
-### The Chronicles — twenty-two seals across four orders
+### The Chronicles — twenty-five seals across four orders
 
 Wax-stamped seals earned through real signals — never grinding for its own sake. When unlocked, the seal slams down upon the certificate with its motto in italic Garamond. The grid lives on the ledger.
 
@@ -220,7 +225,7 @@ typeflux/
 │   ├── quotes.js       quote corpus
 │   ├── sentences.js    everyday-English prose passages
 │   ├── code.js         15-language snippet corpus + tips
-│   ├── achievements.js 22 seals across four orders
+│   ├── achievements.js 25 seals across four orders
 │   ├── commissions.js  daily commission pool + date-seeded draw
 │   ├── sounds.js       Web Audio synthesised keystrokes
 │   ├── chart.js        canvas pace charts

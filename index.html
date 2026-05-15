@@ -407,6 +407,7 @@
                         <span class="nemesis-eyebrow">thy nemesis</span>
                         <span class="nemesis-word" id="nemesis-word">—</span>
                         <span class="nemesis-count" id="nemesis-count">no foe yet named</span>
+                        <span class="nemesis-progress" id="nemesis-progress"></span>
                         <button class="btn btn-secondary" id="nemesis-settle">
                             <span class="btn-numeral">⚔</span> settle the score
                         </button>
@@ -462,6 +463,18 @@
                     <canvas id="history-chart"></canvas>
                 </div>
 
+                <!-- The signature of the hand — a radar self-portrait
+                     across five axes, drawn from recent trials. -->
+                <div class="signature-plate">
+                    <div class="chart-heading">
+                        <span class="plate-numeral">FIG.</span>
+                        <span class="chart-title">the signature of thy hand</span>
+                    </div>
+                    <div class="signature-container">
+                        <canvas id="signature-chart"></canvas>
+                    </div>
+                </div>
+
                 <div class="recent-tests">
                     <div class="recent-heading">
                         <span class="plate-numeral">ROLL.</span>
@@ -477,7 +490,7 @@
                     <div class="recent-heading">
                         <span class="plate-numeral">CHRON.</span>
                         <span class="chart-title">the chronicles · seals earned</span>
-                        <span class="chronicles-count" id="chronicles-count">0 of 22</span>
+                        <span class="chronicles-count" id="chronicles-count">0 of 25</span>
                     </div>
                     <div class="chronicles" id="chronicles" role="list">
                         <!-- seal cards rendered by app.js -->
@@ -622,6 +635,17 @@
                         </div>
                         <label class="toggle">
                             <input type="checkbox" id="ready-countdown" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name">adapt the field to thy hand</span>
+                            <span class="setting-desc">the words lean harder or gentler as thy recent accuracy bids</span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="adaptive-field" checked>
                             <span class="toggle-slider"></span>
                         </label>
                     </div>

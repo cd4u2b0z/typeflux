@@ -240,6 +240,89 @@ const ChartSystem = {
         ctx.fillText('recent tests →', width / 2, height - 8);
     },
 
+    // ─────────────────────────────────────────────────────────────
+    // Skill signature — a radar of the hand: pace, accuracy,
+    // consistency, endurance, range. Each axis 0..1.
+    // ─────────────────────────────────────────────────────────────
+    drawSignature(canvas, axes) {
+        if (!canvas || !axes || axes.length < 3) return;
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width  = rect.width  * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+
+        const W = rect.width, H = rect.height;
+        ctx.clearRect(0, 0, W, H);
+
+        const styles = getComputedStyle(document.documentElement);
+        const gold = (styles.getPropertyValue('--gold').trim()) || '#d9b25f';
+        const dim  = (styles.getPropertyValue('--text-dim').trim()) || '#555';
+        const text = (styles.getPropertyValue('--text-tertiary').trim()) || '#999';
+
+        const n  = axes.length;
+        const cx = W / 2, cy = H / 2 + 4;
+        const R  = Math.min(W, H) / 2 - 42;
+        const ang = (i) => -Math.PI / 2 + i * (2 * Math.PI / n);
+
+        // concentric grid rings
+        ctx.strokeStyle = dim;
+        ctx.lineWidth = 0.5;
+        for (let r = 1; r <= 4; r++) {
+            ctx.beginPath();
+            for (let i = 0; i <= n; i++) {
+                const a = ang(i % n), rr = R * r / 4;
+                const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr;
+                i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+        // spokes
+        for (let i = 0; i < n; i++) {
+            const a = ang(i);
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
+            ctx.stroke();
+        }
+        // the data polygon
+        ctx.beginPath();
+        for (let i = 0; i <= n; i++) {
+            const idx = i % n, a = ang(idx);
+            const v = Math.max(0.04, Math.min(1, axes[idx].value || 0));
+            const x = cx + Math.cos(a) * R * v, y = cy + Math.sin(a) * R * v;
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = gold + '33';
+        ctx.fill();
+        ctx.strokeStyle = gold;
+        ctx.lineWidth = 2;
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+        // vertex marks
+        for (let i = 0; i < n; i++) {
+            const a = ang(i);
+            const v = Math.max(0.04, Math.min(1, axes[i].value || 0));
+            ctx.beginPath();
+            ctx.arc(cx + Math.cos(a) * R * v, cy + Math.sin(a) * R * v, 3, 0, Math.PI * 2);
+            ctx.fillStyle = gold;
+            ctx.fill();
+        }
+        // axis labels
+        ctx.fillStyle = text;
+        ctx.font = '10px "Cinzel", serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        for (let i = 0; i < n; i++) {
+            const a = ang(i);
+            const lx = cx + Math.cos(a) * (R + 22);
+            const ly = cy + Math.sin(a) * (R + 18);
+            ctx.fillText((axes[i].label || '').toUpperCase(), lx, ly);
+        }
+    },
+
     // Mini sparkline for inline display
     drawSparkline(canvas, values, color = null) {
         const ctx = canvas.getContext('2d');

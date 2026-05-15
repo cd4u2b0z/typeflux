@@ -228,6 +228,67 @@ const SoundSystem = {
         this.ensureContext();
 
         this.playTone(600, 0.05, 'triangle', 0.15);
+    },
+
+    // ─────────────────────────────────────────────────────────────
+    // The room drone — a low, near-silent bed that breathes upward
+    // with fervor. Atmosphere, never noise: the gain ceiling is kept
+    // deliberately low. Started with a trial, stopped when it ends.
+    // ─────────────────────────────────────────────────────────────
+    drone: null,
+    droneLevel: 0,
+
+    startDrone() {
+        if (!this.enabled) return;
+        if (!this.ensureContext()) return;
+        if (this.drone) return;
+        const ctx = this.audioContext;
+
+        const osc  = ctx.createOscillator();   // the fundamental
+        const osc2 = ctx.createOscillator();   // a quiet fifth above
+        osc.type = 'sine';   osc.frequency.value = 56;
+        osc2.type = 'sine';  osc2.frequency.value = 84;
+        osc2.detune.value = 5;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 180;
+
+        const gain = ctx.createGain();
+        gain.gain.value = 0; // silent until fervor raises it
+
+        osc.connect(filter); osc2.connect(filter);
+        filter.connect(gain); gain.connect(this.masterGain);
+        osc.start(); osc2.start();
+
+        this.drone = { osc, osc2, filter, gain };
+        this.droneLevel = 0;
+    },
+
+    /* level 0..1 — the room swells with the combo. */
+    setDroneIntensity(level) {
+        if (!this.drone || !this.audioContext) return;
+        const ctx = this.audioContext;
+        const lvl = Math.max(0, Math.min(1, level || 0));
+        this.droneLevel = lvl;
+        // ceiling kept low — felt more than heard
+        this.drone.gain.gain.cancelScheduledValues(ctx.currentTime);
+        this.drone.gain.gain.setTargetAtTime(lvl * 0.05, ctx.currentTime, 0.4);
+        this.drone.filter.frequency.setTargetAtTime(170 + lvl * 320, ctx.currentTime, 0.4);
+    },
+
+    stopDrone() {
+        if (!this.drone || !this.audioContext) { this.drone = null; return; }
+        const ctx = this.audioContext;
+        const d = this.drone;
+        this.drone = null;
+        this.droneLevel = 0;
+        try {
+            d.gain.gain.cancelScheduledValues(ctx.currentTime);
+            d.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.25);
+            d.osc.stop(ctx.currentTime + 1.4);
+            d.osc2.stop(ctx.currentTime + 1.4);
+        } catch (e) {}
     }
 };
 

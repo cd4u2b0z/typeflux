@@ -3894,3 +3894,165 @@ body.ambient-off { --ambient-intensity: 0; }
 @media (prefers-reduced-motion: reduce) {
     .cert-sitting { transition: opacity 200ms linear; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   THE FEEL PASS — caret weight, letterpress, error blot
+   ════════════════════════════════════════════════════════════ */
+
+/* The caret has mass — it stretches in the direction of travel on a
+   word advance, and stretches tall on a line drop, then settles. */
+@keyframes caretLeap {
+    0%   { transform: scaleX(2.6); }
+    100% { transform: scaleX(1); }
+}
+@keyframes caretDrop {
+    0%   { transform: scaleY(1.55); }
+    100% { transform: scaleY(1); }
+}
+.cursor.leap { animation: caretLeap 150ms var(--ease-engraved); }
+.cursor.drop { animation: caretDrop 180ms var(--ease-engraved); }
+
+/* Letterpress — the just-struck letter presses into the vellum. */
+@keyframes letterStrike {
+    0%   { transform: translateY(0) scale(1); }
+    32%  { transform: translateY(1.6px) scale(0.93); }
+    100% { transform: translateY(0) scale(1); }
+}
+.letter.struck { animation: letterStrike 130ms var(--ease-engraved); }
+
+/* A wrong letter blots — a soft crimson ink-stain, on every theme. */
+.letter.incorrect::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 56%;
+    width: 1.5em;
+    height: 1.5em;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, var(--error) 0%, transparent 62%);
+    opacity: 0.2;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* Pacing ahead of the ghost — a faint gold warmth on the field, the
+   bright counterpart to the crimson of urgency (which still wins). */
+.vellum-frame {
+    transition: box-shadow 420ms var(--ease-engraved),
+                border-color 420ms var(--ease-engraved);
+}
+body.ahead-of-ghost:not(.is-urgent) .vellum-frame {
+    border-color: var(--gold);
+    box-shadow:
+        inset 0 0 0 1px var(--gold-deep),
+        inset 0 0 64px var(--inset-shadow),
+        0 24px 64px rgba(0, 0, 0, 0.35),
+        0 0 30px var(--gold-glow);
+}
+
+/* ════════════════════════════════════════════════════════════
+   SKILL SIGNATURE — the radar self-portrait on the ledger
+   ════════════════════════════════════════════════════════════ */
+
+.signature-plate { margin-top: var(--space-8); }
+.signature-container {
+    height: 300px;
+    margin-top: var(--space-3);
+}
+#signature-chart { width: 100%; height: 100%; }
+
+/* ── Nemesis arc — clean-strike progress toward vanquishing ───── */
+.nemesis-count { margin-bottom: 0; }
+.nemesis-progress {
+    position: relative;
+    z-index: 1;
+    font-family: var(--font-display);
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: var(--space-3);
+}
+.nemesis-plate:not(.has-nemesis) .nemesis-progress { display: none; }
+
+/* ════════════════════════════════════════════════════════════
+   MODAL — a manuscript-bound confirmation, not browser chrome
+   ════════════════════════════════════════════════════════════ */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-6);
+    background: rgba(0, 0, 0, 0.66);
+    opacity: 0;
+    transition: opacity 240ms var(--ease-engraved);
+}
+.modal-overlay.visible { opacity: 1; }
+
+.modal {
+    position: relative;
+    max-width: 460px;
+    width: 100%;
+    padding: var(--space-9) var(--space-8) var(--space-7);
+    background: var(--bg-card);
+    border: 1px solid var(--gold-deep);
+    box-shadow:
+        inset 0 0 0 1px var(--rule-faint),
+        inset 0 0 60px var(--inset-shadow),
+        0 32px 80px rgba(0, 0, 0, 0.6);
+    text-align: center;
+    transform: translateY(14px) scale(0.97);
+    transition: transform 280ms var(--ease-engraved);
+}
+.modal-overlay.visible .modal { transform: translateY(0) scale(1); }
+
+.modal-eyebrow {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 0.85rem;
+    color: var(--gold);
+    margin-bottom: var(--space-2);
+}
+.modal-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.5rem;
+    letter-spacing: var(--tracking-engraved);
+    color: var(--ink);
+    margin-bottom: var(--space-3);
+}
+.modal-body {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--ink-dim);
+    margin-bottom: var(--space-6);
+}
+.modal-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: center;
+}
+
+/* ════════════════════════════════════════════════════════════
+   VIEW TRANSITIONS — a clean cross-fade between plates
+   ════════════════════════════════════════════════════════════ */
+
+.has-vt .view { animation: none; }
+
+@keyframes vt-fade-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes vt-fade-out { from { opacity: 1; } to { opacity: 0; } }
+::view-transition-old(root) { animation: vt-fade-out 200ms var(--ease-engraved); }
+::view-transition-new(root) { animation: vt-fade-in  280ms var(--ease-engraved); }
+
+@media (prefers-reduced-motion: reduce) {
+    .cursor.leap, .cursor.drop, .letter.struck { animation: none; }
+    .vellum-frame { transition: none; }
+    .modal-overlay, .modal { transition-duration: 1ms; }
+    ::view-transition-old(root),
+    ::view-transition-new(root) { animation-duration: 1ms; }
+}
