@@ -2,7 +2,7 @@
 
 > *An account of the typewright — a typing trial in the manner of an engraved manuscript.*
 
-![edition](https://img.shields.io/badge/edition-prima_v1.2-c8a25c?style=flat-square&labelColor=2d353b)
+![edition](https://img.shields.io/badge/edition-prima_v1.3-c8a25c?style=flat-square&labelColor=2d353b)
 ![license](https://img.shields.io/badge/license-MIT-7fbbb3?style=flat-square&labelColor=2d353b)
 ![no build](https://img.shields.io/badge/build-none-a7c080?style=flat-square&labelColor=2d353b)
 ![no install](https://img.shields.io/badge/install-double--click-d699b6?style=flat-square&labelColor=2d353b)
@@ -15,11 +15,34 @@ A typing test rendered as a field manual — engraved plates, gilt corners, drif
 
 There is no install. There is no `npm install`. There is no `pip`. There is nothing to compile.
 
-1. **Download** — clone the repo, or click `Download ZIP` on Codeberg and unzip wherever.
-2. **Open** — double-click `index.html`.
-3. **Type.**
+### Download — pick one
 
-Modern browsers only — Firefox, Chrome, LibreWolf, Brave, Safari. No browser extensions required.
+**A. Clone the repo** *(recommended; gets you `git pull` updates)*
+```sh
+git clone https://codeberg.org/cdubz/typeflux.git
+```
+
+**B. Download as ZIP**
+- On Codeberg: open the repo, click the `…` menu near the branch picker, choose **Download ZIP**.
+- Save the archive anywhere, then **right-click → Extract All** (or `unzip typeflux.zip`).
+
+**C. Save individual files** *(only if you must)*
+You'll need every file under `index.html`, `css/`, and `js/` — see [Structure](#structure) below. They reference each other by relative path; missing one and the page won't load. The clone or ZIP route is far easier.
+
+### Open
+
+Double-click `index.html`. That's it. The page opens in your default browser and runs entirely from disk over `file://` — no server, no internet connection required after the first load.
+
+> **Folder layout matters.** `index.html`, the `css/` folder, and the `js/` folder must sit side-by-side, exactly as in the repo. Don't move the HTML out of the project folder, and don't flatten the `css/` and `js/` directories — the script and stylesheet links are relative.
+
+### Updates
+
+If you cloned: `git pull` inside the folder.
+If you ZIP'd: re-download and overwrite. Your trial history, settings, seals, and streak live in `localStorage` and survive a re-download.
+
+### Browsers
+
+Modern only — Firefox, Chrome, LibreWolf, Brave, Edge, Safari. No browser extensions required. Mobile browsers technically work but the page is built for a real keyboard.
 
 ---
 
@@ -39,7 +62,7 @@ The glass (timer) may be set to 15, 30, 60, or 120 seconds. Count to x, xxv, l, 
 - **Cursor trail.** Two ghost cursors lag behind the main one, pooling gold as you pause and lengthening as you accelerate.
 - **Word-pop.** Each correctly-completed word scales briefly and breathes a gold halo — the page acknowledges you.
 - **Ready countdown.** Before each trial, an engraved ring rises and counts *III · II · I · GO*. Toggleable at the desk.
-- **Last-5-second urgency.** When the glass falls under five, the vellum rim flares crimson, corners flicker, the timer numeral thumps.
+- **Last-5-second urgency.** When the glass falls under five, the vellum rim flares crimson, corners flicker, the timer numeral thumps — and the wider room responds: the lantern halo warms to crimson and breathes; drifting motes shift colour; matrix rain (if active) turns its heads to amber. Gentle, not strobing.
 - **Fervor seal.** A circular medallion that breathes gold at five hits, ignites amber **fire** at ten, and burns crimson **blaze** at twenty-five.
 
 ### Medals — fleeting honours of the trial
@@ -108,6 +131,17 @@ Further rites at the desk:
 - voice of the quill (key sounds) + strength of voice
 - stay upon thine error · confidence of the hand (no backspace) · blind passage
 
+### Of Affliction — optional burdens
+
+Four visual debuffs you may take up at your choosing. None intercept input or alter timing — they only test the eye. Combine as you dare; remove them whenever. All respect `prefers-reduced-motion`.
+
+| affliction | what it does |
+|---|---|
+| **the mist** | words yet to come fade into vapour at the page's right edge |
+| **the fading ink** | words past dim to a faint impression behind you |
+| **the dim lantern** | the lantern halo darkens and gutters; the room sinks into shadow |
+| **the narrow eye** | the field is veiled at its left, right, top and bottom — only the centre is plain |
+
 ## The Certificate
 
 Upon conclusion, the trial is sealed: a ringed grade medallion with compass ticks, the grand pace and accuracy in Cinzel caps, a six-row ledger of details, a chart of pace through the glass, and a seal line — *signed this day, by your own hand*.
@@ -117,6 +151,10 @@ A **marginalia tip** sits beneath, in italic Garamond — a one-line counsel dra
 **Personal best.** If your net WPM exceeds every previous trial, a wax-stamped gold sash slams in above the certificate reading **NEW PERSONAL BEST**, the grade letter shimmers, and forty-eight confetti drift fullscreen.
 
 **Newly-earned seals** stamp themselves onto the certificate in succession after the trial — gold wax, slammed in from the right, held a beat, then receded into the Chronicles.
+
+### Honours of this Trial — the post-summary register
+
+Beneath the chart, a **roll of honours** lists every medal flashed during the trial (with `×N` if you earned it more than once) alongside any seal newly impressed upon the Chronicles. Each chip is coloured by tier (gold · teal · plum · crimson) or by seal order (skill · breadth · endurance · secret). If the trial earned no honours, a single italic line marks it: *no honours this trial; the next, perhaps.*
 
 ---
 
@@ -197,4 +235,4 @@ MIT — use, modify, share.
 ---
 
 <p align="center"><em>set thy hand to the field. let the glass run.</em></p>
-<p align="center"><sub>editio prima · v1.2 · by Dr. Baklava</sub></p>
+<p align="center"><sub>editio prima · v1.3 · by Dr. Baklava</sub></p>
