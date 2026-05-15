@@ -1564,6 +1564,11 @@ class TypeFlux {
             this.timerValue--;
             this.updateTimer();
 
+            // Music tension — over the last 12 seconds the score gathers
+            // urgency: top-end, chaos, a rising lift as the glass empties.
+            SoundSystem.setMusicUrgency && SoundSystem.setMusicUrgency(
+                this.timerValue <= 12 ? (12 - this.timerValue) / 12 : 0);
+
             // Last-5-second urgency: crimson rim on the vellum frame +
             // a gentle warm-to-crimson tint of the ambient atmosphere
             // (halo, motes, matrix rain). Body class drives the wider shift.
@@ -2620,8 +2625,10 @@ class TypeFlux {
 
         this.elements.comboCount.textContent = this.combo;
 
-        // The room drone swells with the fervor.
+        // The room drone swells with the fervor — and the music pushes
+        // with it: fuller, brighter, more driving as the combo climbs.
         SoundSystem.setDroneIntensity && SoundSystem.setDroneIntensity(Math.min(1, this.combo / 50));
+        SoundSystem.setMusicIntensity && SoundSystem.setMusicIntensity(Math.min(1, this.combo / 30));
         
         if (this.combo >= 5) {
             this.elements.comboDisplay.classList.add('active');
