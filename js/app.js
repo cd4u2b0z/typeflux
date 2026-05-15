@@ -519,9 +519,10 @@ class TypeFlux {
                 break;
 
             case 'prose': {
-                // Real, everyday English — a coherent passage of working
-                // prose. Completed when the passage is, like a quote.
-                const passage = SentenceGenerator.getAny();
+                // Real, everyday English — coherent passages of working
+                // prose, sized by the Count knob. Completed when the
+                // passage is, like a quote.
+                const passage = SentenceGenerator.getPassage(this.wordCount);
                 this.words = passage.text.split(' ');
                 this.timerValue = 0;
                 break;
@@ -598,14 +599,17 @@ class TypeFlux {
         ];
     }
 
-    /* Context-aware manifest: Glass + Count only govern a `words` trial.
-       In other modes both are inert. Within `words`, whichever knob does
-       not govern the current trial is muted so the contract is plain. */
+    /* Context-aware manifest. Glass bounds only a `words` trial. Count
+       governs `words` (count-bound) and `prose` (passage length); it is
+       inert everywhere else. Within `words`, whichever knob does not
+       govern the current trial is muted so the contract stays plain. */
     updateManifest() {
         const glass = document.querySelector('.manifest-group-glass');
         const count = document.querySelector('.manifest-group-count');
         const isWords = this.mode === 'words';
-        [glass, count].forEach(g => { if (g) g.classList.toggle('inert', !isWords); });
+        const countMatters = isWords || this.mode === 'prose';
+        if (glass) glass.classList.toggle('inert', !isWords);
+        if (count) count.classList.toggle('inert', !countMatters);
         if (glass) glass.classList.toggle('muted', isWords && this.boundBy !== 'time');
         if (count) count.classList.toggle('muted', isWords && this.boundBy !== 'count');
     }

@@ -66,5 +66,23 @@ const SentenceGenerator = {
     getAny() {
         const pool = this.all();
         return { text: pool[Math.floor(Math.random() * pool.length)] };
+    },
+
+    // Build a body of prose of roughly `targetWords` words by joining
+    // distinct passages until the target is met. At least one passage
+    // is always returned, so a small target still yields real text.
+    getPassage(targetWords = 25) {
+        const pool = this.all();
+        const picked = [];
+        const used = new Set();
+        let count = 0;
+        while ((count < targetWords || picked.length === 0) && used.size < pool.length) {
+            const i = Math.floor(Math.random() * pool.length);
+            if (used.has(i)) continue;
+            used.add(i);
+            picked.push(pool[i]);
+            count += pool[i].split(/\s+/).length;
+        }
+        return { text: picked.join(' ') };
     }
 };
