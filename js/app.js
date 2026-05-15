@@ -584,42 +584,70 @@ class TypeFlux {
                 break;
             }
 
-            case 'quotes':
-                const quote = QuoteGenerator.getAny();
-                this.words = quote.text.split(' ');
-                this.timerValue = 0; // No timer for quotes
+            case 'quotes': {
+                // Optionally timed — under a glass, quotes feed endlessly
+                // until it empties; otherwise a single quote to complete.
+                if (this.boundBy === 'time') {
+                    this.words = this.buildTimedWords(
+                        () => QuoteGenerator.getAny().text, this.timeLimit * 4);
+                    this.timerValue = this.timeLimit;
+                } else {
+                    this.words = QuoteGenerator.getAny().text.split(' ');
+                    this.timerValue = 0;
+                }
                 break;
+            }
 
             case 'prose': {
                 // Real, everyday English — coherent passages of working
-                // prose, sized by the Count knob. Completed when the
-                // passage is, like a quote.
-                const passage = SentenceGenerator.getPassage(this.wordCount);
-                this.words = passage.text.split(' ');
-                this.timerValue = 0;
+                // prose. Optionally timed, like quotes; otherwise a single
+                // passage sized by the Count knob.
+                if (this.boundBy === 'time') {
+                    this.words = this.buildTimedWords(
+                        () => SentenceGenerator.getPassage(this.wordCount).text,
+                        this.timeLimit * 4);
+                    this.timerValue = this.timeLimit;
+                } else {
+                    this.words = SentenceGenerator.getPassage(this.wordCount).text.split(' ');
+                    this.timerValue = 0;
+                }
                 break;
             }
-                
+
             case 'code': {
-                const snippet = CodeGenerator.getAny();
-                this.lastLanguage = snippet.language;
+                // Each line is a "word" preserving indentation — every
+                // space, tab, and line break is a required keystroke.
                 this.words = [];
                 this.lineBreaks = new Set();
-                // Each line is a "word" that may contain spaces — every
-                // character (including indentation) is a required keystroke.
-                // Tabs render as four spaces; trailing whitespace is trimmed
-                // off each line so a stray trailing space doesn't trip the
-                // user; empty lines remain typeable as a bare Enter.
-                const expanded = snippet.code.replace(/\t/g, '    ').replace(/\r\n?/g, '\n');
-                const lines = expanded.split('\n').map(l => l.replace(/\s+$/, ''));
-                // Drop a single trailing empty line if present (most snippets
-                // don't end in a blank line, but be safe)
-                while (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
-                lines.forEach((line, idx) => {
-                    if (idx > 0) this.lineBreaks.add(this.words.length);
-                    this.words.push(line);
-                });
-                this.timerValue = 0;
+                const addSnippet = (snippet) => {
+                    const expanded = snippet.code.replace(/\t/g, '    ').replace(/\r\n?/g, '\n');
+                    const lines = expanded.split('\n').map(l => l.replace(/\s+$/, ''));
+                    while (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
+                    if (this.words.length > 0) lines.unshift('');   // a blank gap between snippets
+                    lines.forEach((line) => {
+                        if (this.words.length > 0) this.lineBreaks.add(this.words.length);
+                        this.words.push(line);
+                    });
+                };
+                if (this.boundBy === 'time') {
+                    // Timed — snippets from one language until the glass empties.
+                    const langs = CodeGenerator.getLanguages();
+                    const lang = langs[Math.floor(Math.random() * langs.length)];
+                    const target = Math.max(40, this.timeLimit);
+                    let guard = 0;
+                    while (this.words.length < target && guard++ < 200) {
+                        const s = CodeGenerator.getRandom(lang);
+                        if (!s) break;
+                        if (!this.lastLanguage) this.lastLanguage = s.language;
+                        addSnippet(s);
+                    }
+                    this.timerValue = this.timeLimit;
+                } else {
+                    const snippet = CodeGenerator.getAny();
+                    this.lastLanguage = snippet.language;
+                    addSnippet(snippet);
+                    this.timerValue = 0;
+                }
                 break;
             }
                 
@@ -672,6 +700,28 @@ class TypeFlux {
         this.updateTimerLabel();
     }
 
+    /* The bound governing the current trial:
+       'time' (countdown glass) · 'count' (fixed words) ·
+       'passage' (complete one passage) · 'endless' (zen). */
+    effectiveBound() {
+        if (this.mode === 'zen')   return 'endless';
+        if (this.mode === 'words') return this.boundBy === 'count' ? 'count' : 'time';
+        return this.boundBy === 'time' ? 'time' : 'passage';
+    }
+
+    /* Build a words array large enough to outlast a timed glass — keep
+       appending generated text until well past any sustainable pace. */
+    buildTimedWords(getText, target) {
+        const words = [];
+        let guard = 0;
+        while (words.length < target && guard++ < 500) {
+            const chunk = String(getText() || '').split(/\s+/).filter(Boolean);
+            if (chunk.length === 0) break;
+            words.push(...chunk);
+        }
+        return words;
+    }
+
     /* Ghost bucket args for the current words trial. Time-bound and
        count-bound runs live in separate buckets — one arg is zeroed so
        the two never share a ghost. */
@@ -682,19 +732,41 @@ class TypeFlux {
         ];
     }
 
-    /* Context-aware manifest. Glass bounds only a `words` trial. Count
-       governs `words` (count-bound) and `prose` (passage length); it is
-       inert everywhere else. Within `words`, whichever knob does not
-       govern the current trial is muted so the contract stays plain. */
+    /* Context-aware manifest. The Glass governs words AND quotes/prose/
+       code — for the passage modes a "free" option makes timing optional.
+       The Count governs `words` (count-bound) and `prose` (passage size).
+       Whichever knob does not govern the trial is muted; both fall inert
+       in zen. This also drives the mode/Glass/Count active states. */
     updateManifest() {
-        const glass = document.querySelector('.manifest-group-glass');
-        const count = document.querySelector('.manifest-group-count');
+        const glass   = document.querySelector('.manifest-group-glass');
+        const count   = document.querySelector('.manifest-group-count');
+        const freeBtn = document.querySelector('.time-btn[data-time="0"]');
         const isWords = this.mode === 'words';
+        const isZen   = this.mode === 'zen';
+        const eff     = this.effectiveBound();
         const countMatters = isWords || this.mode === 'prose';
-        if (glass) glass.classList.toggle('inert', !isWords);
-        if (count) count.classList.toggle('inert', !countMatters);
-        if (glass) glass.classList.toggle('muted', isWords && this.boundBy !== 'time');
-        if (count) count.classList.toggle('muted', isWords && this.boundBy !== 'count');
+
+        if (glass) {
+            glass.classList.toggle('inert', isZen);
+            glass.classList.toggle('muted', isWords && eff === 'count');
+        }
+        if (count) {
+            count.classList.toggle('inert', !countMatters);
+            count.classList.toggle('muted', isWords && eff !== 'count');
+        }
+        // The "free" (untimed) glass option applies only to passage modes.
+        if (freeBtn) freeBtn.style.display = isWords ? 'none' : '';
+
+        // Active states
+        document.querySelectorAll('.mode-btn').forEach(b =>
+            b.classList.toggle('active', b.dataset.mode === this.mode));
+        document.querySelectorAll('.time-btn').forEach(b => {
+            const v = parseInt(b.dataset.time);
+            b.classList.toggle('active',
+                eff === 'passage' ? (v === 0) : (v === this.timeLimit));
+        });
+        document.querySelectorAll('.word-btn').forEach(b =>
+            b.classList.toggle('active', parseInt(b.dataset.words) === this.wordCount));
     }
 
     /* The live timer's caption tells the hand whether the glass is
@@ -703,25 +775,24 @@ class TypeFlux {
     updateTimerLabel() {
         const label = document.querySelector('.timer-display .stat-label');
         if (!label) return;
-        const countdown = this.mode === 'words' && this.boundBy === 'time';
-        label.textContent = countdown ? 'glass ⁄ sec' : 'elapsed ⁄ sec';
+        label.textContent = (this.effectiveBound() === 'time') ? 'glass ⁄ sec' : 'elapsed ⁄ sec';
     }
 
     /* A clear, unit-bearing label for a trial — used on the certificate,
        the ledger roll, and the shared account. Never a bare number. */
     trialLabel(t) {
-        const m = (t && t.mode) || 'words';
+        const m  = (t && t.mode) || 'words';
+        const bb = t && t.boundBy;
+        const secs = (t && t.timeLimit) || this.timeLimit;
+        if (m === 'zen') return 'zen · endless';
         if (m === 'words') {
-            if (t && t.boundBy === 'count') {
-                return `words · ${(t && t.wordCount) || this.wordCount} words`;
-            }
-            return `words · ${(t && t.timeLimit) || this.timeLimit} seconds`;
+            if (bb === 'count') return `words · ${(t && t.wordCount) || this.wordCount} words`;
+            return `words · ${secs} seconds`;
         }
-        if (m === 'code')   return (t && t.language) ? `code · ${t.language}` : 'code';
-        if (m === 'quotes') return 'quotes · passage';
-        if (m === 'prose')  return 'prose · passage';
-        if (m === 'zen')    return 'zen · endless';
-        return m;
+        // quotes / prose / code — optionally timed
+        const base = (m === 'code' && t && t.language) ? `code · ${t.language}` : m;
+        if (bb === 'time') return `${base} · ${secs} seconds`;
+        return (m === 'code') ? base : `${base} · passage`;
     }
 
     /* Zen — turn to a fresh leaf. Keep only the words ahead of the
@@ -986,9 +1057,11 @@ class TypeFlux {
         const inputValue = e.target.value;
         const inputChar = inputValue.slice(-1);
 
-        // Start test on first input
+        // Start test on first input. The ready countdown belongs only to
+        // timed trials — a glass is about to run. Untimed passages, count-
+        // bound words, and zen begin straight away.
         if (!this.isActive && inputValue.length > 0) {
-            if (this.settings.readyCountdown) {
+            if (this.settings.readyCountdown && this.effectiveBound() === 'time') {
                 e.target.value = '';
                 this.runCountdown(() => {});
                 return;
@@ -1728,16 +1801,6 @@ class TypeFlux {
         return parts.join('  ·  ');
     }
 
-    // Reflect the restored mode/glass/count onto the manifest buttons.
-    syncManifestButtons() {
-        document.querySelectorAll('.mode-btn').forEach(b =>
-            b.classList.toggle('active', b.dataset.mode === this.mode));
-        document.querySelectorAll('.time-btn').forEach(b =>
-            b.classList.toggle('active', parseInt(b.dataset.time) === this.timeLimit));
-        document.querySelectorAll('.word-btn').forEach(b =>
-            b.classList.toggle('active', parseInt(b.dataset.words) === this.wordCount));
-    }
-
     // ─────────────────────────────────────────────────────────────
     // Stumble panel — surface the most-missed words this trial,
     // plus a one-line counsel naming any pattern we can identify
@@ -2452,8 +2515,8 @@ class TypeFlux {
     }
 
     updateTimer() {
-        if (this.mode === 'words' && this.boundBy === 'time') {
-            // The only countdown glass — words bounded by time.
+        if (this.effectiveBound() === 'time') {
+            // A timed trial — the glass counts down.
             this.elements.liveTimer.textContent = this.timerValue;
         } else {
             // Everything else counts up: elapsed seconds.
@@ -2629,41 +2692,41 @@ class TypeFlux {
         this.mode = mode;
         this.updateSetting('defaultMode', mode);
 
-        document.querySelectorAll('.mode-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.mode === mode);
-        });
+        // Each family keeps its own bound: words → time|count;
+        // quotes/prose/code → time|passage (passage is the gentle default).
+        if (mode === 'words') {
+            this.boundBy = (this.settings.boundBy === 'count') ? 'count' : 'time';
+        } else if (mode !== 'zen') {
+            this.boundBy = (this.settings.passageBound === 'time') ? 'time' : 'passage';
+        }
 
         this.generateTest();
         SoundSystem.click();
     }
 
     setTime(time) {
-        this.timeLimit = time;
-        this.timerValue = time;
-        this.updateSetting('defaultTime', time);
-
-        document.querySelectorAll('.time-btn').forEach(btn => {
-            btn.classList.toggle('active', parseInt(btn.dataset.time) === time);
-        });
-
+        if (time > 0) {
+            this.timeLimit = time;
+            this.updateSetting('defaultTime', time);
+        }
         if (this.mode === 'words') {
-            // Choosing a glass binds the trial to time.
+            // Words have no "free" — choosing a glass binds the trial to time.
             this.boundBy = 'time';
             this.updateSetting('boundBy', 'time');
-            this.generateTest();
         } else {
-            this.updateTimer();
+            // Passage modes: the "free" option (time 0) is untimed; a
+            // duration makes the trial timed.
+            this.boundBy = (time === 0) ? 'passage' : 'time';
+            this.updateSetting('passageBound', this.boundBy);
         }
+        this.timerValue = (this.boundBy === 'time') ? this.timeLimit : 0;
+        this.generateTest();
         SoundSystem.click();
     }
 
     setWordCount(count) {
         this.wordCount = count;
         this.updateSetting('defaultWords', count);
-
-        document.querySelectorAll('.word-btn').forEach(btn => {
-            btn.classList.toggle('active', parseInt(btn.dataset.words) === count);
-        });
 
         if (this.mode === 'words') {
             // Choosing a count binds the trial to a fixed number of words.
@@ -2721,9 +2784,6 @@ class TypeFlux {
         if (this.elements.ambientIntensityValue) this.elements.ambientIntensityValue.textContent = `${intensity}%`;
         document.documentElement.style.setProperty('--ambient-intensity', (intensity / 100).toFixed(2));
 
-        // Words-trial bound — time (countdown glass) or count (fixed words)
-        this.boundBy = (this.settings.boundBy === 'count') ? 'count' : 'time';
-
         // Restore the desk — the mode, glass, and count last set, so a
         // returning typewright opens exactly where they left off.
         const sm = this.settings.defaultMode;
@@ -2732,7 +2792,15 @@ class TypeFlux {
         }
         if (typeof this.settings.defaultTime === 'number')  this.timeLimit = this.settings.defaultTime;
         if (typeof this.settings.defaultWords === 'number') this.wordCount = this.settings.defaultWords;
-        this.syncManifestButtons();
+
+        // The trial bound — per family. Words: time | count. Passage
+        // modes (quotes/prose/code): time | passage, passage the default.
+        if (this.mode === 'words') {
+            this.boundBy = (this.settings.boundBy === 'count') ? 'count' : 'time';
+        } else if (this.mode !== 'zen') {
+            this.boundBy = (this.settings.passageBound === 'time') ? 'time' : 'passage';
+        }
+        this.updateManifest();
 
         // Sound system
         SoundSystem.enabled = this.settings.soundEffects;

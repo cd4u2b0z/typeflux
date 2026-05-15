@@ -47,6 +47,7 @@ const Storage = {
         ambientIntensity: 60,
         adaptiveField: true,
         boundBy: 'time',
+        passageBound: 'passage',
         defaultMode: 'words',
         defaultTime: 30,
         defaultWords: 25
