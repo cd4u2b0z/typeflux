@@ -206,12 +206,9 @@ const SoundSystem = {
         });
     },
 
-    // UI click sound
+    // UI click — a soft woody desk-tap (see uiSelect below)
     click() {
-        if (!this.enabled) return;
-        this.ensureContext();
-
-        this.playTone(1000, 0.02, 'sine', 0.1);
+        this.uiSelect();
     },
 
     // Countdown tick
@@ -289,6 +286,267 @@ const SoundSystem = {
             d.osc.stop(ctx.currentTime + 1.4);
             d.osc2.stop(ctx.currentTime + 1.4);
         } catch (e) {}
+    },
+
+    // ─────────────────────────────────────────────────────────────
+    // Procedural music — a soft "desk jazz" loop beneath the trial.
+    // Original extended chords, ~84 BPM, voiced sparse and warm.
+    // Scheduled against audioContext.currentTime so it never drifts.
+    // ─────────────────────────────────────────────────────────────
+    MUSIC_BPM: 84,
+    MUSIC_LEVEL: 0.085,        // conservative — sits well under keystrokes
+    music: null,
+
+    /* An original slow 8-bar progression of soft extended chords.
+       `bass` + upper-voice notes are MIDI numbers. Not drawn from any
+       known game theme — warm, looping, lightly jazzy. */
+    MUSIC_PROGRESSION: [
+        { bass: 38, notes: [57, 60, 64, 65] },   // i — minor 9 colour
+        { bass: 43, notes: [53, 59, 62, 64] },   // dominant 13 colour
+        { bass: 36, notes: [55, 59, 62, 64] },   // major 9 colour
+        { bass: 45, notes: [55, 59, 62, 67] },   // suspended, open
+        { bass: 46, notes: [53, 57, 62, 65] },   // major 7 colour
+        { bass: 40, notes: [55, 59, 62, 66] },   // minor 9 colour
+        { bass: 45, notes: [55, 59, 60, 64] },   // minor 9 colour
+        { bass: 38, notes: [57, 60, 64, 67] }    // turnaround back to i
+    ],
+
+    _midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); },
+
+    startMusic() {
+        if (!this.enabled) return;
+        if (!this.ensureContext()) return;
+        if (this.music && this.music.active) return;   // never layer loops
+        const ctx = this.audioContext;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+        gain.gain.setTargetAtTime(this.MUSIC_LEVEL, ctx.currentTime, 0.7);  // gentle fade-in
+        gain.connect(this.masterGain);
+        this.music = {
+            gain: gain,
+            active: true,
+            timer: null,
+            intensity: 1,
+            barIndex: 0,
+            nextBarTime: ctx.currentTime + 0.2
+        };
+        this._musicScheduler();
+    },
+
+    setMusicIntensity(level) {
+        if (this.music) this.music.intensity = Math.max(0.35, Math.min(1, level || 0));
+    },
+
+    stopMusic() {
+        const M = this.music;
+        if (!M) return;
+        this.music = null;                  // blocks the scheduler + duplicate starts
+        M.active = false;
+        if (M.timer) { clearTimeout(M.timer); M.timer = null; }
+        if (M.gain && this.audioContext) {
+            const ctx = this.audioContext;
+            M.gain.gain.cancelScheduledValues(ctx.currentTime);
+            M.gain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.4);  // smooth fade-out
+            setTimeout(() => { try { M.gain.disconnect(); } catch (e) {} }, 1800);
+        }
+    },
+
+    /* Look-ahead scheduler — schedules whole bars a little ahead of
+       the audio clock, so a slow setTimeout never makes it drift. */
+    _musicScheduler() {
+        const M = this.music;
+        if (!M || !M.active || !this.audioContext) return;
+        const ctx = this.audioContext;
+        const beat = 60 / this.MUSIC_BPM;
+        const barDur = beat * 4;
+        while (M.nextBarTime < ctx.currentTime + 1.5) {
+            const chord = this.MUSIC_PROGRESSION[M.barIndex % this.MUSIC_PROGRESSION.length];
+            this._scheduleBar(M.nextBarTime, chord, beat);
+            M.nextBarTime += barDur;
+            M.barIndex++;
+        }
+        M.timer = setTimeout(() => this._musicScheduler(), 360);
+    },
+
+    /* One bar: a sparse chord, a muted bass pulse, a little brushed
+       texture — all lightly randomized so it never sounds mechanical. */
+    _scheduleBar(t0, chord, beat) {
+        this._musicChord(t0, chord);
+        this._musicBass(t0, chord.bass, false);
+        if (Math.random() < 0.7) this._musicBass(t0 + beat * 2, chord.bass, true);
+        for (let b = 0; b < 4; b++) {
+            if (Math.random() < 0.3) this._musicBrush(t0 + (b + 0.5) * beat);
+        }
+    },
+
+    _musicChord(t0, chord) {
+        const ctx = this.audioContext;
+        const M = this.music;
+        if (!M) return;
+        const notes = chord.notes.slice();
+        if (Math.random() < 0.3) notes[0] += 12;                  // light inversion
+        if (notes.length > 3 && Math.random() < 0.25) {            // omit a chord tone
+            notes.splice(1 + Math.floor(Math.random() * (notes.length - 1)), 1);
+        }
+        const lp = ctx.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 1100 + Math.random() * 800;           // randomized cutoff
+        lp.Q.value = 0.4;
+        lp.connect(M.gain);
+        const vel = (0.82 + Math.random() * 0.36) * M.intensity;   // randomized velocity
+        for (const m of notes) {
+            this._rhodesNote(m, t0 + Math.random() * 0.028, vel, lp);   // humanized roll
+        }
+    },
+
+    /* A warm electric-piano-ish voice: two soft detuned waves under a
+       gentle attack and a long release, so chords ring into one another. */
+    _rhodesNote(midi, t, vel, dest) {
+        const ctx = this.audioContext;
+        const f = this._midiToFreq(midi);
+        const rel = 2.4 + Math.random() * 1.1;
+        const env = ctx.createGain();
+        env.gain.setValueAtTime(0.0001, t);
+        env.gain.linearRampToValueAtTime(0.17 * vel, t + 0.045);
+        env.gain.exponentialRampToValueAtTime(0.0001, t + rel);
+        env.connect(dest);
+        const o1 = ctx.createOscillator();
+        o1.type = 'sine';
+        o1.frequency.value = f;
+        o1.connect(env);
+        const o2 = ctx.createOscillator();
+        o2.type = 'triangle';
+        o2.frequency.value = f;
+        o2.detune.value = 5 + Math.random() * 5;
+        const o2g = ctx.createGain();
+        o2g.gain.value = 0.35;
+        o2.connect(o2g);
+        o2g.connect(env);
+        o1.start(t); o2.start(t);
+        o1.stop(t + rel + 0.1); o2.stop(t + rel + 0.1);
+    },
+
+    /* Soft muted bass — a low sine with a short rounded envelope. */
+    _musicBass(t, midi, soft) {
+        const ctx = this.audioContext;
+        const M = this.music;
+        if (!M) return;
+        let m = midi;
+        if (Math.random() < 0.18) m += 7;          // occasionally the fifth
+        const env = ctx.createGain();
+        const peak = (soft ? 0.085 : 0.14) * M.intensity;
+        env.gain.setValueAtTime(0.0001, t);
+        env.gain.linearRampToValueAtTime(peak, t + 0.035);
+        env.gain.exponentialRampToValueAtTime(0.0001, t + 0.62);
+        const lp = ctx.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 320;
+        lp.connect(env);
+        env.connect(M.gain);
+        const o = ctx.createOscillator();
+        o.type = 'sine';
+        o.frequency.value = this._midiToFreq(m);
+        o.connect(lp);
+        o.start(t);
+        o.stop(t + 0.72);
+    },
+
+    /* A very quiet brushed tick — filtered noise, barely there. */
+    _musicBrush(t) {
+        const ctx = this.audioContext;
+        const M = this.music;
+        if (!M) return;
+        const dur = 0.05 + Math.random() * 0.05;
+        const len = Math.max(1, Math.floor(ctx.sampleRate * dur));
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const hp = ctx.createBiquadFilter();
+        hp.type = 'highpass';
+        hp.frequency.value = 5500 + Math.random() * 2200;
+        const env = ctx.createGain();
+        env.gain.setValueAtTime(0.0001, t);
+        env.gain.linearRampToValueAtTime(0.016 * M.intensity, t + 0.012);
+        env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        src.connect(hp); hp.connect(env); env.connect(M.gain);
+        src.start(t);
+        src.stop(t + dur + 0.02);
+    },
+
+    // ─────────────────────────────────────────────────────────────
+    // UI audio — soft, varied, rate-limited feedback for the desk.
+    // Every method respects `enabled`; all route through masterGain
+    // so the volume slider governs them.
+    // ─────────────────────────────────────────────────────────────
+
+    /* A quiet hover tick — rate-limited so a fast sweep across dense
+       controls never machine-guns. */
+    hover() {
+        if (!this.enabled) return;
+        const now = Date.now();
+        if (now - (this._lastHover || 0) < 45) return;
+        this._lastHover = now;
+        if (!this.ensureContext()) return;
+        this.noiseBurst(0.016, 0.045, 2800 + Math.random() * 1600, 1700);
+        if (Math.random() < 0.5) {
+            this.playTone(2100 + Math.random() * 900, 0.03, 'sine', 0.022);
+        }
+    },
+
+    /* A soft woody desk-tap for any selection — also the new click(). */
+    uiSelect() {
+        if (!this.enabled) return;
+        if (!this.ensureContext()) return;
+        this.noiseBurst(0.028, 0.10, 1500 + Math.random() * 400, 280);
+        this.playTone(400 + Math.random() * 130, 0.04, 'triangle', 0.055);
+    },
+
+    /* A short two-step mechanical motion for a toggle. */
+    toggleSwitch(on) {
+        if (!this.enabled) return;
+        if (!this.ensureContext()) return;
+        this.noiseBurst(0.02, 0.07, 2200, 600);
+        const base = on ? 520 : 360;
+        this.playTone(base, 0.03, 'triangle', 0.05);
+        setTimeout(() => {
+            this.playTone(base * (on ? 1.16 : 0.86), 0.04, 'triangle', 0.038);
+        }, 55);
+    },
+
+    /* A tiny muted tick for slider motion — rate-limited while dragging. */
+    sliderTick() {
+        if (!this.enabled) return;
+        const now = Date.now();
+        if (now - (this._lastSlider || 0) < 34) return;
+        this._lastSlider = now;
+        if (!this.ensureContext()) return;
+        this.playTone(880 + Math.random() * 520, 0.014, 'sine', 0.03);
+    },
+
+    /* A soft felt thump as a panel opens / closes. */
+    menuOpen() {
+        if (!this.enabled) return;
+        if (!this.ensureContext()) return;
+        this.noiseBurst(0.13, 0.06, 720, 70);
+        this.playTone(174, 0.18, 'sine', 0.05);
+    },
+    menuClose() {
+        if (!this.enabled) return;
+        if (!this.ensureContext()) return;
+        this.noiseBurst(0.10, 0.05, 600, 70);
+        this.playTone(150, 0.15, 'sine', 0.04);
+    },
+
+    /* A gentle tonal shimmer for a theme change — not a fanfare. */
+    themeShift() {
+        if (!this.enabled) return;
+        if (!this.ensureContext()) return;
+        const root = 320 + Math.random() * 70;
+        [1, 1.25, 1.5, 2].forEach((mult, i) => {
+            setTimeout(() => this.playTone(root * mult, 0.5, 'sine', 0.032), i * 75);
+        });
     }
 };
 

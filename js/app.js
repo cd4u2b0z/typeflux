@@ -184,6 +184,7 @@ class TypeFlux {
             soundEffects: document.getElementById('sound-effects'),
             soundVolume: document.getElementById('sound-volume'),
             soundVolumeValue: document.getElementById('sound-volume-value'),
+            musicEffects: document.getElementById('music-effects'),
             stopOnError: document.getElementById('stop-on-error'),
             confidenceMode: document.getElementById('confidence-mode'),
             blindMode: document.getElementById('blind-mode'),
@@ -319,9 +320,46 @@ class TypeFlux {
         
         // Settings
         this.bindSettingsEvents();
-        
+
+        // UI audio — soft hover / select / toggle / slider feedback
+        this.bindUiAudio();
+
         // Window resize
         window.addEventListener('resize', () => this.updateCursorPosition());
+    }
+
+    /* Soft, procedural UI audio — bound once via delegation so no
+       listeners ever accumulate. Hover uses pointerover + a last-element
+       guard so moving within one control (or over its children) stays
+       quiet; SoundSystem rate-limits the rest. All gated by the sound
+       toggle inside SoundSystem itself. */
+    bindUiAudio() {
+        const HOVER_SEL = '.nav-btn, .register-tab, .mode-btn, .time-btn, ' +
+            '.word-btn, .btn, .theme-option, .signet-btn, .toggle, .slider';
+
+        document.addEventListener('pointerover', (e) => {
+            if (e.pointerType === 'touch') return;        // touch has no hover
+            const el = e.target.closest ? e.target.closest(HOVER_SEL) : null;
+            if (el === this._lastHoverEl) return;          // still on the same control
+            this._lastHoverEl = el;
+            if (el && !el.disabled) SoundSystem.hover();
+        });
+
+        // Toggles — a two-step mechanical click on any checkbox switch.
+        document.addEventListener('change', (e) => {
+            const t = e.target;
+            if (t && t.matches && t.matches('input[type="checkbox"]')) {
+                SoundSystem.toggleSwitch(t.checked);
+            }
+        });
+
+        // Sliders — a tiny muted tick as they move (SoundSystem rate-limits).
+        document.addEventListener('input', (e) => {
+            const t = e.target;
+            if (t && t.classList && t.classList.contains('slider')) {
+                SoundSystem.sliderTick();
+            }
+        });
     }
 
     bindSettingsEvents() {
@@ -352,9 +390,24 @@ class TypeFlux {
         this.elements.soundEffects.addEventListener('change', (e) => {
             this.updateSetting('soundEffects', e.target.checked);
             SoundSystem.enabled = e.target.checked;
-            if (!e.target.checked) SoundSystem.stopDrone();
+            if (!e.target.checked) {
+                SoundSystem.stopDrone();
+                SoundSystem.stopMusic();
+            }
             this.elements.soundToggle.classList.toggle('active', e.target.checked);
         });
+
+        // Music of the desk — the procedural lounge layer
+        if (this.elements.musicEffects) {
+            this.elements.musicEffects.addEventListener('change', (e) => {
+                this.updateSetting('music', e.target.checked);
+                if (e.target.checked) {
+                    if (this.isActive) SoundSystem.startMusic();
+                } else {
+                    SoundSystem.stopMusic();
+                }
+            });
+        }
         
         this.elements.soundVolume.addEventListener('input', (e) => {
             const volume = parseInt(e.target.value);
@@ -1394,6 +1447,11 @@ class TypeFlux {
         // The room begins to breathe — a low drone that rises with fervor.
         SoundSystem.startDrone && SoundSystem.startDrone();
 
+        // The desk's music — a soft procedural lounge beneath the trial.
+        if (this.settings.music !== false) {
+            SoundSystem.startMusic && SoundSystem.startMusic();
+        }
+
         // Start countdown timer for timed mode, or elapsed timer for untimed modes
         if (this.timerValue > 0) {
             this.startTimer();
@@ -1520,6 +1578,7 @@ class TypeFlux {
         if (this.elapsedInterval) clearInterval(this.elapsedInterval);
         this.stopGhostReplay();
         SoundSystem.stopDrone && SoundSystem.stopDrone();
+        SoundSystem.stopMusic && SoundSystem.stopMusic();
 
         // Drop urgency styling
         if (this.elements.vellumFrame) {
@@ -2352,6 +2411,7 @@ class TypeFlux {
         if (this.elapsedInterval) clearInterval(this.elapsedInterval);
         this.stopGhostReplay();
         SoundSystem.stopDrone && SoundSystem.stopDrone();
+        SoundSystem.stopMusic && SoundSystem.stopMusic();
 
         // Reset state
         this.isActive = false;
@@ -2760,6 +2820,9 @@ class TypeFlux {
         if (this.elements.ghostTracer) {
             this.elements.ghostTracer.checked = this.settings.ghostTracer !== false;
         }
+        if (this.elements.musicEffects) {
+            this.elements.musicEffects.checked = this.settings.music !== false;
+        }
 
         // Apply afflictions on load — checkbox + body class
         const setAfflict = (el, key, cls) => {
@@ -2823,6 +2886,9 @@ class TypeFlux {
         if (save) {
             this.settings.theme = theme;
             this.updateSetting('theme', theme);
+            // A gentle tonal shimmer — only on a deliberate change, never
+            // on the silent theme application at load.
+            SoundSystem.themeShift && SoundSystem.themeShift();
         }
 
         // Redraw charts with new colors
@@ -2920,7 +2986,7 @@ class TypeFlux {
         const currentIndex = themes.indexOf(this.settings.theme);
         const nextIndex = (currentIndex + 1) % themes.length;
         this.setTheme(themes[nextIndex]);
-        SoundSystem.click();
+        // setTheme already sounds the shimmer — no extra click here.
     }
 
     toggleSound() {
@@ -2929,7 +2995,10 @@ class TypeFlux {
         this.updateSetting('soundEffects', enabled);
         this.elements.soundEffects.checked = enabled;
         this.elements.soundToggle.classList.toggle('active', enabled);
-        if (!enabled) SoundSystem.stopDrone();
+        if (!enabled) {
+            SoundSystem.stopDrone();
+            SoundSystem.stopMusic();
+        }
         
         if (enabled) {
             SoundSystem.click();
@@ -2999,6 +3068,7 @@ class TypeFlux {
             overlay.querySelector('.modal-confirm').textContent = confirmLabel;
             document.body.appendChild(overlay);
             requestAnimationFrame(() => overlay.classList.add('visible'));
+            SoundSystem.menuOpen && SoundSystem.menuOpen();
 
             let done = false;
             const close = (result) => {
@@ -3007,6 +3077,7 @@ class TypeFlux {
                 overlay.classList.remove('visible');
                 document.removeEventListener('keydown', onKey);
                 setTimeout(() => overlay.remove(), 260);
+                SoundSystem.menuClose && SoundSystem.menuClose();
                 resolve(result);
             };
             const onKey = (e) => {

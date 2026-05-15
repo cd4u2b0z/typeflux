@@ -35,6 +35,7 @@ const Storage = {
         showLiveWpm: true,
         soundEffects: true,
         soundVolume: 30,
+        music: true,
         stopOnError: false,
         confidenceMode: false,
         blindMode: false,
