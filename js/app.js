@@ -692,13 +692,13 @@ class TypeFlux {
                     this.words = WordGenerator.generateByLevel(this.wordCount, lvl);
                     this.timerValue = 0;
                 } else {
-                    // Time-bound: a field sized to the glass — proportionate
-                    // to the seconds given, never a wall — topped up as the
-                    // hand advances so it never runs dry.
-                    const field = Math.max(30, Math.round(this.timeLimit));
+                    // Time-bound: a deep field. The display is a clipped,
+                    // scrolling window — so depth costs nothing on screen,
+                    // and any top-up happens far off-screen, unseen. The
+                    // glass ends the trial; the field never runs dry.
+                    const field = Math.min(300, Math.max(110, Math.round(this.timeLimit * 2.5)));
                     this.words = WordGenerator.generateByLevel(field, lvl);
-                    this._refill = () => WordGenerator.generateByLevel(
-                        Math.max(20, Math.round(this.timeLimit * 0.6)), lvl);
+                    this._refill = () => WordGenerator.generateByLevel(60, lvl);
                     this.timerValue = this.timeLimit;
                 }
                 break;
@@ -708,9 +708,9 @@ class TypeFlux {
                 // Optionally timed — under a glass, quotes feed in as the
                 // hand advances; otherwise a single quote to complete.
                 if (this.boundBy === 'time') {
+                    const deep = Math.min(300, Math.max(110, Math.round(this.timeLimit * 2.5)));
                     this.words = this.buildTimedWords(
-                        () => QuoteGenerator.getAny().text,
-                        Math.max(30, Math.round(this.timeLimit)));
+                        () => QuoteGenerator.getAny().text, deep);
                     this._refill = () =>
                         QuoteGenerator.getAny().text.split(/\s+/).filter(Boolean);
                     this.timerValue = this.timeLimit;
@@ -726,11 +726,13 @@ class TypeFlux {
                 // prose. Optionally timed (fed in as the hand advances);
                 // otherwise a single passage sized by the Count knob.
                 if (this.boundBy === 'time') {
+                    // Timed prose draws natural-length passages — the Count
+                    // knob does NOT govern here (it is hidden when timed).
+                    const deep = Math.min(300, Math.max(110, Math.round(this.timeLimit * 2.5)));
                     this.words = this.buildTimedWords(
-                        () => SentenceGenerator.getPassage(this.wordCount).text,
-                        Math.max(30, Math.round(this.timeLimit)));
+                        () => SentenceGenerator.getPassage(45).text, deep);
                     this._refill = () =>
-                        SentenceGenerator.getPassage(this.wordCount).text.split(/\s+/).filter(Boolean);
+                        SentenceGenerator.getPassage(45).text.split(/\s+/).filter(Boolean);
                     this.timerValue = this.timeLimit;
                 } else {
                     this.words = SentenceGenerator.getPassage(this.wordCount).text.split(' ');
@@ -759,7 +761,7 @@ class TypeFlux {
                     // reach (code is slow to type) so it is not a wall.
                     const langs = CodeGenerator.getLanguages();
                     const lang = langs[Math.floor(Math.random() * langs.length)];
-                    const target = Math.max(20, Math.ceil(this.timeLimit * 1.1));
+                    const target = Math.min(300, Math.max(40, Math.ceil(this.timeLimit * 2)));
                     let guard = 0;
                     while (this.words.length < target && guard++ < 200) {
                         const s = CodeGenerator.getRandom(lang);
@@ -880,11 +882,15 @@ class TypeFlux {
         return [0, this.effectiveBound() === 'time' ? this.timeLimit : 0];
     }
 
-    /* Context-aware manifest. The Glass governs words AND quotes/prose/
-       code — for the passage modes a "free" option makes timing optional.
-       The Count governs `words` (count-bound) and `prose` (passage size).
-       Whichever knob does not govern the trial is muted; both fall inert
-       in zen. This also drives the mode/Glass/Count active states. */
+    /* Context-aware manifest. A knob that cannot govern the current
+       trial is HIDDEN outright — never a dead control left on screen:
+         words       — Glass and Count, two real alternatives (the
+                       non-governing one is muted but still a tap away)
+         quotes/code — Glass only (Count never applies)
+         prose       — Glass; Count appears only when untimed ('free')
+         zen         — neither; the trial is endless
+       Hiding a group hides its leading divider too. Also drives the
+       mode/Glass/Count active states. */
     updateManifest() {
         const glass   = document.querySelector('.manifest-group-glass');
         const count   = document.querySelector('.manifest-group-count');
@@ -892,14 +898,29 @@ class TypeFlux {
         const isWords = this.mode === 'words';
         const isZen   = this.mode === 'zen';
         const eff     = this.effectiveBound();
-        const countMatters = isWords || this.mode === 'prose';
 
+        const showGlass = !isZen;
+        const showCount = isWords || (this.mode === 'prose' && eff === 'passage');
+
+        const setShown = (group, shown) => {
+            if (!group) return;
+            group.style.display = shown ? '' : 'none';
+            const div = group.previousElementSibling;
+            if (div && div.classList.contains('manifest-divider')) {
+                div.style.display = shown ? '' : 'none';
+            }
+        };
+        setShown(glass, showGlass);
+        setShown(count, showCount);
+
+        // In words mode both knobs show — the one not governing is muted
+        // (still clickable: it is the alternative, one tap switches to it).
         if (glass) {
-            glass.classList.toggle('inert', isZen);
+            glass.classList.remove('inert');
             glass.classList.toggle('muted', isWords && eff === 'count');
         }
         if (count) {
-            count.classList.toggle('inert', !countMatters);
+            count.classList.remove('inert');
             count.classList.toggle('muted', isWords && eff !== 'count');
         }
         // The "free" (untimed) glass option applies only to passage modes.
@@ -1432,10 +1453,15 @@ class TypeFlux {
                 this.appendZenWords(80);
             }
         } else {
-            // Timed words/quotes/prose top up the field as the hand nears
-            // its end — the glass, not an exhausted field, ends the trial.
-            if (this._refill && this.words.length - this.currentWordIndex < 24) {
-                this.appendWords(this._refill());
+            // Timed words/quotes/prose keep a deep buffer ahead of the
+            // hand — topped up while 80+ words still remain, far past the
+            // visible window, so the field never visibly grows. The
+            // glass, not an exhausted field, ends the trial.
+            if (this._refill) {
+                let guard = 0;
+                while (this.words.length - this.currentWordIndex < 80 && guard++ < 24) {
+                    this.appendWords(this._refill());
+                }
             }
             if (this.currentWordIndex >= this.words.length) {
                 this.finishTest();
