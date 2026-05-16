@@ -551,7 +551,11 @@ body {
 
 .typing-area {
     position: relative;
-    min-height: 220px;
+    /* A fixed three-line window. The field beneath may run deep, but
+       only three lines are ever shown — the words-display translates
+       up (scrollToWord) as the hand advances. Without a fixed height
+       the box grew to fit every word and nothing scrolled: a wall. */
+    height: calc(var(--typing-font-size) * var(--line-height) * 3 + var(--space-2) * 2);
     cursor: text;
     overflow: hidden;
     padding: var(--space-2) 0;
