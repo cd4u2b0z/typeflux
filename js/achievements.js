@@ -23,27 +23,36 @@
      check(ctx)— evaluates the rule against the current context
    ═══════════════════════════════════════════════════════════════ */
 
-/* Grade calculation duplicated here so achievements.js has no
-   dependency on app.js. Keep in sync if grading thresholds change. */
+/* Grade — every test now stores its own duration-normalised grade
+   (struck in app.js). _gradeFor reads that. _gradeOf is only a
+   legacy fallback for tests recorded before grades were stored; it
+   cannot duration-normalise (no elapsed time), so it merely mirrors
+   the threshold ladder. Keep in sync if app.js's ladder changes. */
 function _gradeScore(wpm, accuracy) {
-    return wpm * (accuracy / 100);
+    const acc = (accuracy || 0) / 100;
+    const f = acc >= 0.99 ? 1.05 : acc >= 0.96 ? 1.01
+            : acc >= 0.92 ? 1.00 : acc >= 0.85 ? 0.97 : 0.92;
+    return Math.max(0, wpm) * f;
 }
 function _gradeOf(wpm, accuracy) {
     const s = _gradeScore(wpm, accuracy);
-    if (s >= 100) return 'S+';
-    if (s >=  80) return 'S';
-    if (s >=  65) return 'A+';
-    if (s >=  55) return 'A';
-    if (s >=  45) return 'B+';
-    if (s >=  35) return 'B';
-    if (s >=  25) return 'C+';
-    if (s >=  15) return 'C';
+    if (s >= 90) return 'S+';
+    if (s >= 68) return 'S';
+    if (s >= 56) return 'A+';
+    if (s >= 46) return 'A';
+    if (s >= 34) return 'B+';
+    if (s >= 26) return 'B';
+    if (s >= 19) return 'C+';
+    if (s >= 11) return 'C';
     return 'D';
+}
+function _gradeFor(t) {
+    return (t && t.grade) || _gradeOf(t.wpm, t.accuracy);
 }
 
 /* Helpers */
 function _lastNGrades(tests, n) {
-    return tests.slice(-n).map(t => _gradeOf(t.wpm, t.accuracy));
+    return tests.slice(-n).map(_gradeFor);
 }
 function _localHour(ts) {
     return new Date(ts || Date.now()).getHours();
@@ -120,7 +129,7 @@ const ACHIEVEMENTS = [
         glyph: '☉',
         check: (c) => c.test.mode === 'words'
                    && c.test.timeLimit === 60
-                   && _gradeOf(c.test.wpm, c.test.accuracy) === 'S+'
+                   && _gradeFor(c.test) === 'S+'
     },
     {
         id: 'perfect-glass', category: 'skill',

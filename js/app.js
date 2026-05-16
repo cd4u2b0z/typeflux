@@ -952,13 +952,13 @@ class TypeFlux {
             }
         }
 
-        // A breath from the next grade
+        // A breath from the next grade — same score the verdict uses.
         const grades = [
-            { g: 'S+', s: 100 }, { g: 'S', s: 80 }, { g: 'A+', s: 65 },
-            { g: 'A', s: 55 }, { g: 'B+', s: 45 }, { g: 'B', s: 35 },
-            { g: 'C+', s: 25 }, { g: 'C', s: 15 }
+            { g: 'S+', s: 90 }, { g: 'S', s: 68 }, { g: 'A+', s: 56 },
+            { g: 'A', s: 46 }, { g: 'B+', s: 34 }, { g: 'B', s: 26 },
+            { g: 'C+', s: 19 }, { g: 'C', s: 11 }
         ];
-        const score = results.wpm * (results.accuracy / 100);
+        const score = this.gradeScore(results.wpm, results.accuracy, results.time);
         let next = null;
         for (let i = grades.length - 1; i >= 0; i--) {
             if (grades[i].s > score) { next = grades[i]; break; }
@@ -2360,7 +2360,7 @@ class TypeFlux {
             timeLimit: this.timeLimit,
             boundBy: this.boundBy,
             language: this.lastLanguage || null,
-            grade: this.calculateGrade(wpm, accuracy)
+            grade: this.calculateGrade(wpm, accuracy, Math.round(timeElapsed))
         };
     }
 
@@ -2406,8 +2406,8 @@ class TypeFlux {
         this.elements.resultCombo.textContent = results.maxCombo;
         this.elements.resultType.textContent = this.trialLabel(results);
         
-        // Calculate grade
-        const grade = this.calculateGrade(results.wpm, results.accuracy);
+        // Calculate grade — reuse the verdict struck at finish.
+        const grade = results.grade || this.calculateGrade(results.wpm, results.accuracy, results.time);
         this.elements.resultGrade.textContent = grade;
 
         // Marginalia tip on the certificate — language-specific for code,
@@ -2432,18 +2432,54 @@ class TypeFlux {
         }
     }
 
-    calculateGrade(wpm, accuracy) {
-        const score = wpm * (accuracy / 100);
-        
-        if (score >= 100) return 'S+';
-        if (score >= 80) return 'S';
-        if (score >= 65) return 'A+';
-        if (score >= 55) return 'A';
-        if (score >= 45) return 'B+';
-        if (score >= 35) return 'B';
-        if (score >= 25) return 'C+';
-        if (score >= 15) return 'C';
+    // ─────────────────────────────────────────────────────────────
+    // The verdict — a duration-normalised grade
+    //
+    // wpm here is already NET (errors subtracted). The old grade then
+    // multiplied by accuracy a second time — docking mistakes twice.
+    // The accuracy term is now a light hand: a clean-hand bonus, a
+    // gentle nudge for a sloppy one — never a second penalty.
+    //
+    // durabilityFactor normalises for trial length. A 15-second
+    // sprint inflates pace (you can burst); a two-minute grind
+    // deflates it (the hand tires). Keyed off the trial's ACTUAL
+    // elapsed seconds, it rewards the same skill the same way no
+    // matter which glass — or which count — was chosen. 30s is the
+    // reference (×1.00).
+    // ─────────────────────────────────────────────────────────────
+    durabilityFactor(seconds) {
+        const s = Math.max(1, seconds || 0);
+        if (s <= 15)  return 0.93;
+        if (s <= 30)  return 0.93 + (s - 15) / 15 * 0.07;   // → 1.00
+        if (s <= 60)  return 1.00 + (s - 30) / 30 * 0.05;   // → 1.05
+        if (s <= 120) return 1.05 + (s - 60) / 60 * 0.05;   // → 1.10
+        return 1.10;
+    }
+
+    gradeScore(wpm, accuracy, seconds = 30) {
+        const acc = (accuracy || 0) / 100;
+        const accFactor = acc >= 0.99 ? 1.05    // a flawless hand
+                        : acc >= 0.96 ? 1.01
+                        : acc >= 0.92 ? 1.00
+                        : acc >= 0.85 ? 0.97
+                        :               0.92;   // a notably sloppy one
+        return Math.max(0, wpm) * accFactor * this.durabilityFactor(seconds);
+    }
+
+    gradeFromScore(score) {
+        if (score >= 90) return 'S+';
+        if (score >= 68) return 'S';
+        if (score >= 56) return 'A+';
+        if (score >= 46) return 'A';
+        if (score >= 34) return 'B+';
+        if (score >= 26) return 'B';
+        if (score >= 19) return 'C+';
+        if (score >= 11) return 'C';
         return 'D';
+    }
+
+    calculateGrade(wpm, accuracy, seconds = 30) {
+        return this.gradeFromScore(this.gradeScore(wpm, accuracy, seconds));
     }
 
     trackWpm() {
@@ -2471,6 +2507,8 @@ class TypeFlux {
             this.spawnMedal('THUNDERCLAP', '☇', 'epic');
         } else if (avg(3) >= 80 && this.medalReady('burst', 6000)) {
             this.spawnMedal('THE BURST', '✺', 'rare');
+        } else if (avg(3) >= 56 && this.medalReady('stride', 6000)) {
+            this.spawnMedal('THE STRIDE', '✶', 'common');
         }
     }
 

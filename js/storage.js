@@ -16,15 +16,18 @@ const Storage = {
     },
 
     // The rank ladder — a persistent title the typewright carries,
-    // raised by trials weathered and the crest of pace reached. Each
-    // rank requires BOTH a trial count and a best-WPM mark.
+    // raised chiefly by trials weathered. Each rank also asks a
+    // best-WPM mark, but a gentle one: these are milestones of
+    // improvement an honest hand crosses with practice, not gates
+    // that lock a slower typist out of the ladder forever. The
+    // ladder must always be climbable through play.
     RANKS: [
-        { name: 'Apprentice of the Desk', motto: 'the first nib is cut',         trials: 0,   wpm: 0   },
-        { name: 'Scrivener',              motto: 'a steady hand at the page',    trials: 10,  wpm: 40  },
-        { name: 'Copyist',                motto: 'the ledger fills by thy hand', trials: 30,  wpm: 60  },
-        { name: 'Cartographer',           motto: 'thou mappest the whole field', trials: 75,  wpm: 80  },
-        { name: 'Master Typewright',      motto: 'the press answers thy will',   trials: 150, wpm: 100 },
-        { name: 'Grand Archivist',        motto: 'keeper of every glass run',    trials: 300, wpm: 120 }
+        { name: 'Apprentice of the Desk', motto: 'the first nib is cut',         trials: 0,   wpm: 0  },
+        { name: 'Scrivener',              motto: 'a steady hand at the page',    trials: 8,   wpm: 22 },
+        { name: 'Copyist',                motto: 'the ledger fills by thy hand', trials: 24,  wpm: 32 },
+        { name: 'Cartographer',           motto: 'thou mappest the whole field', trials: 55,  wpm: 44 },
+        { name: 'Master Typewright',      motto: 'the press answers thy will',   trials: 110, wpm: 56 },
+        { name: 'Grand Archivist',        motto: 'keeper of every glass run',    trials: 220, wpm: 70 }
     ],
 
     // Default settings
