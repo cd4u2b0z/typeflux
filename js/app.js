@@ -3293,7 +3293,11 @@ class TypeFlux {
     }
 }
 
-// Initialize app when DOM is ready
+// Initialize app when DOM is ready. The instance is parked on
+// `window.tf` so the desk can be inspected from the console —
+// e.g. `tf.calculateGrade(40, 93, 30)` to read a verdict, or
+// `tf.durabilityFactor(120)` to confirm the round-19 grading is
+// the code actually running.
 document.addEventListener('DOMContentLoaded', () => {
-    new TypeFlux();
+    window.tf = new TypeFlux();
 });
