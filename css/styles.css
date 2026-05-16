@@ -1527,6 +1527,12 @@ body {
     text-align: right;
     font-variant-numeric: tabular-nums;
 }
+/* The difficulty value reads as words (iii · measured), not a
+   percentage — it needs room and should not wrap. */
+.slider-value-wide {
+    min-width: 96px;
+    white-space: nowrap;
+}
 
 /* ── Buttons ─────────────────────────────────────────────────── */
 .btn {

@@ -57,6 +57,8 @@ const Storage = {
         ambientIntensity: 60,
         lite: false,
         liteChosen: false,
+        difficulty: 3,
+        difficultyScales: true,
         boundBy: 'time',
         passageBound: 'passage',
         defaultMode: 'words',

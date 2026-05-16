@@ -210,6 +210,9 @@ class TypeFlux {
             ambientIntensity: document.getElementById('ambient-intensity'),
             ambientIntensityValue: document.getElementById('ambient-intensity-value'),
             liteMode: document.getElementById('lite-mode'),
+            difficultyLevel: document.getElementById('difficulty-level'),
+            difficultyLevelValue: document.getElementById('difficulty-level-value'),
+            difficultyScales: document.getElementById('difficulty-scales'),
 
             // The vault — export / import
             exportData: document.getElementById('export-data'),
@@ -506,6 +509,26 @@ class TypeFlux {
             });
         }
 
+        // Difficulty — the hand of the lexicon. Re-cut the field at
+        // once so the change is felt, unless a trial is under way.
+        if (this.elements.difficultyLevel) {
+            this.elements.difficultyLevel.addEventListener('input', (e) => {
+                const v = Math.max(1, Math.min(5, parseInt(e.target.value) || 3));
+                this.updateSetting('difficulty', v);
+                if (this.elements.difficultyLevelValue) {
+                    this.elements.difficultyLevelValue.textContent = this.difficultyValueLabel(v);
+                }
+                SoundSystem.sliderTick && SoundSystem.sliderTick();
+                if (!this.isActive && !this.isCountingDown) this.generateTest();
+            });
+        }
+        if (this.elements.difficultyScales) {
+            this.elements.difficultyScales.addEventListener('change', (e) => {
+                this.updateSetting('difficultyScales', e.target.checked);
+                if (!this.isActive && !this.isCountingDown) this.generateTest();
+            });
+        }
+
         // The vault — seal & unseal
         if (this.elements.exportData) {
             this.elements.exportData.addEventListener('click', () => this.exportLedger());
@@ -660,17 +683,22 @@ class TypeFlux {
 
         switch (this.mode) {
             case 'words': {
-                // A consistent mixed lexicon — the word difficulty never
-                // shifts with the chosen glass or recent pace.
+                // The lexicon's hand is set by the difficulty slider; a
+                // larger Count plate raises it further — effectiveDifficulty
+                // folds both together. Time never touches difficulty.
+                const lvl = this.effectiveDifficulty();
                 if (this.boundBy === 'count') {
                     // Count-bound: exactly this many words, glass counts up.
-                    this.words = WordGenerator.generateSequence(this.wordCount);
+                    this.words = WordGenerator.generateByLevel(this.wordCount, lvl);
                     this.timerValue = 0;
                 } else {
-                    // Time-bound: a modest field that is topped up as the
-                    // hand advances — never a wall, never runs dry.
-                    this.words = WordGenerator.generateSequence(60);
-                    this._refill = () => WordGenerator.generateSequence(36);
+                    // Time-bound: a field sized to the glass — proportionate
+                    // to the seconds given, never a wall — topped up as the
+                    // hand advances so it never runs dry.
+                    const field = Math.max(30, Math.round(this.timeLimit));
+                    this.words = WordGenerator.generateByLevel(field, lvl);
+                    this._refill = () => WordGenerator.generateByLevel(
+                        Math.max(20, Math.round(this.timeLimit * 0.6)), lvl);
                     this.timerValue = this.timeLimit;
                 }
                 break;
@@ -681,7 +709,8 @@ class TypeFlux {
                 // hand advances; otherwise a single quote to complete.
                 if (this.boundBy === 'time') {
                     this.words = this.buildTimedWords(
-                        () => QuoteGenerator.getAny().text, 45);
+                        () => QuoteGenerator.getAny().text,
+                        Math.max(30, Math.round(this.timeLimit)));
                     this._refill = () =>
                         QuoteGenerator.getAny().text.split(/\s+/).filter(Boolean);
                     this.timerValue = this.timeLimit;
@@ -698,7 +727,8 @@ class TypeFlux {
                 // otherwise a single passage sized by the Count knob.
                 if (this.boundBy === 'time') {
                     this.words = this.buildTimedWords(
-                        () => SentenceGenerator.getPassage(this.wordCount).text, 45);
+                        () => SentenceGenerator.getPassage(this.wordCount).text,
+                        Math.max(30, Math.round(this.timeLimit)));
                     this._refill = () =>
                         SentenceGenerator.getPassage(this.wordCount).text.split(/\s+/).filter(Boolean);
                     this.timerValue = this.timeLimit;
@@ -817,6 +847,24 @@ class TypeFlux {
             words.push(...chunk);
         }
         return words;
+    }
+
+    // The effective lexicon hand for a 'words' trial: the difficulty
+    // slider, raised by the chosen Count plate when scaling is on. A
+    // larger plate (l, c) draws harder words of its own accord — but
+    // the Glass never touches difficulty (that coupling was unfair).
+    effectiveDifficulty() {
+        let lvl = this.settings.difficulty || 3;
+        if (this.settings.difficultyScales !== false && this.boundBy === 'count') {
+            lvl += ({ 50: 1, 100: 2 })[this.wordCount] || 0;
+        }
+        return Math.max(1, Math.min(5, lvl));
+    }
+
+    // The slider's spoken value — numeral · named hand (iii · measured).
+    difficultyValueLabel(level) {
+        const lvl = Math.max(1, Math.min(5, Math.round(level) || 3));
+        return `${WordGenerator.LEVEL_NUMERAL[lvl]} · ${WordGenerator.LEVEL_NAMES[lvl]}`;
     }
 
     /* Ghost bucket args for the current trial. Words split time-bound
@@ -3023,6 +3071,16 @@ class TypeFlux {
 
         // A lighter hand
         this.applyLite(!!this.settings.lite);
+
+        // Difficulty — the hand of the lexicon
+        const diff = Math.max(1, Math.min(5, this.settings.difficulty || 3));
+        if (this.elements.difficultyLevel) this.elements.difficultyLevel.value = diff;
+        if (this.elements.difficultyLevelValue) {
+            this.elements.difficultyLevelValue.textContent = this.difficultyValueLabel(diff);
+        }
+        if (this.elements.difficultyScales) {
+            this.elements.difficultyScales.checked = this.settings.difficultyScales !== false;
+        }
 
         // Restore the desk — the mode, glass, and count last set, so a
         // returning typewright opens exactly where they left off.

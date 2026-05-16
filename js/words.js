@@ -54,6 +54,40 @@ const WordGenerator = {
         return this.getRandom('flow', count);
     },
 
+    // ── Difficulty by level (1–5) ────────────────────────────────
+    // The hand of the lexicon: level 1 draws only short, common
+    // words; level 5 draws long, arcane ones. Each level is a blend,
+    // so the difficulty rises smoothly rather than in hard steps.
+    LEVEL_NAMES: ['', 'plain', 'brisk', 'measured', 'learned', 'arcane'],
+    LEVEL_NUMERAL: ['', 'i', 'ii', 'iii', 'iv', 'v'],
+    LEVEL_MIX: [
+        null,
+        { common: 1.00 },                                 // i  plain
+        { common: 0.70, medium: 0.30 },                   // ii brisk
+        { common: 0.40, medium: 0.45, advanced: 0.15 },   // iii measured
+        { common: 0.15, medium: 0.50, advanced: 0.35 },   // iv learned
+        {               medium: 0.40, advanced: 0.60 },   // v  arcane
+    ],
+
+    generateByLevel(count = 25, level = 3) {
+        const lvl = Math.max(1, Math.min(5, Math.round(level) || 3));
+        const mix = this.LEVEL_MIX[lvl];
+        const cats = Object.keys(mix);
+        const result = [];
+        let prev = '';
+        for (let i = 0; i < count; i++) {
+            const r = Math.random();
+            let acc = 0, cat = cats[cats.length - 1];
+            for (const c of cats) { acc += mix[c]; if (r <= acc) { cat = c; break; } }
+            const list = WORDS[cat] || WORDS.common;
+            let w = list[Math.floor(Math.random() * list.length)];
+            if (w === prev) w = list[Math.floor(Math.random() * list.length)];
+            result.push(w);
+            prev = w;
+        }
+        return result;
+    },
+
     // Generate a natural-feeling word sequence
     generateSequence(count = 25, difficulty = 'normal') {
         let words;
