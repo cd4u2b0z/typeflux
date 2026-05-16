@@ -308,26 +308,33 @@ const SoundSystem = {
     },
 
     // ─────────────────────────────────────────────────────────────
-    // Procedural music — an original, evolving electronic score.
-    // Hypnotic and deep (Berlin dub-house), dreamy (lush pads), and
-    // it lifts (progressive arps) — moving through four phases that
-    // never settle, and REACTING to the trial: pace and brightness
-    // climb with thy fervor, and tension gathers as the glass empties.
+    // Procedural music — an original, evolving electronic score that
+    // never plays the same piece twice. Each trial draws ONE of five
+    // grooves, and the grooves are worlds apart:
+    //   · bounce      — swung house-funk: claps, filtered funk bass
+    //   · boom-bap    — dusty jazz hip-hop: lazy backbeat, upright bass
+    //   · progressive — driving four-on-floor: 16th plucks, long builds
+    //   · trip-hop    — slow, dark, halftime, heavy dub bass, cinematic
+    //   · lounge      — woozy dream-jazz: wobbling tape, vibraphone
+    // On top of the groove sits a random key, tempo, progression and
+    // timbre — and it all REACTS to the trial: pace and brightness
+    // climb with thy fervor, tension gathers as the glass empties.
     // Scheduled against audioContext.currentTime so it never drifts.
     // Fully synthesised — no sampled or copyrighted material.
     // ─────────────────────────────────────────────────────────────
     MUSIC_LEVEL: 0.2,          // the music sub-mix; the music slider scales it
-    MUSIC_SECTION: 6,          // bars per phase
+    MUSIC_SECTION: 6,          // bars per phase (a seed may override)
     music: null,
     _lastTranspose: 0,
+    _lastStyle: '',
 
-    /* Several progressions of soft extended chords (`bass` + upper
-       voices, MIDI). One is chosen per trial and transposed to a
-       random key, at a random tempo, in a random timbre — so no two
-       trials are ever the same piece. */
+    /* Progressions of soft extended chords (`bass` + upper voices,
+       MIDI), each tagged with a `feel`. A trial's groove draws only
+       from progressions whose feel suits it, then transposes to a
+       random key — so no two trials are ever the same piece. */
     MUSIC_PROGRESSIONS: [
-        // 0 — wistful, jazzy minor 9ths (a long 16-bar journey)
-        [
+        // wistful, jazzy minor 9ths (a long 16-bar journey)
+        { feel: 'jazzy', chords: [
             { bass: 38, notes: [57, 60, 64, 65] }, { bass: 43, notes: [53, 59, 62, 64] },
             { bass: 36, notes: [55, 59, 62, 64] }, { bass: 45, notes: [55, 59, 62, 67] },
             { bass: 46, notes: [53, 57, 62, 65] }, { bass: 40, notes: [55, 59, 62, 66] },
@@ -336,22 +343,79 @@ const SoundSystem = {
             { bass: 43, notes: [53, 58, 62, 65] }, { bass: 45, notes: [57, 60, 64, 65] },
             { bass: 41, notes: [55, 60, 63, 65] }, { bass: 46, notes: [53, 58, 62, 65] },
             { bass: 40, notes: [54, 58, 62, 65] }, { bass: 45, notes: [56, 59, 62, 65] }
-        ],
-        // 1 — brighter, lifting (major 7 / 9 colour)
-        [
+        ] },
+        // brighter, lifting (major 7 / 9 colour)
+        { feel: 'bright', chords: [
             { bass: 36, notes: [55, 60, 64, 67] }, { bass: 41, notes: [57, 60, 65, 69] },
             { bass: 43, notes: [55, 59, 62, 67] }, { bass: 40, notes: [55, 59, 64, 67] },
             { bass: 45, notes: [55, 60, 64, 67] }, { bass: 41, notes: [57, 60, 65, 69] },
             { bass: 36, notes: [55, 59, 62, 67] }, { bass: 43, notes: [53, 59, 62, 67] }
-        ],
-        // 2 — deep, suspended, moody (Berlin)
-        [
+        ] },
+        // deep, suspended, moody (Berlin)
+        { feel: 'deep', chords: [
             { bass: 33, notes: [57, 62, 64, 69] }, { bass: 33, notes: [57, 60, 64, 67] },
             { bass: 36, notes: [55, 60, 62, 67] }, { bass: 31, notes: [55, 58, 62, 65] },
             { bass: 38, notes: [57, 62, 64, 69] }, { bass: 38, notes: [57, 60, 65, 69] },
             { bass: 34, notes: [53, 58, 62, 65] }, { bass: 33, notes: [56, 60, 64, 67] }
-        ]
+        ] },
+        // warm, soulful 7th/9th loop (the funk-house bounce)
+        { feel: 'soul', chords: [
+            { bass: 36, notes: [55, 60, 64, 67] }, { bass: 33, notes: [55, 60, 64, 69] },
+            { bass: 41, notes: [57, 60, 65, 69] }, { bass: 43, notes: [55, 59, 62, 65] },
+            { bass: 38, notes: [57, 60, 64, 65] }, { bass: 33, notes: [54, 60, 64, 69] },
+            { bass: 41, notes: [56, 60, 65, 68] }, { bass: 43, notes: [55, 59, 62, 67] }
+        ] },
+        // brooding, low, cinematic (the trip-hop dark)
+        { feel: 'dark', chords: [
+            { bass: 33, notes: [52, 57, 60, 64] }, { bass: 33, notes: [52, 55, 60, 63] },
+            { bass: 31, notes: [50, 55, 58, 62] }, { bass: 36, notes: [51, 55, 58, 63] },
+            { bass: 33, notes: [52, 57, 60, 64] }, { bass: 28, notes: [52, 55, 59, 64] },
+            { bass: 31, notes: [50, 55, 58, 63] }, { bass: 33, notes: [52, 56, 59, 64] }
+        ] },
+        // hazy, wandering maj9/min9 (the woozy dream-lounge)
+        { feel: 'dream', chords: [
+            { bass: 38, notes: [57, 61, 64, 68] }, { bass: 43, notes: [54, 59, 62, 66] },
+            { bass: 36, notes: [55, 59, 62, 67] }, { bass: 40, notes: [56, 59, 63, 66] },
+            { bass: 41, notes: [57, 60, 64, 67] }, { bass: 45, notes: [56, 60, 64, 67] },
+            { bass: 38, notes: [57, 60, 64, 69] }, { bass: 43, notes: [55, 58, 62, 65] }
+        ] }
     ],
+
+    /* The five grooves. Each binds a tempo band, swing, drum + bass
+       character, timbre and arrangement — the single biggest lever
+       on how a trial sounds, so song-to-song variation is dramatic. */
+    MUSIC_STYLES: {
+        bounce: {                                     // swung house-funk
+            bpm: [98, 112], swing: 0.16, feels: ['soul', 'jazzy', 'bright'],
+            pad: { wave: 'sawtooth', bright: 1.12 },
+            kick: 'four', backbeat: 'clap', bass: 'funk',
+            hatDensity: 0.7, arp: 'sparse', crackle: 'light'
+        },
+        boombap: {                                    // dusty jazz hip-hop
+            bpm: [84, 94], swing: 0.2, feels: ['jazzy', 'soul'],
+            pad: { wave: 'triangle', bright: 0.9 },
+            kick: 'boombap', backbeat: 'snare', bass: 'upright',
+            hatDensity: 0.42, arp: 'glints', crackle: 'heavy'
+        },
+        progressive: {                                // driving four-on-floor
+            bpm: [120, 128], swing: 0, feels: ['bright', 'deep'],
+            pad: { wave: 'sawtooth', bright: 1.3 },
+            kick: 'four', backbeat: 'none', bass: 'offbeat',
+            hatDensity: 0.95, arp: 'driving', crackle: 'light'
+        },
+        triphop: {                                    // slow, dark, cinematic
+            bpm: [73, 86], swing: 0.12, feels: ['dark', 'deep'],
+            pad: { wave: 'sawtooth', bright: 0.66 },
+            kick: 'halftime', backbeat: 'snare', bass: 'dub',
+            hatDensity: 0.3, arp: 'glints', crackle: 'heavy'
+        },
+        lounge: {                                     // woozy dream-jazz
+            bpm: [78, 92], swing: 0.14, feels: ['dream', 'jazzy'],
+            pad: { wave: 'triangle', bright: 1.0 }, wobble: true,
+            kick: 'soft', backbeat: 'rim', bass: 'sub',
+            hatDensity: 0.22, arp: 'vibes', crackle: 'light'
+        }
+    },
 
     /* A short, resolved progression for the results coda — peaceful. */
     MUSIC_CODA: [
@@ -363,32 +427,43 @@ const SoundSystem = {
 
     _midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); },
 
-    /* A fresh seed — every trial a different key, tempo, progression
-       and timbre; the results coda resolves in the trial's key. */
+    /* A fresh seed — every trial a different groove, key, tempo,
+       progression and timbre; the results coda resolves calmly. */
     _makeSeed(mood) {
         if (mood === 'results') {
             return {
-                mood: 'results',
+                mood: 'results', style: null, S: null,
                 transpose: this._lastTranspose,
                 prog: this.MUSIC_CODA,
                 bpm: 64 + Math.floor(Math.random() * 12),     // slow, reflective
                 bright: 1.05, padWave: 'triangle',
-                phaseOffset: 0
+                swing: 0, section: 6, phaseOffset: 0
             };
         }
         const tr = Math.floor(Math.random() * 11) - 5;        // -5..+5 semitones
         this._lastTranspose = tr;
-        const pal = [
-            { bright: 1.0,  padWave: 'sawtooth' },
-            { bright: 1.32, padWave: 'triangle' },
-            { bright: 0.78, padWave: 'sawtooth' }
-        ][Math.floor(Math.random() * 3)];
+        // the groove — the biggest lever; avoid repeating the last one
+        const keys = Object.keys(this.MUSIC_STYLES);
+        let style = keys[Math.floor(Math.random() * keys.length)];
+        if (style === this._lastStyle && keys.length > 1) {
+            const others = keys.filter(k => k !== this._lastStyle);
+            style = others[Math.floor(Math.random() * others.length)];
+        }
+        this._lastStyle = style;
+        const S = this.MUSIC_STYLES[style];
+        // a progression whose feel suits the groove
+        const pool = this.MUSIC_PROGRESSIONS.filter(p => S.feels.indexOf(p.feel) >= 0);
+        const chosen = (pool.length ? pool : this.MUSIC_PROGRESSIONS)[
+            Math.floor(Math.random() * (pool.length || this.MUSIC_PROGRESSIONS.length))];
         return {
-            mood: 'trial',
+            mood: 'trial', style: style, S: S,
             transpose: tr,
-            prog: this.MUSIC_PROGRESSIONS[Math.floor(Math.random() * this.MUSIC_PROGRESSIONS.length)],
-            bpm: 82 + Math.floor(Math.random() * 20),          // 82..101
-            bright: pal.bright, padWave: pal.padWave,
+            prog: chosen.chords,
+            bpm: S.bpm[0] + Math.floor(Math.random() * (S.bpm[1] - S.bpm[0] + 1)),
+            bright: S.pad.bright * (0.92 + Math.random() * 0.16),
+            padWave: S.pad.wave,
+            swing: S.swing * (0.85 + Math.random() * 0.3),
+            section: 4 + Math.floor(Math.random() * 5),        // 4..8 bars per phase
             phaseOffset: Math.floor(Math.random() * 4)
         };
     },
@@ -508,116 +583,198 @@ const SoundSystem = {
         return chord.notes.slice().sort((a, b) => a - b);
     },
 
-    /* One bar. The phase decides the character; `drive` (energy ×
-       fervor) and `urgency` (the glass) shape every layer on top. */
+    /* One bar. The groove (seed.S) decides the character; `drive`
+       (energy × fervor) and `urgency` (the glass) shape it on top. */
     _scheduleBar(t0, chord, beat, barCount) {
         const M = this.music;
         // the results coda is its own calm piece
         if (M.mood === 'results') { this._scheduleCodaBar(t0, chord, beat, barCount); return; }
 
+        const S = M.seed.S;
         const energy = this._musicEnergy(barCount);
         const intensity = M.intensity, urgency = M.urgency;
         // overall push — the build, lifted by fervor and by urgency
         const drive = Math.min(1, energy * (0.5 + 0.5 * intensity) + urgency * 0.4);
-        // section: 0 drift (dreamy) · 1 pulse (deep house) · 2 lift
-        // (progressive) · 3 ebb (breakdown) — each MUSIC_SECTION bars
-        const phase = (Math.floor(barCount / this.MUSIC_SECTION) + M.seed.phaseOffset) % 4;
+        const section = M.seed.section || this.MUSIC_SECTION;
+        // phase: 0 intro · 1 groove · 2 peak · 3 breakdown
+        const phase = (Math.floor(barCount / section) + M.seed.phaseOffset) % 4;
+        const sw = M.seed.swing || 0;
+        // swing — the offbeats fall late; the soul of bounce / boom-bap
+        const eighth = (i) => t0 + i * 0.5 * beat + ((i % 2) ? sw * beat : 0);
+        const six    = (i) => t0 + i * 0.25 * beat + ((i % 2) ? sw * 0.5 * beat : 0);
 
-        const eighth = (i) => t0 + i * 0.5 * beat;          // straight 8ths
-        const six = (i) => t0 + i * 0.25 * beat;            // straight 16ths
+        // groove level: 0 sparse · 1 light · 2 full · 3 peak
+        let groove;
+        if (phase === 0)      groove = drive > 0.82 ? 1 : 0;
+        else if (phase === 1) groove = 2;
+        else if (phase === 2) groove = 3;
+        else                  groove = drive > 0.7 ? 1 : 0;     // breakdown
+        if (urgency > 0.55) groove = Math.max(groove, 2);       // the glass pushes
 
-        // ── PAD — the lush bed, almost always present (dreamy) ──
-        if (phase !== 2 || Math.random() < 0.7) {
+        // ── PAD — the bed, nearly always present ──
+        if (!(phase === 2 && S.arp === 'driving' && Math.random() < 0.35)) {
             const padVel = (0.55 + 0.45 * drive) * (phase === 3 ? 1.2 : 1);
             this._musicPad(t0 + Math.random() * 0.04, chord, beat * 4, padVel);
         }
 
-        // ── decide the beat for this bar ──
-        let beatMode;
-        if (urgency > 0.5)        beatMode = 'drive';        // glass emptying — push
-        else if (phase === 1)     beatMode = 'house';
-        else if (phase === 2)     beatMode = 'drive';
-        else if (phase === 0)     beatMode = (drive > 0.86) ? 'house' : 'none';
-        else                      beatMode = 'none';        // phase 3 — breakdown
+        // ── DRUMS — the groove's signature kick + hats ──
+        this._styleDrums(t0, beat, S, groove, drive, eighth, six);
 
-        // ── KICK + sidechain pump ──
-        if (beatMode === 'house' || beatMode === 'drive') {
-            const kVel = beatMode === 'drive' ? 0.92 : 0.78;
-            for (let b = 0; b < 4; b++) {
-                this._drumKick(t0 + b * beat, kVel);
-                this._pump(t0 + b * beat, beat);
+        // ── BACKBEAT — clap / snare / rim on 2 & 4 ──
+        if (groove >= 2 && S.backbeat !== 'none') {
+            const v2 = 0.5 * drive, v4 = 0.58 * drive;
+            if (S.backbeat === 'clap') {
+                this._drumClap(eighth(2), v2); this._drumClap(eighth(6), v4);
+            } else if (S.backbeat === 'snare') {
+                this._drumSnare(t0 + beat + sw * 0.15 * beat, v2 + 0.12);
+                this._drumSnare(t0 + beat * 3 + sw * 0.15 * beat, v4 + 0.12);
+            } else if (S.backbeat === 'rim') {
+                this._drumRim(t0 + beat, v2 * 0.85); this._drumRim(t0 + beat * 3, v4 * 0.85);
             }
-        } else if (drive > 0.6) {
-            this._drumKick(t0, 0.5);                        // a soft heartbeat
-            this._pump(t0, beat);
         }
 
-        // ── HATS — offbeat 'tss', plus ticking 16ths when it drives ──
-        if (beatMode !== 'none') {
-            for (let i = 1; i < 8; i += 2) {                // open hat on the offbeats
-                this._drumHat(eighth(i), (0.65 + Math.random() * 0.4) * drive, true);
+        // ── BASS — the groove's low end ──
+        this._styleBass(t0, beat, chord, S, groove, drive, eighth);
+
+        // ── CHORD STABS — offbeat colour in the groove phases ──
+        if (groove >= 2 && S.arp !== 'driving') {
+            const stabs = groove >= 3 ? [3, 5, 7] : [3, 7];
+            for (const s of stabs) {
+                if (Math.random() < 0.62) this._dubStab(eighth(s), chord, 0.55 * drive, urgency);
             }
-            if (beatMode === 'drive' || urgency > 0.4) {
+        } else if (groove >= 2) {
+            const stabs = groove >= 3 ? [1, 3, 5, 7] : [3, 7];
+            for (const s of stabs) {
+                if (Math.random() < 0.8) this._dubStab(eighth(s), chord, 0.7 * drive, urgency);
+            }
+        }
+
+        // ── ARP / MELODY — the groove's top voice ──
+        this._styleArp(t0, beat, chord, S, phase, groove, drive, urgency, six);
+
+        // ── URGENCY — a rising tension lift over the last seconds ──
+        if (urgency > 0.5 && Math.random() < 0.7) this._tensionSweep(t0, beat * 4, urgency);
+
+        // ── faint crackle texture — heavier for the dusty grooves ──
+        const pops = S.crackle === 'heavy'
+            ? 4 + Math.floor(Math.random() * 6)
+            : 1 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < pops; i++) this._vinylPop(t0 + Math.random() * beat * 4);
+    },
+
+    /* The groove's drums — kick pattern + hats. Each `kick` mode is a
+       different feel: four-on-floor, lazy boom-bap, halftime, or soft. */
+    _styleDrums(t0, beat, S, groove, drive, eighth, six) {
+        if (groove < 1) return;
+        const full = groove >= 2;
+        const kp = S.kick;
+        if (kp === 'four') {
+            if (full) {
+                for (let b = 0; b < 4; b++) {
+                    this._drumKick(t0 + b * beat, groove >= 3 ? 0.95 : 0.8);
+                    this._pump(t0 + b * beat, beat);
+                }
+            } else { this._drumKick(t0, 0.55); this._pump(t0, beat); }
+        } else if (kp === 'boombap') {
+            this._drumKick(t0, 0.92); this._pump(t0, beat);
+            if (full) {
+                this._drumKick(t0 + beat * 2.5, 0.68);
+                if (Math.random() < 0.5) this._drumKick(t0 + beat * 1.75, 0.5);
+                if (groove >= 3 && Math.random() < 0.4) this._drumKick(t0 + beat * 3.5, 0.55);
+            }
+        } else if (kp === 'halftime') {
+            this._drumKick(t0, 0.95); this._pump(t0, beat * 2);
+            if (full && Math.random() < 0.55) this._drumKick(t0 + beat * 2.5, 0.58);
+        } else { // soft
+            this._drumKick(t0, 0.5); this._pump(t0, beat * 2);
+            if (full) this._drumKick(t0 + beat * 2, 0.42);
+        }
+        // hats — offbeat 'tss' + ticking 16ths, scaled by the groove's density
+        const hd = S.hatDensity;
+        if (hd > 0) {
+            for (let i = 1; i < 8; i += 2) {
+                if (Math.random() < 0.45 + 0.5 * hd) {
+                    this._drumHat(eighth(i), (0.5 + Math.random() * 0.4) * drive, true);
+                }
+            }
+            if (full) {
                 for (let i = 0; i < 16; i++) {
-                    if (i % 4 === 0) continue;              // leave the downbeat clear
-                    if (Math.random() < 0.28) continue;
-                    this._drumHat(six(i), 0.34 * drive, false);
+                    if (i % 4 === 0) continue;
+                    if (Math.random() > hd * (0.55 + 0.45 * drive)) continue;
+                    this._drumHat(six(i), 0.3 * drive, false);
                 }
             }
         }
+    },
 
-        // ── soft rim on 2 and 4 once it's really moving ──
-        if (beatMode === 'drive' && drive > 0.7) {
-            this._drumSnare(t0 + beat, 0.5 * drive);
-            this._drumSnare(t0 + beat * 3, 0.55 * drive);
-        }
-
-        // ── BASS ──
-        if (beatMode === 'house' || beatMode === 'drive') {
-            for (let b = 0; b < 4; b++) {                   // deep offbeat house bass
-                const n = chord.bass + ((b % 2) ? 0 : (Math.random() < 0.4 ? 12 : 0));
-                this._musicBassNote(t0 + (b + 0.5) * beat, n, 0.85 * drive);
+    /* The groove's bass — funk pluck, walking upright, offbeat house,
+       dub sub-stab, or a slow sub swell. */
+    _styleBass(t0, beat, chord, S, groove, drive, eighth) {
+        if (groove < 1) { this._subBass(t0, chord.bass, beat * 4); return; }
+        const b = S.bass;
+        if (b === 'funk') {
+            for (const i of [0, 3, 4, 6, 7]) {
+                if (Math.random() < 0.82) {
+                    const oct = (i === 4 || i === 7) && Math.random() < 0.5 ? 12 : 0;
+                    this._funkBass(eighth(i), chord.bass + oct, (0.7 + Math.random() * 0.3) * drive);
+                }
             }
-        } else {
-            this._subBass(t0, chord.bass, beat * 4 * (0.9 + Math.random() * 0.4));
-            if (Math.random() < 0.4) this._subBass(t0 + beat * 2, chord.bass + 7, beat * 2);
-        }
-
-        // ── DUB CHORD STABS — Berlin offbeat stabs in the groove phases ──
-        if (beatMode === 'house' || beatMode === 'drive') {
-            const stabs = beatMode === 'drive' ? [1, 3, 5, 7] : [3, 7];
-            for (const s of stabs) {
-                if (Math.random() < 0.85) this._dubStab(eighth(s), chord, 0.7 * drive, urgency);
+        } else if (b === 'upright') {
+            this._musicBassNote(t0, chord.bass, 0.95 * drive);
+            if (Math.random() < 0.7) this._musicBassNote(t0 + beat * 2, chord.bass + 7, 0.7 * drive);
+            if (groove >= 2 && Math.random() < 0.45) {
+                this._musicBassNote(t0 + beat * 3.5, chord.bass + (Math.random() < 0.5 ? 5 : -2), 0.55 * drive);
             }
+        } else if (b === 'offbeat') {
+            for (let q = 0; q < 4; q++) {
+                const n = chord.bass + ((q % 2) ? 0 : (Math.random() < 0.4 ? 12 : 0));
+                this._musicBassNote(t0 + (q + 0.5) * beat, n, 0.85 * drive);
+            }
+        } else if (b === 'dub') {
+            this._subBass(t0, chord.bass, beat * 4 * (0.9 + Math.random() * 0.3));
+            if (groove >= 2) this._musicBassNote(t0 + beat * 2.5, chord.bass, 0.6 * drive);
+        } else { // sub
+            this._subBass(t0, chord.bass, beat * 4 * (0.95 + Math.random() * 0.3));
+            if (Math.random() < 0.35) this._subBass(t0 + beat * 2, chord.bass + 7, beat * 2);
         }
+    },
 
-        // ── ARP ──
+    /* The groove's top voice — driving 16th arp, sparse syncopated
+       plucks, vibraphone, or sparse bell glints. */
+    _styleArp(t0, beat, chord, S, phase, groove, drive, urgency, six) {
         const arp = this._arpNotes(chord);
-        if (phase === 2 || urgency > 0.45 || (phase === 1 && drive > 0.82)) {
-            // progressive driving 16th arp — rises through the octave
+        const a = S.arp;
+        if (a === 'driving' && (phase === 2 || groove >= 3 || urgency > 0.45)) {
             for (let i = 0; i < 16; i++) {
                 if (Math.random() < 0.1) continue;
-                const midi = arp[i % arp.length] + (i >= 8 ? 12 : 0);
-                this._arpNote(six(i), midi, 0.6 * drive, urgency);
+                this._arpNote(six(i), arp[i % arp.length] + (i >= 8 ? 12 : 0), 0.6 * drive, urgency);
             }
-        } else if (phase === 0 || phase === 3) {
-            // dreamy sparse bell glints
-            const count = 2 + Math.floor(Math.random() * 4);
+        } else if (a === 'sparse' || (a === 'driving' && groove >= 2)) {
+            for (const s of [2, 5, 6, 9, 11, 14]) {
+                if (Math.random() < 0.35 + 0.3 * drive) {
+                    const midi = arp[Math.floor(Math.random() * arp.length)] + (Math.random() < 0.4 ? 12 : 0);
+                    this._arpNote(six(s), midi, 0.5 * drive, urgency);
+                }
+            }
+        } else if (a === 'vibes') {
+            const count = 2 + Math.floor(Math.random() * 3);
+            for (let k = 0; k < count; k++) {
+                this._vibesNote(t0 + Math.random() * beat * 4,
+                    arp[Math.floor(Math.random() * arp.length)] + 12, 0.5 + Math.random() * 0.4);
+            }
+        } else { // glints
+            const count = 1 + Math.floor(Math.random() * 4);
             for (let k = 0; k < count; k++) {
                 this._musicBell(t0 + Math.random() * beat * 4,
-                                arp[Math.floor(Math.random() * arp.length)] + 12,
-                                0.6 + Math.random() * 0.4);
+                    arp[Math.floor(Math.random() * arp.length)] + 12, 0.55 + Math.random() * 0.4);
             }
         }
-
-        // ── URGENCY — a rising tension lift over the last seconds ──
-        if (urgency > 0.5 && Math.random() < 0.7) {
-            this._tensionSweep(t0, beat * 4, urgency);
+        // the glass emptying drags a driving arp in over any groove
+        if (urgency > 0.6 && a !== 'driving') {
+            for (let i = 0; i < 16; i += 2) {
+                if (Math.random() < 0.4) this._arpNote(six(i), arp[i % arp.length] + 12, 0.4 * urgency, urgency);
+            }
         }
-
-        // ── faint crackle texture — always, sparse ──
-        const pops = 1 + Math.floor(Math.random() * 4);
-        for (let i = 0; i < pops; i++) this._vinylPop(t0 + Math.random() * beat * 4);
     },
 
     /* The results coda — a calm, resolved piece for the post-summary.
@@ -651,6 +808,19 @@ const SoundSystem = {
         lp.frequency.linearRampToValueAtTime((700 + vel * 1300) * bright, t + dur * 0.6);
         lp.Q.value = 0.4;
         lp.connect(M.pump);
+        // tape wobble — a slow shared pitch drift; the lounge groove's
+        // woozy, just-off-true haze. One LFO feeds every voice's detune.
+        let wob = null;
+        if (M.seed && M.seed.S && M.seed.S.wobble) {
+            const lfo = ctx.createOscillator();
+            lfo.type = 'sine';
+            lfo.frequency.value = 0.6 + Math.random() * 0.5;
+            wob = ctx.createGain();
+            wob.gain.value = 9 + Math.random() * 8;           // cents of drift
+            lfo.connect(wob);
+            lfo.start(t);
+            lfo.stop(t + dur + 1.8);
+        }
         for (const midi of chord.notes) {
             const f = this._midiToFreq(midi);
             const peak = 0.05 * vel;
@@ -665,6 +835,7 @@ const SoundSystem = {
                 o.type = wave;
                 o.frequency.value = f;
                 o.detune.value = d * (8 + Math.random() * 7);
+                if (wob) wob.connect(o.detune);
                 o.connect(env);
                 o.start(t);
                 o.stop(t + dur + 1.7);
@@ -906,6 +1077,134 @@ const SoundSystem = {
         g.connect(M.gain);
         src.start(t);
         src.stop(t + dur + 0.02);
+    },
+
+    /* A house clap — three micro-bursts of band-passed noise smeared
+       over ~25ms, then a longer tail; the snap of the bounce groove. */
+    _drumClap(t, vel) {
+        const ctx = this.audioContext, M = this.music;
+        if (!M) return;
+        const offs = [0, 0.007, 0.015, 0.027];
+        for (let k = 0; k < offs.length; k++) {
+            const tt = t + offs[k];
+            const last = k === offs.length - 1;
+            const dur = last ? 0.13 : 0.028;
+            const len = Math.max(1, Math.floor(ctx.sampleRate * dur));
+            const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+            const src = ctx.createBufferSource();
+            src.buffer = buf;
+            const bp = ctx.createBiquadFilter();
+            bp.type = 'bandpass';
+            bp.frequency.value = 1500 + Math.random() * 420;
+            bp.Q.value = 1.1;
+            const g = ctx.createGain();
+            const peak = (last ? 0.16 : 0.1) * vel;
+            g.gain.setValueAtTime(0.0001, tt);
+            g.gain.linearRampToValueAtTime(peak, tt + 0.003);
+            g.gain.exponentialRampToValueAtTime(0.0001, tt + dur);
+            src.connect(bp);
+            bp.connect(g);
+            g.connect(M.gain);
+            src.start(tt);
+            src.stop(tt + dur + 0.02);
+        }
+    },
+
+    /* A soft rim / woodblock click — a quick pitched tick. */
+    _drumRim(t, vel) {
+        const ctx = this.audioContext, M = this.music;
+        if (!M) return;
+        const o = ctx.createOscillator();
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(440, t);
+        o.frequency.exponentialRampToValueAtTime(210, t + 0.04);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.12 * vel, t + 0.003);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.075);
+        o.connect(g);
+        g.connect(M.gain);
+        o.start(t);
+        o.stop(t + 0.09);
+    },
+
+    /* A plucky, resonant filtered-saw funk bass — saw + square through
+       a fast-decaying resonant lowpass; the snap of the bounce line. */
+    _funkBass(t, midi, vel) {
+        const ctx = this.audioContext, M = this.music;
+        if (!M) return;
+        const lp = ctx.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.setValueAtTime(1300 + 900 * vel, t);
+        lp.frequency.exponentialRampToValueAtTime(255, t + 0.18);
+        lp.Q.value = 6;
+        const env = ctx.createGain();
+        env.gain.setValueAtTime(0.0001, t);
+        env.gain.linearRampToValueAtTime(0.3 * vel, t + 0.012);
+        env.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+        lp.connect(env);
+        env.connect(M.gain);
+        const f = this._midiToFreq(midi);
+        const o = ctx.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.value = f;
+        const o2 = ctx.createOscillator();
+        o2.type = 'square';
+        o2.frequency.value = f;
+        o2.detune.value = -6;
+        const o2g = ctx.createGain();
+        o2g.gain.value = 0.4;
+        o.connect(lp);
+        o2.connect(o2g);
+        o2g.connect(lp);
+        o.start(t);
+        o2.start(t);
+        o.stop(t + 0.3);
+        o2.stop(t + 0.3);
+    },
+
+    /* A vibraphone note — a sine with a soft inharmonic partial and a
+       gentle tremolo; the woozy lounge groove's melody voice. */
+    _vibesNote(t, midi, vel) {
+        const ctx = this.audioContext, M = this.music;
+        if (!M) return;
+        const f = this._midiToFreq(midi);
+        const dur = 1.4 + Math.random() * 0.8;
+        const env = ctx.createGain();
+        env.gain.setValueAtTime(0.0001, t);
+        env.gain.linearRampToValueAtTime(0.07 * vel, t + 0.012);
+        env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        // tremolo — the vibraphone's shimmer
+        const trem = ctx.createGain();
+        trem.gain.value = 1.0;
+        const lfo = ctx.createOscillator();
+        lfo.type = 'sine';
+        lfo.frequency.value = 4.8 + Math.random() * 1.2;
+        const lfoG = ctx.createGain();
+        lfoG.gain.value = 0.26;
+        lfo.connect(lfoG);
+        lfoG.connect(trem.gain);
+        env.connect(trem);
+        trem.connect(M.pump);
+        const o1 = ctx.createOscillator();
+        o1.type = 'sine';
+        o1.frequency.value = f;
+        o1.connect(env);
+        const o2 = ctx.createOscillator();
+        o2.type = 'sine';
+        o2.frequency.value = f * 3.99;
+        const o2g = ctx.createGain();
+        o2g.gain.value = 0.16;
+        o2.connect(o2g);
+        o2g.connect(env);
+        lfo.start(t);
+        o1.start(t);
+        o2.start(t);
+        lfo.stop(t + dur + 0.1);
+        o1.stop(t + dur + 0.1);
+        o2.stop(t + dur + 0.1);
     },
 
     // ─────────────────────────────────────────────────────────────
