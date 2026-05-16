@@ -161,6 +161,8 @@ class TypeFlux {
             resultCombo: document.getElementById('result-combo'),
             resultType: document.getElementById('result-type'),
             resultGrade: document.getElementById('results-grade'),
+            verdictName: document.getElementById('verdict-name'),
+            verdictStanding: document.getElementById('verdict-standing'),
             wpmChart: document.getElementById('wpm-chart'),
             
             // Stats view
@@ -2410,6 +2412,14 @@ class TypeFlux {
         const grade = results.grade || this.calculateGrade(results.wpm, results.accuracy, results.time);
         this.elements.resultGrade.textContent = grade;
 
+        // Speak the verdict — the grade, put into words a reader feels.
+        if (this.elements.verdictName) {
+            this.elements.verdictName.textContent = this.gradeVerdict(grade);
+        }
+        if (this.elements.verdictStanding) {
+            this.elements.verdictStanding.textContent = this.verdictStanding(results.wpm);
+        }
+
         // Marginalia tip on the certificate — language-specific for code,
         // a general typing tip otherwise.
         if (this.elements.certTip && this.elements.certTipBody) {
@@ -2480,6 +2490,51 @@ class TypeFlux {
 
     calculateGrade(wpm, accuracy, seconds = 30) {
         return this.gradeFromScore(this.gradeScore(wpm, accuracy, seconds));
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // The spoken verdict — the grade, put into words
+    //
+    // A lone letter is abstract; it says nothing a reader feels. The
+    // named hand gives the grade a character; the standing places it
+    // among real typists. Percentiles are anchored to public typing-
+    // speed distributions — 40 wpm is the median hand, 60 the top
+    // quarter, 75 the top 5, 100 the rarest 1 in 100.
+    // ─────────────────────────────────────────────────────────────
+    wpmPercentile(wpm) {
+        const pts = [[0,1],[15,9],[25,22],[35,42],[40,50],[50,63],
+                     [60,76],[70,86],[80,93],[95,98],[110,99],[150,99.8]];
+        if (wpm <= pts[0][0]) return pts[0][1];
+        for (let i = 1; i < pts.length; i++) {
+            if (wpm <= pts[i][0]) {
+                const [w0, p0] = pts[i - 1], [w1, p1] = pts[i];
+                return p0 + (p1 - p0) * (wpm - w0) / (w1 - w0);
+            }
+        }
+        return 99.8;
+    }
+
+    gradeVerdict(grade) {
+        const names = {
+            'S+': 'a peerless hand — the press has met its master',
+            'S':  'a virtuoso hand',
+            'A+': 'a hand of true command',
+            'A':  'a practised, confident hand',
+            'B+': 'a sure and steady hand',
+            'B':  'a sound hand, well on its way',
+            'C+': 'a hand finding its certainty',
+            'C':  'an earnest hand, still in training',
+            'D':  'a beginning hand — every master started here'
+        };
+        return names[grade] || names['C'];
+    }
+
+    verdictStanding(wpm) {
+        const p = Math.round(this.wpmPercentile(wpm));
+        if (p >= 99) return 'swifter than 99 hands in a hundred — the rarest air';
+        if (p >= 50) return `swifter than ${p} hands in every hundred`;
+        if (p >= 20) return `the climb is well begun — ${p} hands in a hundred behind thee`;
+        return 'the first steps of a long and rewarding road';
     }
 
     trackWpm() {
